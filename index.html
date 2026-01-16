@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trailer Bros Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(
+    180deg,
+    #f2f4f7 0%,
+    #e9edf2 40%,
+    #f6f6f6 100%
+  );
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+    header {
+      background-color: #ffffff;
+      padding: 10px 20px 40px;
+    }
+
+    .logo-header img {
+      max-width: 420px;
+      width: 90%;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: normal;
+      margin-top: 20px;
+      color: #444;
+    }
+
+    .intro {
+      max-width: 800px;
+      margin: 30px auto 0;
+      font-size: 18px;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    section {
+      max-width: 1100px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    .selection-grid {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .selection-card {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 40px 20px;
+      width: 100%;
+      max-width: 480px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .selection-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+
+    .selection-card a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .selection-card img {
+      max-width: 380px;
+      width: 100%;
+    }
+
+    .selection-card h3 {
+      margin-top: 24px;
+      font-size: 24px;
+      font-weight: normal;
+      color: #333;
+    }
+
+    @media (max-width: 900px) {
+      .selection-grid {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-header">
+      <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
+    </div>
+
+    <h2>Welcome to the Trailer Bros Rental Portal</h2>
+
+    <div class="intro">
+      Trailer Bros offers equipment rentals across multiple categories.
+      Please select your rental type below to view available equipment,
+      details, and booking options.
+    </div>
+  </header>
+
+  <!-- SELECTION SECTION -->
+  <section>
+    <div class="selection-grid">
+
+      <!-- BOAT RENTALS -->
+      <div class="selection-card">
+        <a href="boatbrosaz.com">
+          <img src="boat-bros.png.png" alt="Boat Bros Rentals" />
+          <h3>Boat Rentals</h3>
+        </a>
+      </div>
+
+      <!-- TRAILER RENTALS -->
+      <div class="selection-card">
+        <a href="coming-soon.html">
+          <img src="trailer-bros.png.png" alt="Trailer Bros Rentals" />
+          <h3>Trailer Rentals</h3>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>
