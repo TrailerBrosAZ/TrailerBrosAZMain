@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Boat Rentals | Boat Bros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f6f6f6;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    header {
+      background-color: #ffffff;
+      padding: 60px 20px 50px;
+    }
+
+    .logo-header img {
+      max-width: 420px;
+      width: 90%;
+      cursor: pointer;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: normal;
+      margin-top: 20px;
+      color: #444;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 14px 28px;
+      font-size: 18px;
+      background-color: #000;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 50px auto;
+      background-color: #ffffff;
+      padding: 40px 30px;
+      border-radius: 10px;
+    }
+
+    .equipment-title {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .equipment-details {
+      line-height: 1.8;
+      margin-bottom: 25px;
+      font-size: 16px;
+      color: #444;
+    }
+
+    /* CAROUSEL */
+    .carousel {
+      position: relative;
+      max-width: 700px;
+      margin: 30px auto;
+    }
+
+    .carousel img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(0,0,0,0.6);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 22px;
+      border-radius: 4px;
+    }
+
+    .carousel-btn.left { left: 10px; }
+    .carousel-btn.right { right: 10px; }
+
+    .contact-section {
+       max-width: 900px;
+       margin: 50px auto;
+       background-color: #ffffff;
+       padding: 40px 30px;
+       border-radius: 10px;
+    }
+
+     .contact-section h2 {
+        font-size: 24px;
+        margin-bottom: 15px;
+        color: #444;
+     }
+
+    .contact-section p {
+      font-size: 16px;
+      color: #444;
+      line-height: 1.8;
+    }
+
+    .contact-section a {
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+
+<body id="top">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-header">
+      <a href="/">
+        <img src="boat-bros.png.png" alt="Boat Bros Logo" />
+      </a>
+    </div>
+
+    <h2>
+      Boat Rentals by Boat Bros AZ<br />
+      Book Online or Contact Us to Get Started
+    </h2>
+
+  </header>
+
+  <!-- BOAT SECTION -->
+  <section>
+    <div class="equipment-title">17ft Fishing Boat</div>
+
+    <div class="equipment-details">
+      Dual fish finders<br />
+      50-Lbs Trolling motor<br />
+      8ft Power-Pole shallow-water anchor<br />
+      Mercury 75 HP outboard motor<br />
+      Seats 3–4 people comfortably<br />
+      Ideal for lakes, reservoirs, and calm river fishing<br />
+      Rental rate: $70/hour (4 hour minimum)<br />
+      Security deposit required: $300 (refunded after 2-week post-rental inspection)
+    </div>
+
+    <!-- IMAGE CAROUSEL -->
+    <div class="carousel">
+      <button class="carousel-btn left" onclick="prevSlide()">&#10094;</button>
+      <img id="boatCarousel" src="boat-pic-1.jpg" alt="Lund Fishing Boat" />
+      <button class="carousel-btn right" onclick="nextSlide()">&#10095;</button>
+    </div>
+  <a href="#booking" class="btn">Book This Boat</a>
+  </section>
+  
+
+  <!-- BOOKING SECTION -->
+  <section id="booking">
+    <h2>Book Your Boat Rental</h2>
+    <p>Select an available time and complete your booking below.</p>
+
+
+<!-- Start Square Appointments Embed Code -->
+   <script src='https://square.site/appointments/buyer/widget/31hvac7fpju5g3/L9FEHYEA49PK0.js'></script>
+<!-- End Square Appointments Embed Code -->
+
+<!-- CONTACT SECTION -->
+<section class="contact-section">
+  <h2>Questions? Contact Us</h2>
+  <p>
+    Phone: <a href="tel:14807445599">(480) 744-5599</a><br />
+    Email: <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+  </p>
+</section>
+
+  <!-- CAROUSEL SCRIPT -->
+  <script>
+    const boatImages = [
+      "boat-pic-1.jpg",
+      "boat-pic-2.jpg",
+      "boat-pic-3.jpg",
+      "boat-pic-4.jpg"
+    ];
+
+    let boatIndex = 0;
+
+    function showSlide() {
+      document.getElementById("boatCarousel").src = boatImages[boatIndex];
+    }
+
+    function nextSlide() {
+      boatIndex = (boatIndex + 1) % boatImages.length;
+      showSlide();
+    }
+
+    function prevSlide() {
+      boatIndex = (boatIndex - 1 + boatImages.length) % boatImages.length;
+      showSlide();
+    }
+  </script>
+
+</body>
+</html>
+
+
