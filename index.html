@@ -4,27 +4,29 @@
   <meta charset="UTF-8" />
   <title>Trailer Bros Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
+
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
   <style>
     body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(
-    180deg,
-    #f2f4f7 0%,
-    #e9edf2 40%,
-    #f6f6f6 100%
-  );
-  margin: 0;
-  padding: 0;
-  text-align: center;
-}
+      font-family: Arial, sans-serif;
+      background: linear-gradient(
+        180deg,
+        #f2f4f7 0%,
+        #e9edf2 45%,
+        #f6f7f9 100%
+      );
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      color: #333;
+    }
 
     header {
       background-color: #ffffff;
-      padding: 10px 20px 40px;
+      padding: 30px 20px 60px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.04);
     }
 
     .logo-header img {
@@ -32,51 +34,53 @@
       width: 90%;
     }
 
-    h2 {
-      font-size: 24px;
+    h1 {
+      font-size: 28px;
       font-weight: normal;
-      margin-top: 20px;
-      color: #444;
+      margin-top: 24px;
+      color: #222;
     }
 
     .intro {
-      max-width: 800px;
-      margin: 30px auto 0;
+      max-width: 760px;
+      margin: 16px auto 0;
       font-size: 18px;
       color: #555;
       line-height: 1.6;
     }
 
     section {
-      max-width: 1100px;
-      margin: 60px auto;
+      max-width: 1200px;
+      margin: 70px auto;
       padding: 0 20px;
     }
 
     .selection-grid {
       display: flex;
-      gap: 40px;
+      gap: 50px;
       justify-content: center;
       align-items: stretch;
     }
 
     .selection-card {
       background-color: #ffffff;
-      border-radius: 12px;
-      padding: 40px 20px;
+      border-radius: 14px;
+      padding: 48px 28px;
       width: 100%;
-      max-width: 480px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      max-width: 500px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
 
     .selection-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      transform: translateY(-6px);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.14);
     }
 
     .selection-card a {
       text-decoration: none;
       color: inherit;
+      display: block;
     }
 
     .selection-card img {
@@ -85,15 +89,45 @@
     }
 
     .selection-card h3 {
-      margin-top: 24px;
+      margin-top: 26px;
       font-size: 24px;
       font-weight: normal;
-      color: #333;
+      color: #222;
     }
 
+    .card-desc {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* TRUST STRIP */
+    .trust-strip {
+      max-width: 1100px;
+      margin: 40px auto 0;
+      display: flex;
+      justify-content: space-around;
+      gap: 30px;
+      padding: 40px 20px;
+      color: #555;
+      font-size: 15px;
+    }
+
+    .trust-item {
+      max-width: 220px;
+      line-height: 1.4;
+    }
+
+    /* MOBILE */
     @media (max-width: 900px) {
       .selection-grid {
         flex-direction: column;
+      }
+
+      .trust-strip {
+        flex-direction: column;
+        align-items: center;
       }
     }
   </style>
@@ -107,12 +141,11 @@
       <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
     </div>
 
-    <h2>Welcome to the Trailer Bros Rental Portal</h2>
+    <h1>Simple Rentals. Real Equipment. No Headaches.</h1>
 
     <div class="intro">
-      Trailer Bros offers equipment rentals across multiple categories.
-      Please select your rental type below to view available equipment,
-      details, and booking options.
+      Boats, trailers, and equipment rentals across Arizona’s East Valley.
+      Fast booking, transparent pricing, and easy local pickup.
     </div>
   </header>
 
@@ -125,6 +158,10 @@
         <a href="https://boatbrosaz.com">
           <img src="boat-bros.png.png" alt="Boat Bros Rentals" />
           <h3>Boat Rentals</h3>
+          <div class="card-desc">
+            Fishing-ready boats equipped for Arizona lakes.
+            Simple pickup, simple return.
+          </div>
         </a>
       </div>
 
@@ -133,16 +170,22 @@
         <a href="coming-soon.html">
           <img src="trailer-bros.png.png" alt="Trailer Bros Rentals" />
           <h3>Trailer Rentals</h3>
+          <div class="card-desc">
+            Utility and haul-ready trailers for work, projects, and transport.
+          </div>
         </a>
       </div>
 
+    </div>
+
+    <!-- TRUST STRIP -->
+    <div class="trust-strip">
+      <div class="trust-item">Transparent pricing. No surprise fees.</div>
+      <div class="trust-item">Local owner-operated rentals.</div>
+      <div class="trust-item">Flexible pickup and return times.</div>
+      <div class="trust-item">Equipment maintained and insured.</div>
     </div>
   </section>
 
 </body>
 </html>
-
-
-
-
-
