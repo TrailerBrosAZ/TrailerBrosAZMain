@@ -14,8 +14,8 @@
       background-image:
         linear-gradient(
           180deg,
-          rgba(255,255,255,0.92) 0%,
-          rgba(255,255,255,0.96) 100%
+          rgba(40,42,45,0.92) 0%,
+          rgba(55,58,62,0.92) 100%
         ),
         url("Trailerbrosheroimage.png");
       background-size: cover;
@@ -24,24 +24,24 @@
       margin: 0;
       padding: 0;
       text-align: center;
-      color: #333;
+      color: #e6e6e6;
     }
 
-    /* HERO HEADER */
+    /* HERO */
     header {
       position: relative;
       padding: 40px 20px 70px;
       background-image:
         linear-gradient(
           to bottom,
-          rgba(0,0,0,0.55),
-          rgba(0,0,0,0.45)
+          rgba(0,0,0,0.65),
+          rgba(0,0,0,0.55)
         ),
         url("Trailerbrosheroimage.png");
       background-size: cover;
       background-position: center;
       overflow: hidden;
-      box-shadow: inset 0 -30px 40px rgba(0,0,0,0.25);
+      box-shadow: inset 0 -60px 70px rgba(0,0,0,0.55);
     }
 
     header::after {
@@ -73,7 +73,7 @@
       max-width: 760px;
       margin: 16px auto 0;
       font-size: 18px;
-      color: #dcdcdc;
+      color: #d0d0d0;
       line-height: 1.6;
     }
 
@@ -82,7 +82,9 @@
       position: relative;
       max-width: 1200px;
       margin: 90px auto;
-      padding: 0 20px;
+      padding: 60px 20px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 28px;
     }
 
     .selection-grid {
@@ -94,19 +96,22 @@
 
     .selection-card {
       background-color: #ffffff;
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 48px 28px;
       width: 100%;
       max-width: 500px;
       transition: transform 0.25s ease, box-shadow 0.25s ease;
-       box-shadow:
-         0 18px 40px rgba(0,0,0,0.18),
-         0 2px 0 rgba(255,255,255,0.4) inset;
+      box-shadow:
+        0 22px 48px rgba(0,0,0,0.45),
+        0 2px 0 rgba(255,255,255,0.35) inset;
+      color: #333;
     }
 
     .selection-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 20px 42px rgba(0,0,0,0.18);
+      box-shadow:
+        0 30px 60px rgba(0,0,0,0.55),
+        0 2px 0 rgba(255,255,255,0.45) inset;
     }
 
     .selection-card a {
@@ -137,12 +142,12 @@
     /* TRUST STRIP */
     .trust-strip {
       max-width: 1100px;
-      margin: 40px auto 0;
+      margin: 50px auto 0;
       display: flex;
       justify-content: space-around;
       gap: 30px;
-      padding: 40px 20px;
-      color: #555;
+      padding: 30px 20px;
+      color: #cfcfcf;
       font-size: 15px;
     }
 
@@ -163,6 +168,11 @@
 
       header::after {
         backdrop-filter: blur(5px);
+      }
+
+      section {
+        padding: 50px 16px;
+        margin: 70px auto;
       }
 
       .selection-grid {
@@ -193,11 +203,10 @@
     </div>
   </header>
 
-  <!-- SELECTION SECTION -->
+  <!-- CONTENT -->
   <section>
     <div class="selection-grid">
 
-      <!-- BOAT RENTALS -->
       <div class="selection-card">
         <a href="https://boatbrosaz.com">
           <img src="boat-bros.png.png" alt="Boat Bros Rentals" />
@@ -209,7 +218,6 @@
         </a>
       </div>
 
-      <!-- TRAILER RENTALS -->
       <div class="selection-card">
         <a href="coming-soon.html">
           <img src="trailer-bros.png.png" alt="Trailer Bros Rentals" />
@@ -222,7 +230,6 @@
 
     </div>
 
-    <!-- TRUST STRIP -->
     <div class="trust-strip">
       <div class="trust-item">Transparent pricing. No surprise fees.</div>
       <div class="trust-item">Local owner-operated rentals.</div>
@@ -233,4 +240,3 @@
 
 </body>
 </html>
-
