@@ -72,10 +72,41 @@
       line-height: 1.6;
     }
 
+    /* HERO → BODY FADE */
+    .hero-fade {
+      height: 140px;
+      background-image:
+        linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.55),
+          rgba(242,244,247,1)
+        ),
+        url("Trailerbrosheroimage.png");
+      background-size: cover;
+      background-position: center;
+      filter: blur(8px);
+    }
+
     section {
+      position: relative;
       max-width: 1200px;
       margin: 70px auto;
       padding: 0 20px;
+    }
+
+    /* SECTION TOP BLEND */
+    section::before {
+      content: "";
+      position: absolute;
+      top: -70px;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: linear-gradient(
+        to bottom,
+        rgba(242,244,247,0),
+        rgba(242,244,247,1)
+      );
     }
 
     .selection-grid {
@@ -152,6 +183,11 @@
         backdrop-filter: blur(7px);
       }
 
+      .hero-fade {
+        height: 110px;
+        filter: blur(10px);
+      }
+
       .selection-grid {
         flex-direction: column;
       }
@@ -179,6 +215,9 @@
       Fast booking, transparent pricing, and easy local pickup.
     </div>
   </header>
+
+  <!-- HERO FADE -->
+  <div class="hero-fade"></div>
 
   <!-- SELECTION SECTION -->
   <section>
