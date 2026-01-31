@@ -23,10 +23,33 @@
       color: #333;
     }
 
+    /* HERO HEADER */
     header {
-      background-color: #ffffff;
-      padding: 30px 20px 60px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+      position: relative;
+      padding: 40px 20px 70px;
+      background-image:
+        linear-gradient(
+          to bottom,
+          rgba(0,0,0,0.65),
+          rgba(0,0,0,0.55)
+        ),
+        url("Trailerbrosheroimage.png");
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+    }
+
+    header > * {
+      position: relative;
+      z-index: 1;
     }
 
     .logo-header img {
@@ -38,14 +61,14 @@
       font-size: 28px;
       font-weight: normal;
       margin-top: 24px;
-      color: #222;
+      color: #f2f2f2;
     }
 
     .intro {
       max-width: 760px;
       margin: 16px auto 0;
       font-size: 18px;
-      color: #555;
+      color: #dcdcdc;
       line-height: 1.6;
     }
 
@@ -121,6 +144,14 @@
 
     /* MOBILE */
     @media (max-width: 900px) {
+      header {
+        padding: 30px 20px 50px;
+      }
+
+      header::after {
+        backdrop-filter: blur(7px);
+      }
+
       .selection-grid {
         flex-direction: column;
       }
