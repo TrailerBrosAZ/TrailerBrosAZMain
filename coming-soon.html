@@ -1,75 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Coming Soon | Trailer Bros</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<title>Trailer Rentals | Trailer Bros</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f6f6f6;
-      text-align: center;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background-image:
+    linear-gradient(180deg, rgba(40,42,45,0.92) 0%, rgba(55,58,62,0.92) 100%),
+    url("Trailerbrosheroimage.png");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  color: #e6e6e6;
+}
 
-    header {
-      background-color: #ffffff;
-      padding: 60px 20px 40px;
-    }
+/* HERO */
+header {
+  position: relative;
+  padding: 50px 20px 70px;
+  background-image:
+    linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.55)),
+    url("Trailerbrosheroimage.png");
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 -60px 70px rgba(0,0,0,0.55);
+}
 
-    .logo img {
-      max-width: 420px;
-      width: 90%;
-    }
+header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
 
-    h2 {
-      margin-top: 30px;
-      font-size: 26px;
-      font-weight: normal;
-      color: #333;
-    }
+header > * {
+  position: relative;
+  z-index: 1;
+}
 
-    p {
-      max-width: 700px;
-      margin: 20px auto;
-      font-size: 18px;
-      color: #555;
-      line-height: 1.6;
-    }
+.logo img {
+  max-width: 420px;
+  width: 90%;
+}
 
-    .btn {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 14px 28px;
-      font-size: 18px;
-      background-color: #000;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 6px;
-    }
-  </style>
+h1 {
+  margin-top: 30px;
+  font-size: 28px;
+  font-weight: normal;
+}
+
+.intro {
+  max-width: 760px;
+  margin: 20px auto 0;
+  font-size: 18px;
+  color: #d0d0d0;
+  line-height: 1.6;
+}
+
+/* MAIN */
+section {
+  max-width: 1100px;
+  margin: 80px auto;
+  padding: 60px 20px;
+  background: rgba(0,0,0,0.30);
+  border-radius: 28px;
+}
+
+/* CARD */
+.trailer-card {
+  background-color: #ffffff;
+  border-radius: 18px;
+  padding: 40px 25px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.55);
+  color: #333;
+}
+
+/* CAROUSEL */
+.carousel {
+  position: relative;
+  max-width: 100%;
+  margin: auto;
+}
+
+.carousel img {
+  width: 100%;
+  border-radius: 12px;
+  display: none;
+}
+
+.carousel img.active {
+  display: block;
+}
+
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  padding: 12px;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 4px;
+  user-select: none;
+  transform: translateY(-50%);
+}
+
+.prev { left: 10px; }
+.next { right: 10px; }
+
+.trailer-card h3 {
+  margin-top: 28px;
+  font-size: 24px;
+}
+
+.specs {
+  margin-top: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.price {
+  margin-top: 25px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 28px;
+  padding: 14px 28px;
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.requirements {
+  margin-top: 40px;
+  font-size: 15px;
+  color: #ccc;
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  body { background-attachment: scroll; }
+}
+</style>
 </head>
 
 <body>
 
-  <header>
-    <div class="logo">
-      <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
-    </div>
+<header>
+  <div class="logo">
+    <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
+  </div>
 
-    <h2>Trailer Rentals Coming Soon</h2>
+  <h1>2026 RawMaxx UTX 14' x 83" Utility Trailer</h1>
 
-    <p>
-      We are currently preparing our trailer rental inventory and booking
-      system. Trailer rentals will be available soon.
-      <br /><br />
-      Please check back shortly, or return to the main portal to explore
-      other rental options.
-    </p>
+  <div class="intro">
+    7,000 lb rated tandem axle trailer with electric brakes on both axles.
+    Ideal for landscaping equipment, side-by-sides, appliances, and project hauling.
+  </div>
+</header>
 
-    <a href="index.html" class="btn">Return to Homepage</a>
-  </header>
+<section>
+
+<div class="trailer-card">
+
+<div class="carousel">
+  <img src="utx1.jpg" class="active" alt="RawMaxx UTX Side View">
+  <img src="utx2.jpg" alt="RawMaxx UTX Deck View">
+  <img src="utx3.jpg" alt="RawMaxx UTX Angle View">
+  <img src="utx4.jpg" alt="RawMaxx Toolbox Closeup">
+  <img src="utx5.jpg" alt="RawMaxx UTX Side Profile">
+  <img src="utx6.jpg" alt="RawMaxx Rear Gate">
+
+  <div class="prev" onclick="changeSlide(-1)">❮</div>
+  <div class="next" onclick="changeSlide(1)">❯</div>
+</div>
+
+<h3>Heavy-Duty Tandem Axle Utility Trailer</h3>
+
+<div class="specs">
+7,000 lb GVWR<br>
+Approx. 5,200 lb payload capacity<br>
+Tandem 3,500 lb axles<br>
+Electric brakes on both axles<br>
+Powder-coated frame<br>
+Reinforced rear drop gate<br>
+Front-mounted toolbox for straps & tools
+</div>
+
+<div class="price">
+$85 / Day<br>
+$325 / Week
+</div>
+
+<a href="BOOKING-LINK-HERE" class="btn">
+Check Availability
+</a>
+
+<div class="requirements">
+<br>
+Towing Requirements:<br>
+2 5/16" ball<br>
+7-pin connector<br>
+Brake controller required
+</div>
+
+</div>
+
+</section>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll(".carousel img");
+
+function showSlide(index) {
+  slides.forEach(slide => slide.classList.remove("active"));
+  currentSlide = (index + slides.length) % slides.length;
+  slides[currentSlide].classList.add("active");
+}
+
+function changeSlide(direction) {
+  showSlide(currentSlide + direction);
+}
+</script>
 
 </body>
 </html>
