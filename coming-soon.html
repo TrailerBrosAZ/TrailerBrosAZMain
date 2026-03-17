@@ -1,244 +1,569 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Trailer Rentals | Trailer Bros</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <title>Trailer Rentals | Trailer Bros AZ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rent a heavy-duty utility trailer in Arizona's East Valley. Tandem axle, 7,000 lb GVWR. Affordable daily, weekly, and monthly rates." />
+  <meta property="og:title" content="Trailer Rentals | Trailer Bros AZ" />
+  <meta property="og:description" content="Heavy-duty trailer rentals in Arizona's East Valley. Transparent pricing, easy pickup." />
+  <meta property="og:type" content="website" />
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background-image:
-    linear-gradient(180deg, rgba(40,42,45,0.92) 0%, rgba(55,58,62,0.92) 100%),
-    url("Trailerbrosheroimage.png");
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  color: #e6e6e6;
-}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-/* HERO */
-header {
-  position: relative;
-  padding: 50px 20px 70px;
-  background-image:
-    linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.55)),
-    url("Trailerbrosheroimage.png");
-  background-size: cover;
-  background-position: center;
-  box-shadow: inset 0 -60px 70px rgba(0,0,0,0.55);
-}
+  <style>
+    :root {
+      --accent: #E8620A;
+      --accent-dark: #C4510A;
+      --bg-dark: #1C1F23;
+      --text-light: #e6e6e6;
+      --text-muted: #a0a0a0;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --radius-lg: 18px;
+      --radius-sm: 8px;
+      --shadow-card: 0 25px 60px rgba(0,0,0,0.5);
+      --transition: 0.25s ease;
+    }
 
-header::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(3px);
-  pointer-events: none;
-}
+    *, *::before, *::after { box-sizing: border-box; }
 
-header > * {
-  position: relative;
-  z-index: 1;
-}
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        linear-gradient(180deg, rgba(28,31,35,0.95) 0%, rgba(28,31,35,0.95) 100%),
+        url("Trailerbrosheroimage.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      margin: 0;
+      padding: 0;
+      color: var(--text-light);
+    }
 
-.logo img {
-  max-width: 420px;
-  width: 90%;
-}
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 40px;
+      background: rgba(28,31,35,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
 
-h1 {
-  margin-top: 30px;
-  font-size: 28px;
-  font-weight: normal;
-}
+    .nav-logo img {
+      height: 44px;
+      display: block;
+    }
 
-.intro {
-  max-width: 760px;
-  margin: 20px auto 0;
-  font-size: 18px;
-  color: #d0d0d0;
-  line-height: 1.6;
-}
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
 
-/* MAIN */
-section {
-  max-width: 1100px;
-  margin: 80px auto;
-  padding: 60px 20px;
-  background: rgba(0,0,0,0.30);
-  border-radius: 28px;
-}
+    .nav-links a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      opacity: 0.85;
+      transition: opacity var(--transition), color var(--transition);
+    }
 
-/* CARD */
-.trailer-card {
-  background-color: #ffffff;
-  border-radius: 18px;
-  padding: 40px 25px;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.55);
-  color: #333;
-}
+    .nav-links a:hover {
+      opacity: 1;
+      color: var(--accent);
+    }
 
-/* CAROUSEL */
-.carousel {
-  position: relative;
-  max-width: 100%;
-  margin: auto;
-}
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      opacity: 1 !important;
+    }
 
-.carousel img {
-  width: 100%;
-  border-radius: 12px;
-  display: none;
-}
+    .nav-cta:hover {
+      background: var(--accent-dark) !important;
+      color: #fff !important;
+    }
 
-.carousel img.active {
-  display: block;
-}
+    /* HERO */
+    header {
+      position: relative;
+      padding: 70px 20px 80px;
+      text-align: center;
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.72), rgba(0,0,0,0.60)),
+        url("Trailerbrosheroimage.png");
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+      box-shadow: inset 0 -80px 80px rgba(28,31,35,0.8);
+    }
 
-.prev, .next {
-  cursor: pointer;
-  position: absolute;
-  top: 50%;
-  padding: 12px;
-  color: white;
-  font-weight: bold;
-  font-size: 18px;
-  background: rgba(0,0,0,0.5);
-  border-radius: 4px;
-  user-select: none;
-  transform: translateY(-50%);
-}
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(2px);
+      pointer-events: none;
+    }
 
-.prev { left: 10px; }
-.next { right: 10px; }
+    header > * { position: relative; z-index: 1; }
 
-.trailer-card h3 {
-  margin-top: 28px;
-  font-size: 24px;
-}
+    .logo img {
+      max-width: 400px;
+      width: 80%;
+    }
 
-.specs {
-  margin-top: 18px;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #555;
-}
+    h1 {
+      margin: 28px auto 0;
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 600;
+      color: #fff;
+      max-width: 680px;
+    }
 
-.price {
-  margin-top: 25px;
-  font-size: 20px;
-  font-weight: bold;
-}
+    .intro {
+      max-width: 620px;
+      margin: 16px auto 0;
+      font-size: 16px;
+      color: #c8c8c8;
+      line-height: 1.65;
+    }
 
-.btn {
-  display: inline-block;
-  margin-top: 28px;
-  padding: 14px 28px;
-  background-color: #000;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 6px;
-}
+    .intro a {
+      color: var(--accent);
+      text-decoration: none;
+    }
 
-.requirements {
-  margin-top: 40px;
-  font-size: 15px;
-  color: #ccc;
-}
+    .intro a:hover { text-decoration: underline; }
 
-/* MOBILE */
-@media (max-width: 900px) {
-  body { background-attachment: scroll; }
-}
-</style>
+    /* MAIN */
+    section {
+      max-width: 860px;
+      margin: 70px auto 80px;
+      padding: 0 20px;
+    }
+
+    /* CARD */
+    .trailer-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 44px 36px;
+      box-shadow: var(--shadow-card);
+      color: var(--text-dark);
+      text-align: center;
+    }
+
+    /* CAROUSEL */
+    .carousel {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.4s ease;
+    }
+
+    .carousel-track img {
+      min-width: 100%;
+      width: 100%;
+      height: auto;
+      max-height: 480px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .prev, .next {
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 10px 16px;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+      background: rgba(0,0,0,0.55);
+      border: none;
+      border-radius: 4px;
+      user-select: none;
+      transition: background var(--transition);
+      z-index: 2;
+    }
+
+    .prev:hover, .next:hover { background: rgba(0,0,0,0.85); }
+    .prev { left: 12px; }
+    .next { right: 12px; }
+
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 0 4px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: #ccc;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.25);
+    }
+
+    /* CARD CONTENT */
+    .trailer-card h3 {
+      margin-top: 32px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .specs {
+      margin-top: 18px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text-mid);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px 24px;
+      text-align: left;
+    }
+
+    .spec-item::before {
+      content: "✓  ";
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+      justify-content: center;
+    }
+
+    .pricing-box {
+      flex: 1;
+      max-width: 180px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 22px 16px;
+      text-align: center;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .pricing-box:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(232,98,10,0.15);
+    }
+
+    .pricing-period {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+
+    .pricing-amount {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: 6px;
+    }
+
+    .pricing-unit {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* CTA BUTTON */
+    .btn {
+      display: inline-block;
+      margin-top: 32px;
+      padding: 16px 44px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition);
+      letter-spacing: 0.3px;
+    }
+
+    .btn:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+    }
+
+    /* REQUIREMENTS */
+    .requirements {
+      margin-top: 36px;
+      background: #f7f7f7;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      padding: 20px 24px;
+      text-align: left;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+    }
+
+    .requirements strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .requirements ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .requirements li { margin-bottom: 4px; }
+
+    /* FOOTER */
+    footer {
+      padding: 48px 40px 32px;
+      background: rgba(0,0,0,0.45);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-logo img { height: 48px; }
+
+    .footer-contact {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .footer-contact a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-contact a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 13px;
+      color: #606060;
+      margin-top: 8px;
+    }
+
+    /* MOBILE */
+    @media (max-width: 700px) {
+      body { background-attachment: scroll; }
+      nav { padding: 12px 20px; }
+      .nav-links { display: none; }
+      .trailer-card { padding: 32px 20px; }
+      .pricing-grid { flex-direction: column; align-items: center; }
+      .pricing-box { max-width: 100%; width: 100%; }
+      .specs { grid-template-columns: 1fr; }
+      footer { padding: 40px 20px 28px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-  <div class="logo">
-    <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
-  </div>
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="trailer-bros.png.png" alt="Trailer Bros" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
+      <li><a href="coming-soon.html">Trailer Rentals</a></li>
+      <li><a href="#book" class="nav-cta">Book Now</a></li>
+    </ul>
+  </nav>
 
-  <h1>High quality trailers for all your hauling needs</h1>
+  <!-- HERO -->
+  <header>
+    <div class="logo">
+      <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
+    </div>
+    <h1>High-Quality Trailers for All Your Hauling Needs</h1>
+    <div class="intro">
+      Please see our available trailer options below. Questions?
+      Call us at <a href="tel:4807445599">(480) 744-5599</a> or email
+      <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+    </div>
+  </header>
 
-  <div class="intro">
-    Pleas see our available trailer options below, and feel free to reach out with any questions: (480) 744-5599 or at trailerbrosaz@gmail.com
-  </div>
-</header>
+  <!-- LISTING -->
+  <section>
+    <div class="trailer-card">
 
-<section>
+      <div class="carousel">
+        <div class="carousel-track" id="carouselTrack">
+          <img src="utx1.jpg" alt="RawMaxx UTX Side View">
+          <img src="utx2.jpg" alt="RawMaxx UTX Deck View">
+          <img src="utx3.jpg" alt="RawMaxx UTX Angle View">
+          <img src="utx4.jpg" alt="RawMaxx Toolbox Closeup">
+          <img src="utx5.jpg" alt="RawMaxx UTX Side Profile">
+          <img src="utx6.jpg" alt="RawMaxx Rear Gate">
+        </div>
+        <button class="prev" onclick="changeSlide(-1)" aria-label="Previous image">&#10094;</button>
+        <button class="next" onclick="changeSlide(1)" aria-label="Next image">&#10095;</button>
+      </div>
 
-<div class="trailer-card">
+      <div class="carousel-dots" id="carouselDots"></div>
 
-<div class="carousel">
-  <img src="utx1.jpg" class="active" alt="RawMaxx UTX Side View">
-  <img src="utx2.jpg" alt="RawMaxx UTX Deck View">
-  <img src="utx3.jpg" alt="RawMaxx UTX Angle View">
-  <img src="utx4.jpg" alt="RawMaxx Toolbox Closeup">
-  <img src="utx5.jpg" alt="RawMaxx UTX Side Profile">
-  <img src="utx6.jpg" alt="RawMaxx Rear Gate">
+      <h3>Heavy-Duty Tandem Axle Utility Trailer</h3>
 
-  <div class="prev" onclick="changeSlide(-1)">❮</div>
-  <div class="next" onclick="changeSlide(1)">❯</div>
-</div>
+      <div class="specs">
+        <span class="spec-item">7,000 lb GVWR</span>
+        <span class="spec-item">Approx. 5,200 lb payload capacity</span>
+        <span class="spec-item">Electric brakes</span>
+        <span class="spec-item">Powder-coated frame</span>
+        <span class="spec-item">Reinforced rear drop gate</span>
+        <span class="spec-item">Front-mounted toolbox with straps</span>
+      </div>
 
-<h3>Heavy-Duty Tandem Axle Utility Trailer</h3>
+      <div class="pricing-grid">
+        <div class="pricing-box">
+          <div class="pricing-period">Daily</div>
+          <div class="pricing-amount">$60</div>
+          <div class="pricing-unit">per day</div>
+        </div>
+        <div class="pricing-box">
+          <div class="pricing-period">Weekly</div>
+          <div class="pricing-amount">$350</div>
+          <div class="pricing-unit">per week</div>
+        </div>
+        <div class="pricing-box">
+          <div class="pricing-period">Monthly</div>
+          <div class="pricing-amount">$1,450</div>
+          <div class="pricing-unit">per month</div>
+        </div>
+      </div>
 
-<div class="specs">
-7,000 lb GVWR<br>
-Approx. 5,200 lb payload capacity<br>
-Electric brakes<br>
-Powder-coated frame<br>
-Reinforced rear drop gate<br>
-Front-mounted toolbox with straps included
-</div>
+      <div id="book">
+        <a href="BOOKING-LINK-HERE" class="btn">Check Availability</a>
+      </div>
 
-<div class="price">
-$60 / Day<br>
-$350 / Week<br>
-$1,450 / Month
-</div>
+      <div class="requirements">
+        <strong>Towing Requirements</strong>
+        <ul>
+          <li>2 5/16" ball hitch</li>
+          <li>7-pin connector</li>
+          <li>Brake controller required</li>
+        </ul>
+      </div>
 
-<a href="BOOKING-LINK-HERE" class="btn">
-Check Availability
-</a>
+    </div>
+  </section>
 
-<div class="requirements">
-<br>
-Towing Requirements:<br>
-2 5/16" ball<br>
-7-pin connector<br>
-Brake controller required
-</div>
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <img src="trailer-bros.png.png" alt="Trailer Bros" />
+      </div>
+      <div class="footer-contact">
+        Questions? Give us a call or shoot us an email.<br>
+        <a href="tel:4807445599">(480) 744-5599</a> &nbsp;|&nbsp;
+        <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
+        <li><a href="coming-soon.html">Trailer Rentals</a></li>
+      </ul>
+      <div class="footer-copy">&copy; 2025 Trailer Bros AZ. All rights reserved.</div>
+    </div>
+  </footer>
 
-</div>
+  <script>
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('carouselDots');
+    const slides = track.querySelectorAll('img');
+    let current = 0;
 
-</section>
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.classList.add('dot');
+      if (i === 0) dot.classList.add('active');
+      dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+      dot.addEventListener('click', () => goTo(i));
+      dotsContainer.appendChild(dot);
+    });
 
-<script>
-let currentSlide = 0;
-const slides = document.querySelectorAll(".carousel img");
+    function goTo(index) {
+      current = (index + slides.length) % slides.length;
+      track.style.transform = `translateX(-${current * 100}%)`;
+      document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    }
 
-function showSlide(index) {
-  slides.forEach(slide => slide.classList.remove("active"));
-  currentSlide = (index + slides.length) % slides.length;
-  slides[currentSlide].classList.add("active");
-}
+    function changeSlide(dir) { goTo(current + dir); }
 
-function changeSlide(direction) {
-  showSlide(currentSlide + direction);
-}
-</script>
+    let touchStartX = 0;
+    track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1);
+    }, { passive: true });
+  </script>
 
 </body>
 </html>
-
-
-
-
-
