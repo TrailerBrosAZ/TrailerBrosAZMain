@@ -344,11 +344,45 @@
       margin-top: 8px;
     }
 
+    /* HAMBURGER */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-light);
+      border-radius: 2px;
+      transition: background var(--transition);
+    }
+
     /* MOBILE */
     @media (max-width: 900px) {
       body { background-attachment: scroll; }
-      nav { padding: 12px 20px; }
-      .nav-links { display: none; }
+      nav { padding: 12px 20px; flex-wrap: wrap; }
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 8px 0 12px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .nav-links a { padding: 11px 4px; display: block; }
+      .nav-cta {
+        margin-top: 8px;
+        display: inline-block;
+        width: auto;
+      }
       header { padding: 60px 20px 70px; }
       .selection-grid { flex-direction: column; align-items: center; }
       .trust-strip {
@@ -369,8 +403,11 @@
     <a class="nav-logo" href="index.html">
       <img src="trailer-bros.png.png" alt="Trailer Bros" />
     </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" style="color:var(--accent)">Home</a></li>
       <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
       <li><a href="coming-soon.html">Trailer Rentals</a></li>
       <li><a href="coming-soon.html" class="nav-cta">Book Now</a></li>
@@ -463,5 +500,10 @@
     </div>
   </footer>
 
+  <script>
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+  </script>
 </body>
 </html>

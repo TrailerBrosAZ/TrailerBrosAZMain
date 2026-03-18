@@ -435,11 +435,40 @@
       margin-top: 8px;
     }
 
+    /* HAMBURGER */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-light);
+      border-radius: 2px;
+    }
+
     /* MOBILE */
     @media (max-width: 700px) {
       body { background-attachment: scroll; }
-      nav { padding: 12px 20px; }
-      .nav-links { display: none; }
+      nav { padding: 12px 20px; flex-wrap: wrap; }
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 8px 0 12px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .nav-links a { padding: 11px 4px; display: block; }
+      .nav-cta { margin-top: 8px; display: inline-block; }
       .boat-card, .booking-card { padding: 32px 20px; }
       .pricing-grid { flex-direction: column; align-items: center; }
       .pricing-box { max-width: 100%; width: 100%; }
@@ -457,9 +486,12 @@
     <a class="nav-logo" href="/">
       <img src="boat-bros.png.png" alt="Boat Bros" />
     </a>
-    <ul class="nav-links">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
       <li><a href="/">Home</a></li>
-      <li><a href="/boatbrosaz">Boat Rentals</a></li>
+      <li><a href="/boatbrosaz" style="color:var(--accent)">Boat Rentals</a></li>
       <li><a href="/coming-soon.html">Trailer Rentals</a></li>
       <li><a href="#booking" class="nav-cta">Book Now</a></li>
     </ul>
@@ -473,7 +505,7 @@
     <h1>Fishing-Ready Boat Rentals in Arizona's East Valley</h1>
     <div class="intro">
       Fully equipped and ready to launch. Book online or give us a call —
-      <a href="tel:14807445599" style="color:var(--accent);text-decoration:none;">(480) 744-5599</a>
+      <a href="tel:14807445599">(480) 744-5599</a>
     </div>
     <a href="#booking" class="hero-cta">Check Availability</a>
   </header>
@@ -584,6 +616,10 @@
       const diff = touchStartX - e.changedTouches[0].clientX;
       if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1);
     }, { passive: true });
+
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
   </script>
 
 </body>
