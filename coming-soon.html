@@ -456,21 +456,20 @@
     }
 
     .calendar-wrapper {
-      position: relative;
       width: 100%;
-      padding-bottom: 75%;
       overflow: hidden;
-      border-radius: 10px;
-      border: 1px solid #e8e8e8;
+      border-radius: var(--radius-lg);
     }
 
     .calendar-wrapper iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
-      height: 100%;
+      height: 450px;
       border: 0;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .calendar-wrapper iframe { height: 350px; }
     }
 
     .request-btn {
