@@ -455,6 +455,47 @@
       margin: 0 0 28px;
     }
 
+    .calendar-wrapper {
+      position: relative;
+      width: 100%;
+      padding-bottom: 75%;
+      overflow: hidden;
+      border-radius: 10px;
+      border: 1px solid #e8e8e8;
+    }
+
+    .calendar-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .request-btn {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 16px 44px;
+      background: var(--bg-dark);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .request-btn:hover {
+      background: #000;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 700px) {
+      .request-btn { display: block; width: 100%; text-align: center; padding: 16px 20px; }
+    }
+
     /* HAMBURGER */
     .hamburger {
       display: none;
@@ -596,10 +637,11 @@
   <section class="booking" id="book">
     <div class="booking-card">
       <h2>Book Your Trailer Rental</h2>
-      <p>Select an available time and complete your booking below.</p>
-      <!-- Start Square Appointments Embed Code -->
-      <script src='https://square.site/appointments/buyer/widget/31hvac7fpju5g3/LB43662G5FQKT.js'></script>
-      <!-- End Square Appointments Embed Code -->
+      <p>Check availability below, then submit a rental request.</p>
+      <div class="calendar-wrapper">
+        <iframe src="https://calendar.google.com/calendar/embed?src=86f1fab7ff2a7ffae3ca65c2444871cb629871ffd0dfc61aec4c4fc4cb75c940%40group.calendar.google.com&ctz=America%2FPhoenix" frameborder="0" scrolling="no"></iframe>
+      </div>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSdS-se5bAa_JZUu1bM6lIkOxn42sxHXiOZKtQwHTyGBm4NKAA/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" class="request-btn">Request This Rental</a>
     </div>
   </section>
 
