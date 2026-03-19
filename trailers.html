@@ -473,6 +473,56 @@
       margin: 0 0 28px;
     }
 
+    .booking-steps {
+      display: flex;
+      gap: 16px;
+      margin: 0 0 28px;
+      text-align: left;
+    }
+
+    .booking-step {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #f4f4f4;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .step-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 3px;
+    }
+
+    .step-text span {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .booking-steps { flex-direction: column; }
+    }
+
     .calendar-wrapper {
       width: 100%;
       overflow: hidden;
@@ -654,7 +704,22 @@
   <section class="booking" id="book">
     <div class="booking-card">
       <h2>Book Your Trailer Rental</h2>
-      <p>Check availability below, then submit a rental request.</p>
+      <div class="booking-steps">
+        <div class="booking-step">
+          <div class="step-number">1</div>
+          <div class="step-text">
+            <strong>Check Availability</strong>
+            <span>Check the calendar below to confirm your dates are available.</span>
+          </div>
+        </div>
+        <div class="booking-step">
+          <div class="step-number">2</div>
+          <div class="step-text">
+            <strong>Submit Your Request</strong>
+            <span>Submit the rental request form using the button below the calendar.</span>
+          </div>
+        </div>
+      </div>
       <div class="calendar-wrapper">
         <iframe src="https://calendar.google.com/calendar/embed?src=86f1fab7ff2a7ffae3ca65c2444871cb629871ffd0dfc61aec4c4fc4cb75c940%40group.calendar.google.com&ctz=America%2FPhoenix" frameborder="0" scrolling="no"></iframe>
       </div>
