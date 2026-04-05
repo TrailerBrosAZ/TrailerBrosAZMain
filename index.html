@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Trailer Bros AZ | Boat &amp; Trailer Rentals in Arizona's East Valley</title>
+  <title>Trailer Bros AZ | Utility Trailer Rentals in Mesa</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Trailer Bros AZ offers boat and utility trailer rentals across Arizona's East Valley. Simple pickup, transparent pricing, no headaches." />
-  <meta property="og:title" content="Trailer Bros AZ | Rentals Made Easy" />
-  <meta property="og:description" content="Boat and trailer rentals in Arizona's East Valley. Fast booking, transparent pricing, easy local pickup." />
+  <meta name="description" content="Rent a 14ft tandem axle utility trailer in Mesa, AZ. $60/day. Easy booking, local pickup. Call (480) 744-5599." />
+  <meta property="og:title" content="Trailer Bros AZ | Utility Trailer Rentals in Mesa" />
+  <meta property="og:description" content="Rent a 14ft tandem axle utility trailer in Mesa, AZ. $60/day. Easy booking, local pickup." />
   <meta property="og:type" content="website" />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -26,8 +26,7 @@
       --text-mid: #555;
       --radius-lg: 18px;
       --radius-sm: 8px;
-      --shadow-card: 0 20px 50px rgba(0,0,0,0.45), 0 2px 0 rgba(255,255,255,0.3) inset;
-      --shadow-card-hover: 0 32px 64px rgba(0,0,0,0.55);
+      --shadow-card: 0 30px 70px rgba(0,0,0,0.7);
       --transition: 0.25s ease;
     }
 
@@ -45,7 +44,7 @@
       content: "";
       position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.20'/%3E%3C/svg%3E");
       background-repeat: repeat;
       background-size: 200px 200px;
       pointer-events: none;
@@ -110,7 +109,7 @@
     /* HERO */
     header {
       position: relative;
-      padding: 80px 20px 90px;
+      padding: 70px 20px 80px;
       text-align: center;
       background-image:
         linear-gradient(to bottom, rgba(0,0,0,0.72), rgba(0,0,0,0.60)),
@@ -143,30 +142,37 @@
 
     header > * { position: relative; z-index: 1; }
 
-    .logo-header img {
+    .logo img {
       max-width: 400px;
       width: 80%;
     }
 
     h1 {
+      margin: 28px auto 0;
       font-size: clamp(22px, 4vw, 34px);
       font-weight: 600;
-      margin: 28px auto 0;
       color: #fff;
-      max-width: 700px;
+      max-width: 680px;
     }
 
     .intro {
       max-width: 620px;
       margin: 16px auto 0;
-      font-size: 17px;
+      font-size: 16px;
       color: #c8c8c8;
       line-height: 1.65;
     }
 
+    .intro a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .intro a:hover { text-decoration: underline; }
+
     .hero-cta {
       display: inline-block;
-      margin-top: 36px;
+      margin-top: 32px;
       padding: 16px 40px;
       background: var(--accent);
       color: #fff;
@@ -183,132 +189,276 @@
       transform: translateY(-2px);
     }
 
-    /* CARDS SECTION */
-    section.cards-section {
-      max-width: 1200px;
-      margin: 80px auto;
+    /* MAIN */
+    section {
+      max-width: 860px;
+      margin: 70px auto 80px;
       padding: 0 20px;
-      text-align: center;
     }
 
-    .section-heading {
-      font-size: clamp(20px, 3vw, 28px);
-      font-weight: 600;
-      color: #fff;
-      margin: 0 0 10px;
-    }
-
-    .section-sub {
-      font-size: 16px;
-      color: var(--text-muted);
-      margin: 0 0 48px;
-    }
-
-    .selection-grid {
-      display: flex;
-      gap: 36px;
-      justify-content: center;
-      align-items: stretch;
-    }
-
-    .selection-card {
-      background: #ffffff;
+    /* CARD */
+    .trailer-card {
+      background: #f2f2f0;
       border-radius: var(--radius-lg);
-      padding: 40px 28px 36px;
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: transform var(--transition), box-shadow var(--transition);
+      padding: 44px 36px;
       box-shadow: var(--shadow-card);
+      border-top: 1px solid rgba(255,255,255,0.08);
       color: var(--text-dark);
-    }
-
-    .selection-card:hover {
-      transform: translateY(-8px);
-      box-shadow: var(--shadow-card-hover);
-    }
-
-    .card-link {
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
-      width: 100%;
-    }
-
-    .selection-card img {
-      max-width: 340px;
-      width: 100%;
-    }
-
-    .selection-card h3 {
-      margin-top: 24px;
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-
-    .card-desc {
-      margin-top: 10px;
-      font-size: 15px;
-      color: var(--text-mid);
-      line-height: 1.55;
       text-align: center;
     }
 
-    .card-btn {
+    /* CAROUSEL */
+    .carousel {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.4s ease;
+    }
+
+    .carousel-track img {
+      min-width: 100%;
+      width: 100%;
+      height: auto;
+      max-height: 480px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .prev, .next {
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 10px 16px;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+      background: rgba(0,0,0,0.55);
+      border: none;
+      border-radius: 4px;
+      user-select: none;
+      transition: background var(--transition);
+      z-index: 2;
+    }
+
+    .prev:hover, .next:hover { background: rgba(0,0,0,0.85); }
+    .prev { left: 12px; }
+    .next { right: 12px; }
+
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 0 4px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: #ccc;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.25);
+    }
+
+    /* CARD CONTENT */
+    .trailer-card h3 {
+      margin-top: 32px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .specs {
+      margin-top: 18px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text-mid);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px 24px;
+      text-align: left;
+    }
+
+    .spec-item::before {
+      content: "✓  ";
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+      justify-content: center;
+    }
+
+    .pricing-box {
+      flex: 1;
+      max-width: 180px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 22px 16px;
+      text-align: center;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .pricing-box:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(232,98,10,0.15);
+    }
+
+    .pricing-period {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+
+    .pricing-amount {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: 6px;
+    }
+
+    .pricing-unit {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* CTA BUTTON */
+    .btn {
       display: inline-block;
-      margin-top: 28px;
-      padding: 12px 32px;
+      margin-top: 32px;
+      padding: 16px 44px;
       background: var(--accent);
       color: #fff;
-      font-size: 15px;
-      font-weight: 600;
       text-decoration: none;
       border-radius: var(--radius-sm);
-      transition: background var(--transition);
+      font-size: 16px;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition);
+      letter-spacing: 0.3px;
     }
 
-    .card-btn:hover { background: var(--accent-dark); }
+    .btn:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+    }
 
-    /* TRUST STRIP */
-    .trust-strip {
-      max-width: 1100px;
-      margin: 64px auto 0;
-      display: flex;
-      justify-content: space-around;
-      gap: 24px;
-      padding: 48px 30px;
-      background: rgba(0,0,0,0.28);
+    /* REQUIREMENTS */
+    .requirements {
+      margin-top: 36px;
+      background: #f7f7f7;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      padding: 20px 24px;
+      text-align: left;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+    }
+
+    .requirements strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .requirements ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .requirements li { margin-bottom: 4px; }
+
+    /* BOOK CTA SECTION */
+    section.book-cta {
+      max-width: 680px;
+      margin: 48px auto 80px;
+      padding: 48px 40px;
+      background: #f2f2f0;
       border-radius: var(--radius-lg);
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .trust-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      max-width: 200px;
+      box-shadow: var(--shadow-card);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-dark);
       text-align: center;
     }
 
-    .trust-icon { font-size: 26px; line-height: 1; }
-
-    .trust-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #cfcfcf;
-      line-height: 1.45;
+    .book-cta h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 16px;
+      color: var(--text-dark);
     }
+
+    .book-cta p {
+      font-size: 15px;
+      color: var(--text-mid);
+      margin: 0 0 20px;
+      line-height: 1.6;
+    }
+
+    .deposit-note {
+      font-size: 0.9rem;
+      color: #888;
+      margin: 0 0 28px !important;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 16px 44px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 600;
+      transition: background var(--transition), transform var(--transition);
+      letter-spacing: 0.3px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+    }
+
+    .book-cta .contact-line {
+      margin-top: 20px;
+      font-size: 14px;
+      color: var(--text-mid);
+      margin-bottom: 0;
+    }
+
+    .book-cta .contact-line a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .book-cta .contact-line a:hover { text-decoration: underline; }
 
     /* FOOTER */
     footer {
-      margin-top: 80px;
       padding: 48px 40px 32px;
       background: rgba(0,0,0,0.45);
       border-top: 1px solid rgba(255,255,255,0.07);
@@ -378,11 +528,10 @@
       height: 2px;
       background: var(--text-light);
       border-radius: 2px;
-      transition: background var(--transition);
     }
 
     /* MOBILE */
-    @media (max-width: 900px) {
+    @media (max-width: 700px) {
       body { background-attachment: scroll; }
       nav { padding: 12px 20px; flex-wrap: wrap; }
       .hamburger { display: flex; }
@@ -396,18 +545,12 @@
       .nav-links.open { display: flex; }
       .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
       .nav-links a { padding: 11px 4px; display: block; }
-      .nav-cta {
-        margin-top: 8px;
-        display: inline-block;
-        width: auto;
-      }
-      header { padding: 60px 20px 70px; }
-      .selection-grid { flex-direction: column; align-items: center; }
-      .trust-strip {
-        flex-direction: column;
-        align-items: center;
-        margin: 40px 20px 0;
-      }
+      .nav-cta { margin-top: 8px; display: inline-block; }
+      .trailer-card { padding: 32px 20px; }
+      section.book-cta { padding: 32px 20px; }
+      .pricing-grid { flex-direction: column; align-items: center; }
+      .pricing-box { max-width: 100%; width: 100%; }
+      .specs { grid-template-columns: 1fr; }
       footer { padding: 40px 20px 28px; }
       .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
     }
@@ -426,76 +569,89 @@
     </button>
     <ul class="nav-links" id="navLinks">
       <li><a href="index.html" style="color:var(--accent)">Home</a></li>
-      <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
-      <li><a href="trailers.html">Trailer Rentals</a></li>
-      <li><a href="trailers.html" class="nav-cta">Book Now</a></li>
+      <li><a href="request.html" class="nav-cta">Request a Rental</a></li>
     </ul>
   </nav>
 
   <!-- HERO -->
   <header>
-    <div class="logo-header">
+    <div class="logo">
       <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
     </div>
-    <h1>Simple Rentals. Real Equipment. No Headaches.</h1>
+    <h1>High-Quality Trailers for All Your Hauling Needs</h1>
     <div class="intro">
-      Boats, trailers, and equipment rentals across Arizona's East Valley.
-      Fast booking, transparent pricing, and easy local pickup.
+      14ft tandem axle utility trailer. $60/day — $100 refundable deposit. Mesa pickup. Transparent pricing, no surprises.
     </div>
-    <a href="trailers.html" class="hero-cta">View Available Rentals</a>
+    <a href="#book" class="hero-cta">Book the Trailer</a>
   </header>
 
-  <!-- CARDS -->
-  <section class="cards-section">
-    <h2 class="section-heading">What Would You Like to Rent?</h2>
-    <p class="section-sub">Select a category to browse availability and pricing.</p>
+  <!-- LISTING -->
+  <section>
+    <div class="trailer-card">
 
-    <div class="selection-grid">
-
-      <div class="selection-card">
-        <a href="https://boatbrosaz.com" class="card-link">
-          <img src="boat-bros.png.png" alt="Boat Bros Rentals" />
-          <h3>Boat Rentals</h3>
-          <div class="card-desc">
-            Fishing-ready boats equipped for Arizona lakes.
-            Simple pickup, simple return.
-          </div>
-        </a>
-        <a href="https://boatbrosaz.com" class="card-btn">View Boats</a>
+      <div class="carousel">
+        <div class="carousel-track" id="carouselTrack">
+          <img src="utx1.jpg" alt="RawMaxx UTX Side View">
+          <img src="utx2.jpg" alt="RawMaxx UTX Deck View">
+          <img src="utx3.jpg" alt="RawMaxx UTX Angle View">
+          <img src="utx4.jpg" alt="RawMaxx Toolbox Closeup">
+          <img src="utx5.jpg" alt="RawMaxx UTX Side Profile">
+          <img src="utx6.jpg" alt="RawMaxx Rear Gate">
+        </div>
+        <button class="prev" onclick="changeSlide(-1)" aria-label="Previous image">&#10094;</button>
+        <button class="next" onclick="changeSlide(1)" aria-label="Next image">&#10095;</button>
       </div>
 
-      <div class="selection-card">
-        <a href="trailers.html" class="card-link">
-          <img src="trailer-bros.png.png" alt="Trailer Bros Rentals" />
-          <h3>Trailer Rentals</h3>
-          <div class="card-desc">
-            Utility and haul-ready trailers for work, projects, and transport.
-          </div>
-        </a>
-        <a href="trailers.html" class="card-btn">View Trailers</a>
+      <div class="carousel-dots" id="carouselDots"></div>
+
+      <h3>Heavy-Duty Tandem Axle Utility Trailer</h3>
+
+      <div class="specs">
+        <span class="spec-item">7,000 lb GVWR</span>
+        <span class="spec-item">Approx. 5,200 lb payload capacity</span>
+        <span class="spec-item">Electric brakes</span>
+        <span class="spec-item">Powder-coated frame</span>
+        <span class="spec-item">Reinforced rear drop gate</span>
+        <span class="spec-item">Front-mounted toolbox with straps</span>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="pricing-box">
+          <div class="pricing-period">Daily</div>
+          <div class="pricing-amount">$60</div>
+          <div class="pricing-unit">per day</div>
+        </div>
+        <div class="pricing-box">
+          <div class="pricing-period">Weekly</div>
+          <div class="pricing-amount">$350</div>
+          <div class="pricing-unit">per week</div>
+        </div>
+        <div class="pricing-box">
+          <div class="pricing-period">Monthly</div>
+          <div class="pricing-amount">$1,450</div>
+          <div class="pricing-unit">per month</div>
+        </div>
+      </div>
+
+      <div class="requirements">
+        <strong>Towing Requirements</strong>
+        <ul>
+          <li>2 5/16" ball hitch</li>
+          <li>7-pin connector</li>
+          <li>Brake controller required</li>
+        </ul>
       </div>
 
     </div>
+  </section>
 
-    <!-- TRUST STRIP -->
-    <div class="trust-strip">
-      <div class="trust-item">
-        <div class="trust-icon">&#9989;</div>
-        <div class="trust-label">Transparent pricing.<br>No surprise fees.</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">&#128101;</div>
-        <div class="trust-label">Local owner-operated<br>rentals.</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">&#128336;</div>
-        <div class="trust-label">Flexible pickup and<br>return times.</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">&#128736;</div>
-        <div class="trust-label">Equipment maintained<br>and insured.</div>
-      </div>
-    </div>
+  <!-- BOOK CTA -->
+  <section class="book-cta" id="book">
+    <h2>Ready to Book?</h2>
+    <p>Fill out our quick rental request form and we'll confirm your dates within a few hours.</p>
+    <p class="deposit-note">A $100 refundable deposit is collected at pickup.</p>
+    <a href="request.html" class="btn-primary">Request This Rental</a>
+    <p class="contact-line">Questions? Call or text <a href="tel:4807445599">(480) 744-5599</a></p>
   </section>
 
   <!-- FOOTER -->
@@ -511,17 +667,53 @@
       </div>
       <ul class="footer-links">
         <li><a href="index.html">Home</a></li>
-        <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
-        <li><a href="trailers.html">Trailer Rentals</a></li>
+        <li><a href="request.html">Request a Rental</a></li>
       </ul>
       <div class="footer-copy">&copy; 2025 Trailer Bros AZ. All rights reserved.</div>
     </div>
   </footer>
 
   <script>
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('carouselDots');
+    const slides = track.querySelectorAll('img');
+    let current = 0;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.classList.add('dot');
+      if (i === 0) dot.classList.add('active');
+      dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+      dot.addEventListener('click', () => goTo(i));
+      dotsContainer.appendChild(dot);
+    });
+
+    function goTo(index) {
+      current = (index + slides.length) % slides.length;
+      track.style.transform = `translateX(-${current * 100}%)`;
+      document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    }
+
+    function changeSlide(dir) { goTo(current + dir); }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    track.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    track.addEventListener('touchend', e => {
+      const diffX = touchStartX - e.changedTouches[0].clientX;
+      const diffY = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+        changeSlide(diffX > 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
     document.getElementById('hamburger').addEventListener('click', function() {
       document.getElementById('navLinks').classList.toggle('open');
     });
   </script>
+
 </body>
 </html>

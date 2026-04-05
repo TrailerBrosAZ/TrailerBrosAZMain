@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trailer Bros AZ | Boat &amp; Trailer Rentals in Arizona's East Valley</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Trailer Bros AZ offers boat and utility trailer rentals across Arizona's East Valley. Simple pickup, transparent pricing, no headaches." />
+  <meta property="og:title" content="Trailer Bros AZ | Rentals Made Easy" />
+  <meta property="og:description" content="Boat and trailer rentals in Arizona's East Valley. Fast booking, transparent pricing, easy local pickup." />
+  <meta property="og:type" content="website" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --accent: #E8620A;
+      --accent-dark: #C4510A;
+      --bg-dark: #1C1F23;
+      --text-light: #e6e6e6;
+      --text-muted: #a0a0a0;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --radius-lg: 18px;
+      --radius-sm: 8px;
+      --shadow-card: 0 20px 50px rgba(0,0,0,0.45), 0 2px 0 rgba(255,255,255,0.3) inset;
+      --shadow-card-hover: 0 32px 64px rgba(0,0,0,0.55);
+      --transition: 0.25s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: var(--bg-dark);
+      margin: 0;
+      padding: 0;
+      color: var(--text-light);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 1;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 40px;
+      background: rgba(28,31,35,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .nav-logo img {
+      height: 44px;
+      display: block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      opacity: 0.85;
+      transition: opacity var(--transition), color var(--transition);
+    }
+
+    .nav-links a:hover {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      opacity: 1 !important;
+    }
+
+    .nav-cta:hover {
+      background: var(--accent-dark) !important;
+      color: #fff !important;
+    }
+
+    /* HERO */
+    header {
+      position: relative;
+      padding: 80px 20px 90px;
+      text-align: center;
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.72), rgba(0,0,0,0.60)),
+        url("Trailerbrosheroimage.png");
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+      box-shadow: inset 0 -80px 80px rgba(28,31,35,0.8);
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(2px);
+      pointer-events: none;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 220px;
+      background: linear-gradient(to bottom, transparent, var(--bg-dark));
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    header > * { position: relative; z-index: 1; }
+
+    .logo-header img {
+      max-width: 400px;
+      width: 80%;
+    }
+
+    h1 {
+      font-size: clamp(22px, 4vw, 34px);
+      font-weight: 600;
+      margin: 28px auto 0;
+      color: #fff;
+      max-width: 700px;
+    }
+
+    .intro {
+      max-width: 620px;
+      margin: 16px auto 0;
+      font-size: 17px;
+      color: #c8c8c8;
+      line-height: 1.65;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      margin-top: 36px;
+      padding: 16px 40px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), transform var(--transition);
+      letter-spacing: 0.3px;
+    }
+
+    .hero-cta:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+    }
+
+    /* CARDS SECTION */
+    section.cards-section {
+      max-width: 1200px;
+      margin: 80px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .section-heading {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 10px;
+    }
+
+    .section-sub {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin: 0 0 48px;
+    }
+
+    .selection-grid {
+      display: flex;
+      gap: 36px;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .selection-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 40px 28px 36px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform var(--transition), box-shadow var(--transition);
+      box-shadow: var(--shadow-card);
+      color: var(--text-dark);
+    }
+
+    .selection-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    .card-link {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      width: 100%;
+    }
+
+    .selection-card img {
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .selection-card h3 {
+      margin-top: 24px;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .card-desc {
+      margin-top: 10px;
+      font-size: 15px;
+      color: var(--text-mid);
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .card-btn {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 12px 32px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
+    }
+
+    .card-btn:hover { background: var(--accent-dark); }
+
+    /* TRUST STRIP */
+    .trust-strip {
+      max-width: 1100px;
+      margin: 64px auto 0;
+      display: flex;
+      justify-content: space-around;
+      gap: 24px;
+      padding: 48px 30px;
+      background: rgba(0,0,0,0.28);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .trust-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      max-width: 200px;
+      text-align: center;
+    }
+
+    .trust-icon { font-size: 26px; line-height: 1; }
+
+    .trust-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #cfcfcf;
+      line-height: 1.45;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: 80px;
+      padding: 48px 40px 32px;
+      background: rgba(0,0,0,0.45);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-logo img { height: 48px; }
+
+    .footer-contact {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .footer-contact a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-contact a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 13px;
+      color: #606060;
+      margin-top: 8px;
+    }
+
+    /* HAMBURGER */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-light);
+      border-radius: 2px;
+      transition: background var(--transition);
+    }
+
+    /* MOBILE */
+    @media (max-width: 900px) {
+      body { background-attachment: scroll; }
+      nav { padding: 12px 20px; flex-wrap: wrap; }
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 8px 0 12px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .nav-links a { padding: 11px 4px; display: block; }
+      .nav-cta {
+        margin-top: 8px;
+        display: inline-block;
+        width: auto;
+      }
+      header { padding: 60px 20px 70px; }
+      .selection-grid { flex-direction: column; align-items: center; }
+      .trust-strip {
+        flex-direction: column;
+        align-items: center;
+        margin: 40px 20px 0;
+      }
+      footer { padding: 40px 20px 28px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="trailer-bros.png.png" alt="Trailer Bros" />
+    </a>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" style="color:var(--accent)">Home</a></li>
+      <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
+      <li><a href="trailers.html">Trailer Rentals</a></li>
+      <li><a href="trailers.html" class="nav-cta">Book Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <header>
+    <div class="logo-header">
+      <img src="trailer-bros.png.png" alt="Trailer Bros Logo" />
+    </div>
+    <h1>Simple Rentals. Real Equipment. No Headaches.</h1>
+    <div class="intro">
+      Boats, trailers, and equipment rentals across Arizona's East Valley.
+      Fast booking, transparent pricing, and easy local pickup.
+    </div>
+    <a href="trailers.html" class="hero-cta">View Available Rentals</a>
+  </header>
+
+  <!-- CARDS -->
+  <section class="cards-section">
+    <h2 class="section-heading">What Would You Like to Rent?</h2>
+    <p class="section-sub">Select a category to browse availability and pricing.</p>
+
+    <div class="selection-grid">
+
+      <div class="selection-card">
+        <a href="https://boatbrosaz.com" class="card-link">
+          <img src="boat-bros.png.png" alt="Boat Bros Rentals" />
+          <h3>Boat Rentals</h3>
+          <div class="card-desc">
+            Fishing-ready boats equipped for Arizona lakes.
+            Simple pickup, simple return.
+          </div>
+        </a>
+        <a href="https://boatbrosaz.com" class="card-btn">View Boats</a>
+      </div>
+
+      <div class="selection-card">
+        <a href="trailers.html" class="card-link">
+          <img src="trailer-bros.png.png" alt="Trailer Bros Rentals" />
+          <h3>Trailer Rentals</h3>
+          <div class="card-desc">
+            Utility and haul-ready trailers for work, projects, and transport.
+          </div>
+        </a>
+        <a href="trailers.html" class="card-btn">View Trailers</a>
+      </div>
+
+    </div>
+
+    <!-- TRUST STRIP -->
+    <div class="trust-strip">
+      <div class="trust-item">
+        <div class="trust-icon">&#9989;</div>
+        <div class="trust-label">Transparent pricing.<br>No surprise fees.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128101;</div>
+        <div class="trust-label">Local owner-operated<br>rentals.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128336;</div>
+        <div class="trust-label">Flexible pickup and<br>return times.</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">&#128736;</div>
+        <div class="trust-label">Equipment maintained<br>and insured.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <img src="trailer-bros.png.png" alt="Trailer Bros" />
+      </div>
+      <div class="footer-contact">
+        Questions? Give us a call or shoot us an email.<br>
+        <a href="tel:4807445599">(480) 744-5599</a> &nbsp;|&nbsp;
+        <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="https://boatbrosaz.com">Boat Rentals</a></li>
+        <li><a href="trailers.html">Trailer Rentals</a></li>
+      </ul>
+      <div class="footer-copy">&copy; 2025 Trailer Bros AZ. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

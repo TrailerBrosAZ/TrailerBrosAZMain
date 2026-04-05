@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Request Received | Trailer Bros AZ</title>
+  <title>Page Not Found | Trailer Bros AZ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
 
@@ -63,10 +63,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
-    .nav-logo img {
-      height: 44px;
-      display: block;
-    }
+    .nav-logo img { height: 44px; display: block; }
 
     .nav-links {
       display: flex;
@@ -85,10 +82,7 @@
       transition: opacity var(--transition), color var(--transition);
     }
 
-    .nav-links a:hover {
-      opacity: 1;
-      color: var(--accent);
-    }
+    .nav-links a:hover { opacity: 1; color: var(--accent); }
 
     .nav-cta {
       background: var(--accent);
@@ -98,10 +92,7 @@
       opacity: 1 !important;
     }
 
-    .nav-cta:hover {
-      background: var(--accent-dark) !important;
-      color: #fff !important;
-    }
+    .nav-cta:hover { background: var(--accent-dark) !important; }
 
     /* HERO */
     header {
@@ -128,9 +119,7 @@
     header::before {
       content: "";
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       height: 220px;
       background: linear-gradient(to bottom, transparent, var(--bg-dark));
       z-index: 1;
@@ -139,77 +128,45 @@
 
     header > * { position: relative; z-index: 2; }
 
-    .logo img {
-      max-width: 400px;
-      width: 80%;
-    }
+    .logo img { max-width: 400px; width: 80%; }
 
-    /* THANK YOU CARD */
-    section {
-      max-width: 680px;
-      margin: 60px auto 80px;
+    /* ERROR PAGE */
+    .error-page {
+      max-width: 600px;
+      margin: 80px auto;
       padding: 0 20px;
       text-align: center;
+      color: var(--text-light);
     }
 
-    .thankyou-card {
-      background: #f2f2f0;
-      border-radius: var(--radius-lg);
-      border-top: 1px solid rgba(255,255,255,0.08);
-      box-shadow: var(--shadow-card);
-      padding: 56px 40px;
-      color: var(--text-dark);
-    }
-
-    .check-icon {
-      font-size: 48px;
-      line-height: 1;
-      margin-bottom: 20px;
-    }
-
-    .thankyou-card h2 {
-      font-size: 28px;
+    .error-page h1 {
+      font-size: clamp(28px, 5vw, 48px);
       font-weight: 700;
-      color: var(--text-dark);
-      margin: 0 0 16px;
+      color: #fff;
+      margin: 0 0 20px;
     }
 
-    .thankyou-card p {
-      font-size: 16px;
-      color: var(--text-mid);
-      line-height: 1.7;
-      margin: 0 0 12px;
+    .error-page p {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin: 0 0 36px;
+      line-height: 1.6;
     }
 
-    .thankyou-card .contact-line {
-      margin-top: 28px;
-      font-size: 15px;
-      color: var(--text-mid);
-    }
-
-    .thankyou-card .contact-line a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .thankyou-card .contact-line a:hover { text-decoration: underline; }
-
-    .back-btn {
+    .btn-primary {
       display: inline-block;
-      margin-top: 32px;
-      padding: 14px 36px;
+      padding: 16px 44px;
       background: var(--accent);
       color: #fff;
       text-decoration: none;
       border-radius: var(--radius-sm);
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       transition: background var(--transition), transform var(--transition);
       letter-spacing: 0.3px;
     }
 
-    .back-btn:hover {
+    .btn-primary:hover {
       background: var(--accent-dark);
       transform: translateY(-2px);
     }
@@ -239,11 +196,7 @@
       line-height: 1.7;
     }
 
-    .footer-contact a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
+    .footer-contact a { color: var(--accent); text-decoration: none; }
     .footer-contact a:hover { text-decoration: underline; }
 
     .footer-links {
@@ -263,11 +216,7 @@
 
     .footer-links a:hover { color: var(--accent); }
 
-    .footer-copy {
-      font-size: 13px;
-      color: #606060;
-      margin-top: 8px;
-    }
+    .footer-copy { font-size: 13px; color: #606060; margin-top: 8px; }
 
     /* HAMBURGER */
     .hamburger {
@@ -302,7 +251,7 @@
       .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
       .nav-links a { padding: 11px 4px; display: block; }
       .nav-cta { margin-top: 8px; display: inline-block; }
-      .thankyou-card { padding: 40px 24px; }
+      .error-page { margin: 60px auto; }
       footer { padding: 40px 20px 28px; }
       .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
     }
@@ -332,20 +281,11 @@
     </div>
   </header>
 
-  <!-- THANK YOU -->
-  <section>
-    <div class="thankyou-card">
-      <div class="check-icon">&#10003;</div>
-      <h2>Request Received!</h2>
-      <p>Thanks for reaching out. We've got your rental request and will be in touch shortly to confirm availability and pricing.</p>
-      <p>Most requests are responded to within a few hours during business hours.</p>
-      <div class="contact-line">
-        Questions in the meantime? Call or text us at
-        <a href="tel:4807445599">(480) 744-5599</a> or email
-        <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
-      </div>
-      <a href="index.html" class="back-btn">Back to Home</a>
-    </div>
+  <!-- ERROR -->
+  <section class="error-page">
+    <h1>Page Not Found</h1>
+    <p>Sorry, we couldn't find that page. Let's get you back on track.</p>
+    <a href="index.html" class="btn-primary">Back to Home</a>
   </section>
 
   <!-- FOOTER -->
