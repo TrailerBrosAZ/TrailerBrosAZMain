@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Request a Rental | Trailer Bros AZ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Submit a trailer rental request with Trailer Bros AZ. Easy online form — we'll confirm availability and pricing shortly." />
+  <meta name="description" content="Submit a trailer rental request with Trailer Bros AZ. We'll confirm availability and pricing shortly." />
 
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -63,10 +63,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
-    .nav-logo img {
-      height: 44px;
-      display: block;
-    }
+    .nav-logo img { height: 44px; display: block; }
 
     .nav-links {
       display: flex;
@@ -85,10 +82,7 @@
       transition: opacity var(--transition), color var(--transition);
     }
 
-    .nav-links a:hover {
-      opacity: 1;
-      color: var(--accent);
-    }
+    .nav-links a:hover { opacity: 1; color: var(--accent); }
 
     .nav-cta {
       background: var(--accent);
@@ -98,10 +92,7 @@
       opacity: 1 !important;
     }
 
-    .nav-cta:hover {
-      background: var(--accent-dark) !important;
-      color: #fff !important;
-    }
+    .nav-cta:hover { background: var(--accent-dark) !important; }
 
     /* HERO */
     header {
@@ -128,9 +119,7 @@
     header::before {
       content: "";
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       height: 220px;
       background: linear-gradient(to bottom, transparent, var(--bg-dark));
       z-index: 1;
@@ -139,10 +128,7 @@
 
     header > * { position: relative; z-index: 2; }
 
-    .logo img {
-      max-width: 400px;
-      width: 80%;
-    }
+    .logo img { max-width: 400px; width: 80%; }
 
     h1 {
       margin: 24px auto 0;
@@ -153,7 +139,7 @@
     }
 
     .intro {
-      max-width: 580px;
+      max-width: 560px;
       margin: 14px auto 0;
       font-size: 16px;
       color: #c8c8c8;
@@ -162,7 +148,7 @@
 
     /* FORM SECTION */
     section {
-      max-width: 860px;
+      max-width: 720px;
       margin: 60px auto 80px;
       padding: 0 20px;
     }
@@ -172,19 +158,116 @@
       border-radius: var(--radius-lg);
       border-top: 1px solid rgba(255,255,255,0.08);
       box-shadow: var(--shadow-card);
-      overflow: hidden;
+      padding: 48px 44px;
     }
 
-    .form-wrapper {
-      width: 100%;
-      overflow: hidden;
+    .form-card h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 6px;
     }
 
-    .form-wrapper iframe {
-      width: 100%;
-      height: 820px;
-      border: 0;
+    .form-card .form-sub {
+      font-size: 14px;
+      color: var(--text-mid);
+      margin: 0 0 32px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
       display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #888;
+      margin-bottom: 7px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #ddddd9;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: 'Inter', Arial, sans-serif;
+      color: var(--text-dark);
+      background: #fff;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      appearance: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.10);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.5;
+    }
+
+    .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #ddddd9;
+      margin: 28px 0;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Inter', Arial, sans-serif;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .form-note {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-mid);
+      text-align: center;
+      line-height: 1.5;
     }
 
     /* FOOTER */
@@ -212,11 +295,7 @@
       line-height: 1.7;
     }
 
-    .footer-contact a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
+    .footer-contact a { color: var(--accent); text-decoration: none; }
     .footer-contact a:hover { text-decoration: underline; }
 
     .footer-links {
@@ -236,11 +315,7 @@
 
     .footer-links a:hover { color: var(--accent); }
 
-    .footer-copy {
-      font-size: 13px;
-      color: #606060;
-      margin-top: 8px;
-    }
+    .footer-copy { font-size: 13px; color: #606060; margin-top: 8px; }
 
     /* HAMBURGER */
     .hamburger {
@@ -275,7 +350,8 @@
       .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
       .nav-links a { padding: 11px 4px; display: block; }
       .nav-cta { margin-top: 8px; display: inline-block; }
-      .form-wrapper iframe { height: 1000px; }
+      .form-card { padding: 32px 20px; }
+      .form-row { grid-template-columns: 1fr; }
       footer { padding: 40px 20px 28px; }
       .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
     }
@@ -314,13 +390,76 @@
   <!-- FORM -->
   <section>
     <div class="form-card">
-      <div class="form-wrapper">
-        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdS-se5bAa_JZUu1bM6lIkOxn42sxHXiOZKtQwHTyGBm4NKAA/viewform?embedded=true"
-          title="Trailer Rental Request Form"
-          allowfullscreen>
-          Loading form…
-        </iframe>
-      </div>
+      <h2>Rental Request</h2>
+      <p class="form-sub">All fields marked * are required. We'll get back to you within a few hours.</p>
+
+      <form id="rentalForm" novalidate>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name *</label>
+            <input type="text" id="firstName" name="firstName" placeholder="John" required />
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name *</label>
+            <input type="text" id="lastName" name="lastName" placeholder="Smith" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="phone">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" placeholder="(480) 000-0000" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">Desired Start Date *</label>
+            <input type="date" id="startDate" name="startDate" required />
+          </div>
+          <div class="form-group">
+            <label for="duration">Rental Duration *</label>
+            <select id="duration" name="duration" required>
+              <option value="" disabled selected>Select duration…</option>
+              <option value="1 Day">1 Day — $60</option>
+              <option value="2 Days">2 Days — $120</option>
+              <option value="3 Days">3 Days — $180</option>
+              <option value="4 Days">4 Days — $240</option>
+              <option value="5 Days">5 Days — $300</option>
+              <option value="6 Days">6 Days — $340</option>
+              <option value="1 Week">1 Week — $350</option>
+              <option value="2 Weeks">2 Weeks — $650</option>
+              <option value="1 Month">1 Month — $1,450</option>
+              <option value="Other">Other — I'll explain below</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="useCase">What will you be hauling? *</label>
+          <input type="text" id="useCase" name="useCase" placeholder="e.g. landscaping debris, ATV, furniture move…" required />
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Additional Notes</label>
+          <textarea id="notes" name="notes" placeholder="Any questions, special requests, or details we should know…"></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Submit Request</button>
+
+        <p class="form-note">
+          By submitting you agree to be contacted at the number or email provided.<br>
+          Questions? Call us at <a href="tel:4807445599" style="color:var(--accent);text-decoration:none;">(480) 744-5599</a>
+        </p>
+
+      </form>
     </div>
   </section>
 
@@ -345,8 +484,59 @@
   </footer>
 
   <script>
+    // Hamburger menu
     document.getElementById('hamburger').addEventListener('click', function() {
       document.getElementById('navLinks').classList.toggle('open');
+    });
+
+    // Set min date to today
+    document.getElementById('startDate').min = new Date().toISOString().split('T')[0];
+
+    // Form submission
+    const SCRIPT_URL = 'PASTE_YOUR_APPS_SCRIPT_URL_HERE';
+
+    document.getElementById('rentalForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const btn = document.getElementById('submitBtn');
+
+      // Basic validation
+      const required = form.querySelectorAll('[required]');
+      let valid = true;
+      required.forEach(function(field) {
+        if (!field.value.trim()) {
+          field.style.borderColor = '#e74c3c';
+          valid = false;
+        } else {
+          field.style.borderColor = '';
+        }
+      });
+      if (!valid) return;
+
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
+
+      const data = {
+        firstName:  form.firstName.value.trim(),
+        lastName:   form.lastName.value.trim(),
+        phone:      form.phone.value.trim(),
+        email:      form.email.value.trim(),
+        startDate:  form.startDate.value,
+        duration:   form.duration.value,
+        useCase:    form.useCase.value.trim(),
+        notes:      form.notes.value.trim(),
+        submitted:  new Date().toLocaleString('en-US', { timeZone: 'America/Phoenix' })
+      };
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).finally(function() {
+        window.location.href = 'thankyou.html';
+      });
     });
   </script>
 
