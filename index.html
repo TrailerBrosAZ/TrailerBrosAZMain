@@ -554,6 +554,39 @@
       footer { padding: 40px 20px 28px; }
       .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
     }
+
+    .trust-signals {
+      background: #1c2a3a;
+      padding: 48px 24px;
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .trust-item .trust-icon {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .trust-item p {
+      color: #ffffff;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    @media (min-width: 640px) {
+      .trust-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
   </style>
 </head>
 
@@ -582,7 +615,7 @@
     <div class="intro">
       14ft tandem axle utility trailer. $60/day — $100 refundable deposit. Mesa pickup. Transparent pricing, no surprises.
     </div>
-    <a href="#book" class="hero-cta">Book the Trailer</a>
+    <a href="#book" class="hero-cta">Book Now</a>
   </header>
 
   <!-- LISTING -->
@@ -642,6 +675,27 @@
         </ul>
       </div>
 
+    </div>
+  </section>
+
+  <section class="trust-signals">
+    <div class="trust-grid">
+      <div class="trust-item">
+        <span class="trust-icon">✅</span>
+        <p>Transparent pricing.<br>No surprise fees.</p>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">👥</span>
+        <p>Local owner-operated<br>rentals.</p>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">🕐</span>
+        <p>Flexible pickup and<br>return times.</p>
+      </div>
+      <div class="trust-item">
+        <span class="trust-icon">🛠</span>
+        <p>Equipment maintained<br>and insured.</p>
+      </div>
     </div>
   </section>
 
