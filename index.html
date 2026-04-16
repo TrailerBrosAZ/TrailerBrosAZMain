@@ -787,6 +787,67 @@
       }
     }
 
+    .service-area-section {
+      max-width: 900px;
+      margin: 80px auto 0;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .map-wrapper {
+      position: relative;
+      margin-top: 40px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    #serviceMap {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+    }
+
+    .map-tooltip {
+      position: absolute;
+      background: rgba(28,31,35,0.97);
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .city-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .city-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .city-chip.active {
+      border-color: var(--accent);
+      color: #fff;
+    }
+
     .fade-in-up {
       opacity: 0;
       transform: translateY(24px);
@@ -886,6 +947,17 @@
     <p class="testimonial-cta-nudge">Happy with your rental? <a href="https://g.page/r/YOURREVIEWLINK" target="_blank">Leave us a Google review.</a></p>
   </section>
 
+  <!-- SERVICE AREA MAP -->
+  <section id="service-area" class="service-area-section">
+    <h2 class="section-heading">Where We Serve</h2>
+    <p class="section-subhead">Based in Mesa. Serving the greater East Valley.</p>
+    <div class="map-wrapper">
+      <div class="map-tooltip" id="mapTooltip"></div>
+      <canvas id="serviceMap" width="900" height="520"></canvas>
+    </div>
+    <div class="city-chips" id="cityChips"></div>
+  </section>
+
   <!-- LISTING -->
   <section>
     <div class="trailer-card">
@@ -949,7 +1021,7 @@
   <!-- BOOK CTA -->
   <section class="book-cta" id="book">
     <h2>Ready to Book?</h2>
-    <p>Fill out our quick rental request form and we'll confirm your dates within a few hours.</p>
+    <p>Fill out our quick rental request form and we'll confirm your dates same day.</p>
     <p class="deposit-note">A $100 refundable deposit is collected at pickup.</p>
     <div class="trust-grid">
       <div class="trust-item">
@@ -1042,6 +1114,183 @@
     }, { threshold: 0.15 });
 
     document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+
+    (async function() {
+      const SERVICE_CITIES = ['Mesa','Gilbert','Chandler','Tempe','Apache Junction','Queen Creek','San Tan Valley','Gold Canyon'];
+
+      const canvas = document.getElementById('serviceMap');
+      const ctx = canvas.getContext('2d');
+      const tooltip = document.getElementById('mapTooltip');
+      const chipsContainer = document.getElementById('cityChips');
+      const W = canvas.width, H = canvas.height;
+
+      SERVICE_CITIES.forEach(name => {
+        const chip = document.createElement('div');
+        chip.className = 'city-chip';
+        chip.textContent = name;
+        chip.id = 'chip-' + name.replace(/\s+/g,'');
+        chipsContainer.appendChild(chip);
+      });
+
+      let allFeatures = [];
+      let serviceFeatures = [];
+      let bounds = { minLng: Infinity, maxLng: -Infinity, minLat: Infinity, maxLat: -Infinity };
+
+      function project(lng, lat) {
+        const x = (lng - bounds.minLng) / (bounds.maxLng - bounds.minLng) * (W - 80) + 40;
+        const y = H - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat) * (H - 80) + 40);
+        return [x, y];
+      }
+
+      function getPolygons(geom) {
+        if (geom.type === 'Polygon') return [geom.coordinates];
+        if (geom.type === 'MultiPolygon') return geom.coordinates;
+        return [];
+      }
+
+      function drawFeature(feature, fillColor, strokeColor) {
+        const polys = getPolygons(feature.geometry);
+        polys.forEach(poly => {
+          poly.forEach(ring => {
+            ctx.beginPath();
+            ring.forEach(([lng, lat], i) => {
+              const [x, y] = project(lng, lat);
+              i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          });
+        });
+      }
+
+      function render(hoveredName) {
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(28,31,35,0)';
+        ctx.fillRect(0, 0, W, H);
+
+        allFeatures.forEach(f => {
+          const name = f.properties.NAME || '';
+          const isService = SERVICE_CITIES.some(c => name.toLowerCase().includes(c.toLowerCase()));
+          if (!isService) {
+            drawFeature(f, 'rgba(255,255,255,0.04)', 'rgba(255,255,255,0.12)');
+          }
+        });
+
+        serviceFeatures.forEach(f => {
+          const name = f.properties.NAME || '';
+          const matched = SERVICE_CITIES.find(c => name.toLowerCase().includes(c.toLowerCase()));
+          const isHovered = matched === hoveredName;
+          const fill = isHovered ? 'rgba(232,98,10,0.55)' : 'rgba(232,98,10,0.2)';
+          const stroke = isHovered ? 'rgba(232,98,10,1)' : 'rgba(232,98,10,0.6)';
+          drawFeature(f, fill, stroke);
+
+          if (matched) {
+            const polys = getPolygons(f.geometry);
+            let sumX = 0, sumY = 0, count = 0;
+            polys[0]?.[0]?.forEach(([lng, lat]) => {
+              const [x, y] = project(lng, lat);
+              sumX += x; sumY += y; count++;
+            });
+            if (count > 0) {
+              ctx.font = '600 11px Inter, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillStyle = isHovered ? '#fff' : 'rgba(255,255,255,0.6)';
+              ctx.fillText(matched, sumX / count, sumY / count);
+            }
+          }
+        });
+      }
+
+      function hitTest(mx, my) {
+        for (const f of serviceFeatures) {
+          const polys = getPolygons(f.geometry);
+          for (const poly of polys) {
+            for (const ring of poly) {
+              let inside = false;
+              for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const [px1, py1] = project(ring[i][0], ring[i][1]);
+                const [px2, py2] = project(ring[j][0], ring[j][1]);
+                if ((py1 > my) !== (py2 > my) && mx < (px2 - px1) * (my - py1) / (py2 - py1) + px1) {
+                  inside = !inside;
+                }
+              }
+              if (inside) return f.properties.NAME;
+            }
+          }
+        }
+        return null;
+      }
+
+      try {
+        const url = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4/query?where=STATE%3D%2704%27+AND+COUNTY%3D%27013%27&outFields=NAME,GEOID&f=geojson&resultRecordCount=200';
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.features || !data.features.length) throw new Error('no features');
+
+        allFeatures = data.features.filter(f => f.geometry);
+        serviceFeatures = allFeatures.filter(f => {
+          const n = (f.properties.NAME || '').toLowerCase();
+          return SERVICE_CITIES.some(c => n.includes(c.toLowerCase()));
+        });
+
+        allFeatures.forEach(f => {
+          getPolygons(f.geometry).forEach(poly => {
+            poly[0].forEach(([lng, lat]) => {
+              if (lng < bounds.minLng) bounds.minLng = lng;
+              if (lng > bounds.maxLng) bounds.maxLng = lng;
+              if (lat < bounds.minLat) bounds.minLat = lat;
+              if (lat > bounds.maxLat) bounds.maxLat = lat;
+            });
+          });
+        });
+
+        render(null);
+
+        canvas.addEventListener('mousemove', e => {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = W / rect.width;
+          const scaleY = H / rect.height;
+          const mx = (e.clientX - rect.left) * scaleX;
+          const my = (e.clientY - rect.top) * scaleY;
+
+          const hit = hitTest(mx, my);
+          const matched = hit ? SERVICE_CITIES.find(c => hit.toLowerCase().includes(c.toLowerCase())) : null;
+
+          render(matched || null);
+
+          document.querySelectorAll('.city-chip').forEach(ch => ch.classList.remove('active'));
+
+          if (matched) {
+            tooltip.textContent = matched;
+            tooltip.style.opacity = '1';
+            tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+            tooltip.style.top = (e.clientY - rect.top - 36) + 'px';
+            const chip = document.getElementById('chip-' + matched.replace(/\s+/g,''));
+            if (chip) chip.classList.add('active');
+          } else {
+            tooltip.style.opacity = '0';
+          }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+          tooltip.style.opacity = '0';
+          render(null);
+          document.querySelectorAll('.city-chip').forEach(ch => ch.classList.remove('active'));
+        });
+
+      } catch(e) {
+        canvas.style.display = 'none';
+        document.querySelectorAll('.city-chip').forEach(ch => {
+          ch.style.borderColor = 'var(--accent)';
+          ch.style.color = '#fff';
+        });
+      }
+    })();
   </script>
 
 </body>
