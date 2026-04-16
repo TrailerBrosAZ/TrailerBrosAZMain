@@ -702,6 +702,91 @@
       }
     }
 
+    .testimonial-section {
+      max-width: 860px;
+      margin: 80px auto 0;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .testimonial-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 36px 28px;
+      text-align: left;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .testimonial-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(232,98,10,0.15);
+    }
+
+    .testimonial-stars {
+      color: #F5A623;
+      font-size: 18px;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .testimonial-quote {
+      font-size: 16px;
+      color: #e6e6e6;
+      line-height: 1.7;
+      font-style: italic;
+      margin: 0 0 24px;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .testimonial-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .testimonial-source {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.06);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .testimonial-cta-nudge {
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .testimonial-cta-nudge a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .testimonial-cta-nudge a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 700px) {
+      .testimonial-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .fade-in-up {
       opacity: 0;
       transform: translateY(24px);
@@ -775,6 +860,30 @@
       </div>
     </div>
     <a href="request.html" class="btn-primary" style="display:inline-block;margin-top:36px;">Request a Rental</a>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials" class="testimonial-section">
+    <h2 class="section-heading">What Renters Say</h2>
+    <div class="testimonial-grid">
+      <div class="testimonial-card fade-in-up" style="transition-delay:0s">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"On time, great pricing, nice trailer, and easy to communicate with. Would highly recommend Colton for your trailer rental needs."</p>
+        <div class="testimonial-author">
+          <span class="testimonial-name">Bob</span>
+          <span class="testimonial-source">Facebook Marketplace</span>
+        </div>
+      </div>
+      <div class="testimonial-card fade-in-up" style="transition-delay:0.15s">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"Quick, easy and perfect for what we needed!"</p>
+        <div class="testimonial-author">
+          <span class="testimonial-name">Anastasia F.</span>
+          <span class="testimonial-source">Google Review</span>
+        </div>
+      </div>
+    </div>
+    <p class="testimonial-cta-nudge">Happy with your rental? <a href="https://g.page/r/YOURREVIEWLINK" target="_blank">Leave us a Google review.</a></p>
   </section>
 
   <!-- LISTING -->
