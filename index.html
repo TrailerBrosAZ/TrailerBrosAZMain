@@ -610,6 +610,108 @@
         grid-template-columns: repeat(4, 1fr);
       }
     }
+
+    .how-it-works-section {
+      max-width: 900px;
+      margin: 80px auto 0;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .section-heading {
+      font-size: clamp(22px, 3.5vw, 32px);
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 12px;
+    }
+
+    .section-subhead {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin: 0 0 48px;
+      line-height: 1.6;
+    }
+
+    .hiw-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .hiw-step {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 32px 20px;
+      position: relative;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .hiw-step:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(232,98,10,0.15);
+    }
+
+    .hiw-step::before {
+      content: attr(data-step);
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hiw-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+
+    .hiw-step h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 10px;
+    }
+
+    .hiw-step p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    @media (max-width: 700px) {
+      .hiw-steps {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .hiw-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .fade-in-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 
@@ -645,6 +747,35 @@
     </div>
     <a href="#book" class="hero-cta">Book Now</a>
   </header>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="how-it-works-section">
+    <h2 class="section-heading">How It Works</h2>
+    <p class="section-subhead">Renting is straightforward. Here's what to expect from start to finish.</p>
+    <div class="hiw-steps">
+      <div class="hiw-step fade-in-up" data-step="1" style="transition-delay:0s;">
+        <div class="hiw-icon">📋</div>
+        <h3>Submit a Request</h3>
+        <p>Fill out the short rental request form with your dates and what you're hauling. Takes two minutes.</p>
+      </div>
+      <div class="hiw-step fade-in-up" data-step="2" style="transition-delay:0.1s;">
+        <div class="hiw-icon">✅</div>
+        <h3>Get Confirmed</h3>
+        <p>We'll confirm availability and send pickup details within a few hours. No automated runaround.</p>
+      </div>
+      <div class="hiw-step fade-in-up" data-step="3" style="transition-delay:0.2s;">
+        <div class="hiw-icon">🚛</div>
+        <h3>Pick Up in Mesa</h3>
+        <p>Hook up and go. Straps are included. We'll make sure you're set before you leave.</p>
+      </div>
+      <div class="hiw-step fade-in-up" data-step="4" style="transition-delay:0.3s;">
+        <div class="hiw-icon">🔄</div>
+        <h3>Return When Done</h3>
+        <p>Drop it off at the same Mesa location. Deposit refunded on the spot once we check it in.</p>
+      </div>
+    </div>
+    <a href="request.html" class="btn-primary" style="display:inline-block;margin-top:36px;">Request a Rental</a>
+  </section>
 
   <!-- LISTING -->
   <section>
@@ -792,6 +923,16 @@
     document.getElementById('hamburger').addEventListener('click', function() {
       document.getElementById('navLinks').classList.toggle('open');
     });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
   </script>
 
 </body>
