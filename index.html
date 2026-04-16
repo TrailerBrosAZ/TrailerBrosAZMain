@@ -230,6 +230,12 @@
       border-top: 1px solid rgba(255,255,255,0.08);
       color: var(--text-dark);
       text-align: center;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .trailer-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8);
     }
 
     /* CAROUSEL */
@@ -852,15 +858,6 @@
       transition: opacity 0.55s ease, transform 0.55s ease;
     }
 
-    .trailer-card {
-      transition: box-shadow 0.25s ease, transform 0.25s ease;
-    }
-
-    .trailer-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 40px 80px rgba(0,0,0,0.8);
-    }
-
     .trust-item {
       transition: transform 0.22s ease;
     }
@@ -1143,7 +1140,7 @@
           fadeObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12 });
+    }, { threshold: 0.05 });
 
     document.querySelectorAll('.fade-in-up').forEach(el => {
       fadeObserver.observe(el);
