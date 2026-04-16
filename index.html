@@ -108,10 +108,16 @@
       color: #fff !important;
     }
 
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
     .nav-phone-cta {
       border: 1.5px solid var(--accent);
       color: var(--accent);
-      padding: 7px 16px;
+      padding: 7px 18px;
       border-radius: 20px;
       font-size: 14px;
       font-weight: 600;
@@ -564,6 +570,7 @@
       .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
       .nav-links a { padding: 11px 4px; display: block; }
       .nav-cta { margin-top: 8px; display: inline-block; }
+      .nav-right { gap: 12px; }
       .nav-phone-cta { display: none; }
       .trailer-card { padding: 32px 20px; }
       section.book-cta { padding: 32px 20px; }
@@ -616,13 +623,15 @@
     <button class="hamburger" id="hamburger" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
-    <a href="tel:4807445599" class="nav-phone-cta">📞 (480) 744-5599</a>
-    <ul class="nav-links" id="navLinks">
+    <div class="nav-right">
+      <a href="tel:4807445599" class="nav-phone-cta">(480) 744-5599</a>
+      <ul class="nav-links" id="navLinks">
       <li><a href="index.html" style="color:var(--accent)">Home</a></li>
       <li><a href="#trailers">Trailers</a></li>
       <li><a href="faq.html">FAQ</a></li>
       <li><a href="request.html" class="nav-cta">Request a Rental</a></li>
     </ul>
+    </div>
   </nav>
 
   <!-- HERO -->
