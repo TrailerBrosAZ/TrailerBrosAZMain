@@ -838,13 +838,55 @@
 
     .fade-in-up {
       opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateY(28px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
     }
 
     .fade-in-up.visible {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    .section-heading,
+    .section-subhead {
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .trailer-card {
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .trailer-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+    }
+
+    .trust-item {
+      transition: transform 0.22s ease;
+    }
+
+    .trust-item:hover {
+      transform: translateY(-3px);
+    }
+
+    .testimonial-card {
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .hero-cta {
+      transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .hero-cta:hover {
+      box-shadow: 0 8px 24px rgba(232,98,10,0.35);
+    }
+
+    .btn-primary {
+      transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 24px rgba(232,98,10,0.35);
     }
   </style>
 </head>
@@ -884,8 +926,8 @@
 
   <!-- HOW IT WORKS -->
   <section id="how-it-works" class="how-it-works-section">
-    <h2 class="section-heading">How It Works</h2>
-    <p class="section-subhead">No complicated process, no surprises. Here's all it takes to get rolling.</p>
+    <h2 class="section-heading fade-in-up">How It Works</h2>
+    <p class="section-subhead fade-in-up">No complicated process, no surprises. Here's all it takes to get rolling.</p>
     <div class="hiw-steps">
       <div class="hiw-step fade-in-up" data-step="1" style="transition-delay:0s;">
         <div class="hiw-icon">📋</div>
@@ -913,7 +955,7 @@
 
   <!-- TESTIMONIALS -->
   <section id="testimonials" class="testimonial-section">
-    <h2 class="section-heading">What Renters Say</h2>
+    <h2 class="section-heading fade-in-up">What Renters Say</h2>
     <div class="testimonial-grid">
       <div class="testimonial-card fade-in-up" style="transition-delay:0s">
         <div class="testimonial-stars">★★★★★</div>
@@ -937,8 +979,8 @@
 
   <!-- SERVICE AREA MAP -->
   <section id="service-area" class="service-area-section">
-    <h2 class="section-heading">Where We Serve</h2>
-    <p class="section-subhead">Based in Mesa. Serving the greater East Valley.</p>
+    <h2 class="section-heading fade-in-up">Where We Serve</h2>
+    <p class="section-subhead fade-in-up">Based in Mesa. Serving the greater East Valley.</p>
     <div class="map-container-wrap">
       <div id="service-map"></div>
     </div>
@@ -947,7 +989,7 @@
 
   <!-- LISTING -->
   <section>
-    <div class="trailer-card">
+    <div class="trailer-card fade-in-up">
 
       <div class="carousel">
         <div class="carousel-track" id="carouselTrack">
@@ -1006,24 +1048,24 @@
   </section>
 
   <!-- BOOK CTA -->
-  <section class="book-cta" id="book">
+  <section class="book-cta fade-in-up" id="book">
     <h2>Ready to Book?</h2>
     <p>Fill out our quick rental request form and we'll confirm your dates same day.</p>
     <p class="deposit-note">A $100 refundable deposit is collected at pickup.</p>
     <div class="trust-grid">
-      <div class="trust-item">
+      <div class="trust-item fade-in-up" style="transition-delay:0s">
         <span class="trust-icon">✅</span>
         <p>Transparent pricing.<br>No surprise fees.</p>
       </div>
-      <div class="trust-item">
+      <div class="trust-item fade-in-up" style="transition-delay:0.08s">
         <span class="trust-icon">👥</span>
         <p>Local owner-operated<br>rentals.</p>
       </div>
-      <div class="trust-item">
+      <div class="trust-item fade-in-up" style="transition-delay:0.16s">
         <span class="trust-icon">🕐</span>
         <p>Flexible pickup and<br>return times.</p>
       </div>
-      <div class="trust-item">
+      <div class="trust-item fade-in-up" style="transition-delay:0.24s">
         <span class="trust-icon">🛠</span>
         <p>Equipment maintained<br>and insured.</p>
       </div>
@@ -1094,15 +1136,18 @@
       document.getElementById('navLinks').classList.toggle('open');
     });
 
-    const observer = new IntersectionObserver((entries) => {
+    const fadeObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          fadeObserver.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.12 });
 
-    document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+    document.querySelectorAll('.fade-in-up').forEach(el => {
+      fadeObserver.observe(el);
+    });
 
     (function() {
       if (!document.getElementById('service-map')) return;
