@@ -332,14 +332,15 @@
     /* PRICING */
     .pricing-grid {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       margin-top: 32px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .pricing-box {
       flex: 1;
-      max-width: 180px;
+      max-width: 160px;
       border: 2px solid #e8e8e8;
       border-radius: 12px;
       padding: 22px 16px;
@@ -350,6 +351,14 @@
     .pricing-box:hover {
       border-color: var(--accent);
       box-shadow: 0 4px 20px rgba(232,98,10,0.15);
+    }
+
+    .pricing-box--deposit {
+      border-color: rgba(232,98,10,0.3);
+    }
+
+    .pricing-box--deposit .pricing-unit {
+      color: #4caf50;
     }
 
     .pricing-period {
@@ -1029,6 +1038,11 @@
           <div class="pricing-period">Monthly</div>
           <div class="pricing-amount">$1,450</div>
           <div class="pricing-unit">per month</div>
+        </div>
+        <div class="pricing-box pricing-box--deposit">
+          <div class="pricing-period">Deposit</div>
+          <div class="pricing-amount">$100</div>
+          <div class="pricing-unit">refundable</div>
         </div>
       </div>
 
