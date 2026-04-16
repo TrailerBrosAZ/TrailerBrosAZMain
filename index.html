@@ -1121,8 +1121,8 @@
       });
 
       const map = L.map('service-map', {
-        center: [33.35, -111.75],
-        zoom: 11,
+        center: [33.30, -111.72],
+        zoom: 10,
         zoomControl: true,
         scrollWheelZoom: false
       });
@@ -1130,6 +1130,11 @@
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         maxZoom: 16
+      }).addTo(map);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '',
+        maxZoom: 16,
+        pane: 'shadowPane'
       }).addTo(map);
 
       const layers = {};
