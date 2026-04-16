@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FAQ | Trailer Bros AZ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Common questions about renting a trailer with Trailer Bros AZ. Deposits, booking, cancellation policy, towing requirements and more." />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --accent: #E8620A;
+      --accent-dark: #C4510A;
+      --bg-dark: #1C1F23;
+      --text-light: #e6e6e6;
+      --text-muted: #a0a0a0;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --radius-lg: 18px;
+      --radius-sm: 8px;
+      --shadow-card: 0 30px 70px rgba(0,0,0,0.7);
+      --transition: 0.25s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: var(--bg-dark);
+      margin: 0;
+      padding: 0;
+      color: var(--text-light);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.20'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 1;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 40px;
+      background: rgba(28,31,35,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .nav-logo img {
+      height: 44px;
+      display: block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      opacity: 0.85;
+      transition: opacity var(--transition), color var(--transition);
+    }
+
+    .nav-links a:hover {
+      opacity: 1;
+      color: var(--accent);
+    }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      opacity: 1 !important;
+    }
+
+    .nav-cta:hover {
+      background: var(--accent-dark) !important;
+      color: #fff !important;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-phone-cta {
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 7px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .nav-phone-cta:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 48px 40px 32px;
+      background: rgba(0,0,0,0.45);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-logo img { height: 48px; }
+
+    .footer-contact {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .footer-contact a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-contact a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 13px;
+      color: #606060;
+      margin-top: 8px;
+    }
+
+    /* HAMBURGER */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-light);
+      border-radius: 2px;
+    }
+
+    /* MOBILE */
+    @media (max-width: 700px) {
+      body { background-attachment: scroll; }
+      nav { padding: 12px 20px; flex-wrap: wrap; }
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 8px 0 12px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .nav-links a { padding: 11px 4px; display: block; }
+      .nav-cta { margin-top: 8px; display: inline-block; }
+      .nav-right { gap: 12px; }
+      .nav-phone-cta { display: none; }
+      footer { padding: 40px 20px 28px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    }
+
+    /* FAQ */
+    .faq-section {
+      max-width: 760px;
+      margin: 80px auto 100px;
+      padding: 0 20px;
+    }
+
+    .faq-heading {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 12px;
+      text-align: center;
+    }
+
+    .faq-subhead {
+      text-align: center;
+      font-size: 15px;
+      color: var(--text-muted);
+      margin: 0 0 56px;
+    }
+
+    .faq-subhead a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .faq-subhead a:hover {
+      text-decoration: underline;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .faq-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.25s ease;
+    }
+
+    .faq-item.open {
+      border-color: var(--accent);
+    }
+
+    .faq-question {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      text-align: left;
+      transition: color 0.25s ease;
+      font-family: 'Inter', Arial, sans-serif;
+    }
+
+    .faq-question:hover {
+      color: var(--accent);
+    }
+
+    .faq-icon {
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+      line-height: 1;
+    }
+
+    .faq-item.open .faq-icon {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.25s ease;
+      padding: 0 24px;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 400px;
+      padding: 0 24px 20px;
+    }
+
+    .faq-answer p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.75;
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="trailer-bros.png.png" alt="Trailer Bros" />
+    </a>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right">
+      <a href="tel:4807445599" class="nav-phone-cta">(480) 744-5599</a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#trailers">Trailers</a></li>
+        <li><a href="faq.html" style="color:var(--accent)">FAQ</a></li>
+        <li><a href="request.html" class="nav-cta">Request a Rental</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- FAQ -->
+  <section class="faq-section">
+    <h1 class="faq-heading">Frequently Asked Questions</h1>
+    <p class="faq-subhead">Have a question not listed here? Call or text us at <a href="tel:4807445599">(480) 744-5599</a>.</p>
+
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What do I need to tow a trailer?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>You'll need a vehicle rated to tow the load you're hauling, a properly sized ball hitch, a 7-pin connector, and a functioning brake controller. Each trailer listing includes the specific towing requirements for that unit. If you're unsure whether your vehicle qualifies, text us before booking.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          How do I book a rental?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Fill out the rental request form on our site with your desired dates and what you're hauling. We'll reach out same day to confirm availability and send over an invoice. Booking is confirmed once the invoice is paid.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          How much is the deposit and when do I get it back?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Deposits vary by trailer. See the individual trailer listing for deposit details, or contact us with any questions. The deposit is fully refundable and is held as a security against any damage that occurs during the rental, such as a blown tire, damaged lights, or a bent jack. If the trailer is returned in the same condition it left, your deposit is refunded within 48 hours of return inspection.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What is your cancellation policy?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Cancellations with more than 24 hours notice receive a full refund. Cancellations within 24 hours of the rental start time will receive a refund of the deposit only. The day rate is non-refundable for late cancellations.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          Can I take the trailer out of state?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Yes. Trailers can cross state lines. They cannot leave the country.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What's included with the rental?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Every rental includes tie-down straps and the tools needed to perform a tire change. Wheel chocks are also included. A moving dolly is available as an add-on for $10/day.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          How long can I rent?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>As long as you need. We offer daily, weekly, and monthly rates. The longer you rent, the better the rate.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" aria-expanded="false">
+          What if I need to extend my rental?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          <p>Extensions are usually not a problem but depend on availability. If the trailer is reserved for another renter, you'll need to return at the originally agreed time. If it's open, we can extend your rental for as long as needed. A new invoice will be sent and is due immediately. Extension requests must be made as soon as you know you need more time and are not guaranteed.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <img src="trailer-bros.png.png" alt="Trailer Bros" />
+      </div>
+      <div class="footer-contact">
+        Questions? Give us a call or shoot us an email.<br>
+        <a href="tel:4807445599">(480) 744-5599</a> &nbsp;|&nbsp;
+        <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="request.html">Request a Rental</a></li>
+      </ul>
+      <div class="footer-copy">&copy; 2025 Trailer Bros AZ. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+  </script>
+
+  <script>
+    document.querySelectorAll('.faq-question').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+        btn.setAttribute('aria-expanded', !isOpen);
+      });
+    });
+  </script>
+
+</body>
+</html>
