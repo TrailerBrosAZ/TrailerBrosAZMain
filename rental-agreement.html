@@ -1012,6 +1012,52 @@
     .footer-links a:hover { color: var(--accent); }
     .footer-copy { font-size: 13px; color: #606060; margin-top: 8px; }
 
+    /* TRAILER SELECTION */
+    .trailer-select-dropdown {
+      width: 100%;
+      padding: 13px 44px 13px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-dark);
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 14px center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      outline: none;
+    }
+
+    .trailer-select-dropdown:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.12);
+    }
+
+    .trailer-select-dropdown.selected {
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Keep border between trailer-select and the form body below it */
+    .form-card > .trailer-select-section {
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    /* FORM BODY — hidden until trailer is selected */
+    .form-body { display: none; }
+
+    .form-body.unlocked {
+      display: block;
+      animation: formReveal 0.45s ease forwards;
+    }
+
+    @keyframes formReveal {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* MOBILE */
     @media (max-width: 700px) {
       nav { padding: 12px 20px; flex-wrap: wrap; }
@@ -1099,34 +1145,49 @@
     <!-- FORM CARD -->
     <div class="form-card">
 
+      <!-- SECTION 0: SELECT TRAILER (always visible, gates the rest) -->
+      <div class="form-section trailer-select-section">
+        <div class="section-title">Select Your Trailer</div>
+        <div class="section-desc">Choose the trailer for this rental. The rest of the form will unlock once a trailer is selected.</div>
+        <div class="field-group">
+          <label for="trailerSelect">Trailer <span class="req">*</span></label>
+          <select id="trailerSelect" class="trailer-select-dropdown" onchange="handleTrailerSelect()">
+            <option value="">Select a trailer...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- FORM BODY: reveals after trailer selection -->
+      <div id="formBody" class="form-body">
+
       <!-- SECTION 1: TRAILER INFO -->
       <div class="form-section">
         <div class="section-title">Trailer Information</div>
-        <div class="section-desc">Fixed trailer details for this rental.</div>
+        <div class="section-desc">Specs for your selected trailer.</div>
         <div class="trailer-info-banner">
           <div class="info-item">
             <span class="info-label">Make / Model</span>
-            <span class="info-value">RawMaxx UTX</span>
+            <span class="info-value" id="infoMakeModel">—</span>
           </div>
           <div class="info-item">
             <span class="info-label">Type</span>
-            <span class="info-value">Utility Trailer</span>
+            <span class="info-value" id="infoType">—</span>
           </div>
           <div class="info-item">
             <span class="info-label">GVWR</span>
-            <span class="info-value">7,000 lbs</span>
+            <span class="info-value" id="infoGvwr">—</span>
           </div>
           <div class="info-item">
             <span class="info-label">Load Capacity</span>
-            <span class="info-value">5,800 lbs</span>
+            <span class="info-value" id="infoCapacity">—</span>
           </div>
           <div class="info-item">
             <span class="info-label">VIN</span>
-            <span class="info-value">3EVBU1421T1130642</span>
+            <span class="info-value" id="infoVin">—</span>
           </div>
           <div class="info-item">
             <span class="info-label">License Plate</span>
-            <span class="info-value">11A 865</span>
+            <span class="info-value" id="infoPlate">—</span>
           </div>
         </div>
       </div>
@@ -1431,6 +1492,8 @@
         </p>
       </div>
 
+      </div><!-- /formBody -->
+
     </div>
   </div>
 
@@ -1456,6 +1519,57 @@
   </footer>
 
   <script>
+    // ─── FLEET DATA ──────────────────────────────────────────────────────────
+    const TRAILERS = {
+      "rawmaxx-utx": {
+        label:    "RawMaxx UTX — 14ft Utility Trailer",
+        make:     "RawMaxx",
+        model:    "UTX",
+        type:     "Utility",
+        gvwr:     "7,000 lbs",
+        capacity: "5,800 lbs",
+        vin:      "3EVBU1421T1130642",
+        plate:    "11A 865"
+      }
+    };
+
+    // Populate dropdown from fleet data so adding a new trailer only requires
+    // adding an entry to TRAILERS above.
+    (function() {
+      const sel = document.getElementById('trailerSelect');
+      Object.entries(TRAILERS).forEach(([key, t]) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = t.label;
+        sel.appendChild(opt);
+      });
+    })();
+
+    function handleTrailerSelect() {
+      const key = document.getElementById('trailerSelect').value;
+      const formBody = document.getElementById('formBody');
+      const sel = document.getElementById('trailerSelect');
+
+      if (!key) {
+        formBody.classList.remove('unlocked');
+        sel.classList.remove('selected');
+        updateValidation();
+        return;
+      }
+
+      const t = TRAILERS[key];
+      document.getElementById('infoMakeModel').textContent = t.make + ' ' + t.model;
+      document.getElementById('infoType').textContent      = t.type;
+      document.getElementById('infoGvwr').textContent      = t.gvwr;
+      document.getElementById('infoCapacity').textContent  = t.capacity;
+      document.getElementById('infoVin').textContent       = t.vin;
+      document.getElementById('infoPlate').textContent     = t.plate;
+
+      sel.classList.add('selected');
+      formBody.classList.add('unlocked');
+      updateValidation();
+    }
+
     // ─── DAMAGE LOCATIONS ───────────────────────────────────────────────────
     const DAMAGE_LOCATIONS = [
       'Hitch & Coupler',
@@ -1739,6 +1853,10 @@
       return pickup && ret && new Date(ret) > new Date(pickup);
     }
 
+    function isTrailerDone() {
+      return document.getElementById('trailerSelect').value !== '';
+    }
+
     function isConditionDone() {
       return document.getElementById('noDamageCheck').checked ||
         Object.values(damageState).some(s => s.checked);
@@ -1767,7 +1885,7 @@
       setCheck('chk-sig',       sig);
       setCheck('chk-name',      name);
 
-      const allDone = renter && dates && condition && terms && sig && name;
+      const allDone = isTrailerDone() && renter && dates && condition && terms && sig && name;
       const btn = document.getElementById('submitBtn');
       btn.disabled = !allDone;
       btn.classList.toggle('ready', allDone);
