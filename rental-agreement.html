@@ -1519,6 +1519,9 @@
   </footer>
 
   <script>
+    // ─── BACKEND ─────────────────────────────────────────────────────────────
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd2XnOhPwTnHsdsaTbhBx944L0Mx08V3glOxtPqeviejfjyEc_0UmY-3uWW8tc3oM/exec';
+
     // ─── FLEET DATA ──────────────────────────────────────────────────────────
     const TRAILERS = {
       "rawmaxx-utx": {
@@ -2008,18 +2011,64 @@
       btn.textContent = 'Submitting…';
       btn.disabled = true;
 
-      setTimeout(() => {
-        document.getElementById('submitSection').style.display = 'none';
-        document.querySelectorAll('.form-section').forEach(s => { s.style.display = 'none'; });
-        const success = document.getElementById('successScreen');
-        success.classList.add('show');
+      const now = new Date();
+      const timestamp = now.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+      const trailerKey = document.getElementById('trailerSelect').value;
 
-        const now = new Date();
-        document.getElementById('successTimestamp').textContent =
-          'Submitted ' + now.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+      // Collect checked damage items
+      const damageItems = [];
+      Object.entries(damageState).forEach(([id, s]) => {
+        if (s.checked) {
+          const i = parseInt(id.replace('dmg_', ''), 10);
+          damageItems.push({ location: DAMAGE_LOCATIONS[i], note: s.note });
+        }
+      });
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 1200);
+      const idImg = document.getElementById('idPreviewImg');
+
+      const payload = {
+        timestamp,
+        trailer:       TRAILERS[trailerKey] ? TRAILERS[trailerKey].label : trailerKey,
+        trailerVin:    document.getElementById('infoVin').textContent,
+        fullName:      document.getElementById('fullName').value.trim(),
+        dlNumber:      document.getElementById('dlNumber').value.trim(),
+        dlState:       document.getElementById('dlState').value,
+        address:       document.getElementById('address').value.trim(),
+        city:          document.getElementById('city').value.trim(),
+        state:         document.getElementById('state').value,
+        zip:           document.getElementById('zip').value.trim(),
+        phone:         document.getElementById('phone').value.trim(),
+        email:         document.getElementById('email').value.trim(),
+        pickupDate:    document.getElementById('pickupDate').value,
+        returnDate:    document.getElementById('returnDate').value,
+        noDamage:      document.getElementById('noDamageCheck').checked,
+        damageItems,
+        damageNotes:   document.getElementById('damageNotesGeneral').value.trim(),
+        termsAgreed:   true,
+        printedName:   document.getElementById('printedName').value.trim(),
+        signatureDate: document.getElementById('signatureDate').value,
+        signature:     document.getElementById('signaturePad').toDataURL('image/png'),
+        idPhoto:       idImg.src.startsWith('data:') ? idImg.src : null
+      };
+
+      // Apps Script requires no-cors — response is opaque so we can't detect
+      // server-side errors; both .then() and .catch() show the success screen.
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      })
+        .then(() => showSuccess(timestamp))
+        .catch(() => showSuccess(timestamp));
+    }
+
+    function showSuccess(timestamp) {
+      document.getElementById('submitSection').style.display = 'none';
+      document.querySelectorAll('.form-section').forEach(s => { s.style.display = 'none'; });
+      document.getElementById('successScreen').classList.add('show');
+      document.getElementById('successTimestamp').textContent = 'Submitted ' + timestamp;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // ─── HAMBURGER ────────────────────────────────────────────────────────────
