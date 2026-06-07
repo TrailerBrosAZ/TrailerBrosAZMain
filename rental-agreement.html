@@ -1570,6 +1570,7 @@
 
       sel.classList.add('selected');
       formBody.classList.add('unlocked');
+      requestAnimationFrame(resizeCanvas); // Canvas was inside display:none — size it now that form is visible
       updateValidation();
     }
 
@@ -1689,13 +1690,15 @@
     function resizeCanvas() {
       const ratio = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * ratio;
+      if (rect.width === 0) return; // Form body still hidden — called again when it unlocks
+      canvas.width  = rect.width  * ratio;
       canvas.height = rect.height * ratio;
-      ctx.scale(ratio, ratio);
+      // setTransform instead of scale() so repeated calls don't stack the multiplier
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.strokeStyle = '#1a1a1a';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.lineWidth   = 2.5;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
     }
 
     function getPos(e) {
@@ -1757,8 +1760,8 @@
     canvas.addEventListener('touchend', () => { isDrawing = false; });
 
     function clearSignature() {
-      const ratio = window.devicePixelRatio || 1;
-      ctx.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
       hasSig = false;
       document.getElementById('sigWrap').classList.remove('has-sig');
       updateValidation();
@@ -2020,7 +2023,11 @@
       Object.entries(damageState).forEach(([id, s]) => {
         if (s.checked) {
           const i = parseInt(id.replace('dmg_', ''), 10);
-          damageAreas.push({ location: DAMAGE_LOCATIONS[i], note: s.note });
+          damageAreas.push({
+            location: DAMAGE_LOCATIONS[i],
+            note:     s.note,
+            photos:   s.photos.map(p => p.data)
+          });
         }
       });
 
