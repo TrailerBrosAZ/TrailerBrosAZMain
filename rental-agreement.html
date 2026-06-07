@@ -1554,7 +1554,7 @@
           <p>Trailer Bros LLC &nbsp;·&nbsp; (480) 744-5599 &nbsp;·&nbsp; trailerbrosaz@gmail.com</p>
 
           <h4>Payment &amp; Security Deposit</h4>
-          <p>The full rental amount and the $100 security deposit are due at pickup. The security deposit is not a limitation of liability. Upon return, Trailer Bros LLC will conduct a post-rental inspection within 48 hours. If no damage or additional charges are identified, the deposit will be refunded in full. If total damages or charges exceed the $100 security deposit, renter agrees to pay the full remaining balance immediately upon written notice.</p>
+          <p>The full rental amount and the $100 security deposit are due at pickup. The security deposit is not a limitation of liability. Upon return, Trailer Bros LLC will conduct a post-rental inspection within 48 hours. If no damage or additional charges are identified, the deposit will be refunded in full. If total damages or charges exceed the $100 security deposit, renter agrees to pay the full remaining balance immediately.</p>
 
           <h4>Authorized Driver</h4>
           <p>Renter must be at least 25 years old, possess a valid driver's license, and maintain active auto insurance. Only the person listed in this agreement may tow the trailer unless approved in writing.</p>
@@ -2063,7 +2063,7 @@
       const extraRow = document.getElementById('calcExtraHoursRow');
       if (extraHours > 0) {
         document.getElementById('calcExtraHoursLabel').textContent = capped
-          ? extraHours + ' extra hours — capped at 1 day'
+          ? extraHours + (extraHours === 1 ? ' extra hour' : ' extra hours') + ' × $10/hr (capped at $' + rate + ')'
           : extraHours + (extraHours === 1 ? ' extra hour' : ' extra hours') + ' × $10/hr';
         document.getElementById('calcExtraHoursAmt').textContent = '$' + extraCharge;
         extraRow.style.display = '';
