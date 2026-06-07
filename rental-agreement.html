@@ -2015,41 +2015,47 @@
       const timestamp = now.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
       const trailerKey = document.getElementById('trailerSelect').value;
 
-      // Collect checked damage items
-      const damageItems = [];
+      // Collect checked damage areas
+      const damageAreas = [];
       Object.entries(damageState).forEach(([id, s]) => {
         if (s.checked) {
           const i = parseInt(id.replace('dmg_', ''), 10);
-          damageItems.push({ location: DAMAGE_LOCATIONS[i], note: s.note });
+          damageAreas.push({ location: DAMAGE_LOCATIONS[i], note: s.note });
         }
       });
 
       const idImg = document.getElementById('idPreviewImg');
 
       const payload = {
-        timestamp,
-        trailer:       TRAILERS[trailerKey] ? TRAILERS[trailerKey].label : trailerKey,
-        trailerVin:    document.getElementById('infoVin').textContent,
-        fullName:      document.getElementById('fullName').value.trim(),
-        dlNumber:      document.getElementById('dlNumber').value.trim(),
-        dlState:       document.getElementById('dlState').value,
-        address:       document.getElementById('address').value.trim(),
-        city:          document.getElementById('city').value.trim(),
-        state:         document.getElementById('state').value,
-        zip:           document.getElementById('zip').value.trim(),
-        phone:         document.getElementById('phone').value.trim(),
-        email:         document.getElementById('email').value.trim(),
-        pickupDate:    document.getElementById('pickupDate').value,
-        returnDate:    document.getElementById('returnDate').value,
-        noDamage:      document.getElementById('noDamageCheck').checked,
-        damageItems,
-        damageNotes:   document.getElementById('damageNotesGeneral').value.trim(),
-        termsAgreed:   true,
-        printedName:   document.getElementById('printedName').value.trim(),
-        signatureDate: document.getElementById('signatureDate').value,
-        signature:     document.getElementById('signaturePad').toDataURL('image/png'),
-        idPhoto:       idImg.src.startsWith('data:') ? idImg.src : null
+        submittedAt:  now.toISOString(),
+        trailerLabel: TRAILERS[trailerKey] ? TRAILERS[trailerKey].label : trailerKey,
+        renter: {
+          fullName: document.getElementById('fullName').value.trim(),
+          dlNumber: document.getElementById('dlNumber').value.trim(),
+          dlState:  document.getElementById('dlState').value,
+          address:  document.getElementById('address').value.trim(),
+          city:     document.getElementById('city').value.trim(),
+          state:    document.getElementById('state').value,
+          zip:      document.getElementById('zip').value.trim(),
+          phone:    document.getElementById('phone').value.trim(),
+          email:    document.getElementById('email').value.trim()
+        },
+        rental: {
+          pickupDate:  document.getElementById('pickupDate').value,
+          returnDate:  document.getElementById('returnDate').value,
+          totalCharge: document.getElementById('calcTotal').textContent
+        },
+        condition: {
+          noDamage:     document.getElementById('noDamageCheck').checked,
+          damageAreas,
+          generalNotes: document.getElementById('damageNotesGeneral').value.trim()
+        },
+        signature:   document.getElementById('signaturePad').toDataURL('image/png'),
+        printedName: document.getElementById('printedName').value.trim(),
+        idPhoto:     idImg.src.startsWith('data:') ? idImg.src : null
       };
+
+      console.log('Rental agreement payload:', payload);
 
       // Apps Script requires no-cors — response is opaque so we can't detect
       // server-side errors; both .then() and .catch() show the success screen.
