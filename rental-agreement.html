@@ -421,6 +421,132 @@
     .calc-label { font-weight: 500; }
     .calc-value { font-weight: 600; color: var(--text-dark); }
 
+    /* DELIVERY SECTION */
+    .delivery-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .delivery-option-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .delivery-option-row:hover { border-color: #bbb; }
+
+    .delivery-option-row:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(232,98,10,0.03);
+    }
+
+    .delivery-option-row input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .delivery-option-content { flex: 1; }
+
+    .delivery-option-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .delivery-option-sub {
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-top: 2px;
+    }
+
+    .delivery-fee-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--success-color);
+      background: rgba(46,125,50,0.1);
+      border-radius: 20px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .delivery-fee-badge.fee {
+      color: var(--accent);
+      background: rgba(232,98,10,0.1);
+    }
+
+    .delivery-tier-wrap {
+      margin-top: 14px;
+      padding: 16px 18px;
+      background: #fafafa;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+    }
+
+    .delivery-tier-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    .delivery-tiers {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .delivery-tier-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .delivery-tier-row:hover { border-color: var(--accent); }
+
+    .delivery-tier-row:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(232,98,10,0.03);
+    }
+
+    .delivery-tier-row input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .delivery-tier-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    .delivery-tier-fee {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
     /* DAMAGE SECTION */
     .damage-toggle-row {
       display: flex;
@@ -1279,7 +1405,7 @@
       <!-- SECTION 3: RENTAL PERIOD -->
       <div class="form-section">
         <div class="section-title">Rental Period &amp; Payment</div>
-        <div class="section-desc">Daily rate: $60/day &nbsp;·&nbsp; Late fee: $10/hr or $70/additional day &nbsp;·&nbsp; Security deposit: $100 (refundable)</div>
+        <div class="section-desc">Late fee: $10/hr for any portion of an additional day, capped at $60 per additional day</div>
 
         <div class="field-row">
           <div class="field-group">
@@ -1295,21 +1421,21 @@
         </div>
 
         <div class="rental-calc" id="rentalCalc" style="display:none;">
-          <div class="rental-calc-row">
-            <span class="calc-label">Rental duration</span>
-            <span class="calc-value" id="calcDuration">—</span>
+          <div class="rental-calc-row" id="calcFullDaysRow">
+            <span class="calc-label" id="calcFullDays">—</span>
+            <span class="calc-value" id="calcFullDaysAmt">—</span>
           </div>
-          <div class="rental-calc-row">
-            <span class="calc-label">Daily rate</span>
-            <span class="calc-value">$60 / day</span>
+          <div class="rental-calc-row" id="calcExtraHoursRow" style="display:none;">
+            <span class="calc-label" id="calcExtraHoursLabel">—</span>
+            <span class="calc-value" id="calcExtraHoursAmt">—</span>
           </div>
-          <div class="rental-calc-row">
-            <span class="calc-label">Rental charge</span>
-            <span class="calc-value" id="calcRental">—</span>
+          <div class="rental-calc-row" id="calcDeliveryRow" style="display:none;">
+            <span class="calc-label">Delivery fee</span>
+            <span class="calc-value" id="calcDeliveryAmt">—</span>
           </div>
           <div class="rental-calc-row">
             <span class="calc-label">Security deposit</span>
-            <span class="calc-value">$100 (refundable)</span>
+            <span class="calc-value" id="calcDepositAmt">—</span>
           </div>
           <div class="rental-calc-row total">
             <span class="calc-label">Total due at pickup</span>
@@ -1318,7 +1444,53 @@
         </div>
       </div>
 
-      <!-- SECTION 4: CONDITION -->
+      <!-- SECTION 4: DELIVERY -->
+      <div class="form-section">
+        <div class="section-title">Pickup &amp; Delivery</div>
+        <div class="section-desc">Choose how you'll receive the trailer.</div>
+
+        <div class="delivery-options">
+          <label class="delivery-option-row">
+            <input type="radio" name="deliveryType" id="deliveryMeetup" value="meetup" checked onchange="handleDeliveryChange()" />
+            <div class="delivery-option-content">
+              <div class="delivery-option-title">Local meetup</div>
+              <div class="delivery-option-sub">I will meet to pick up the trailer</div>
+            </div>
+            <span class="delivery-fee-badge">No fee</span>
+          </label>
+          <label class="delivery-option-row">
+            <input type="radio" name="deliveryType" id="deliveryDeliver" value="delivery" onchange="handleDeliveryChange()" />
+            <div class="delivery-option-content">
+              <div class="delivery-option-title">Deliver to my location</div>
+              <div class="delivery-option-sub">We'll bring it to you — fee based on distance</div>
+            </div>
+            <span class="delivery-fee-badge fee">From $20</span>
+          </label>
+        </div>
+
+        <div class="delivery-tier-wrap" id="deliveryTierWrap" style="display:none;">
+          <div class="delivery-tier-label">Select your distance range:</div>
+          <div class="delivery-tiers">
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier0to10" value="0-10" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">0–10 miles</span>
+              <span class="delivery-tier-fee">$20</span>
+            </label>
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier10to20" value="10-20" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">10–20 miles</span>
+              <span class="delivery-tier-fee">$40</span>
+            </label>
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier20to35" value="20-35" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">20–35 miles</span>
+              <span class="delivery-tier-fee">$65</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: CONDITION -->
       <div class="form-section">
         <div class="section-title">Trailer Condition at Pickup</div>
         <div class="section-desc">Document the trailer's condition before leaving. This protects both parties.</div>
@@ -1409,6 +1581,9 @@
           <h4>Return Condition</h4>
           <p>Trailer must be returned reasonably clean, in the same condition as received, and at the agreed return date and time. Failure to return trailer may be treated as theft under Arizona law.</p>
 
+          <h4>Late Return</h4>
+          <p>Late fee: $10/hr for any portion of an additional day, capped at $60 per additional day.</p>
+
           <h4>Roadside / Breakdown</h4>
           <p>Renter is responsible for all roadside service costs unless failure is due to a mechanical defect not caused by misuse.</p>
 
@@ -1484,7 +1659,7 @@
         </div>
 
         <button class="submit-btn" id="submitBtn" onclick="handleSubmit()" disabled>
-          Complete &amp; Sign Agreement
+          Submit Rental Agreement
         </button>
 
         <p class="submit-note">
@@ -1532,7 +1707,9 @@
         gvwr:     "7,000 lbs",
         capacity: "5,800 lbs",
         vin:      "3EVBU1421T1130642",
-        plate:    "11A 865"
+        plate:    "11A 865",
+        rate:     60,
+        deposit:  100
       }
     };
 
@@ -1571,6 +1748,7 @@
       sel.classList.add('selected');
       formBody.classList.add('unlocked');
       requestAnimationFrame(resizeCanvas); // Canvas was inside display:none — size it now that form is visible
+      updateRentalCalc();
       updateValidation();
     }
 
@@ -1805,26 +1983,105 @@
       if (termsBox.scrollTop > 40) scrollHint.classList.add('scrolled');
     });
 
+    // ─── DELIVERY ────────────────────────────────────────────────────────────
+    const DELIVERY_TIERS = { '0-10': 20, '10-20': 40, '20-35': 65 };
+
+    function getDeliveryFee() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      if (!typeEl || typeEl.value === 'meetup') return 0;
+      const tierEl = document.querySelector('input[name="deliveryTier"]:checked');
+      return tierEl ? (DELIVERY_TIERS[tierEl.value] || 0) : 0;
+    }
+
+    function getDeliveryState() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      const isDelivery = typeEl && typeEl.value === 'delivery';
+      const tierEl = isDelivery ? document.querySelector('input[name="deliveryTier"]:checked') : null;
+      return {
+        type: isDelivery ? 'delivery' : 'meetup',
+        tier: tierEl ? tierEl.value : null,
+        fee:  tierEl ? (DELIVERY_TIERS[tierEl.value] || 0) : 0
+      };
+    }
+
+    function handleDeliveryChange() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      const isDelivery = typeEl && typeEl.value === 'delivery';
+      document.getElementById('deliveryTierWrap').style.display = isDelivery ? 'block' : 'none';
+      updateRentalCalc();
+      updateValidation();
+    }
+
+    function isDeliveryDone() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      if (!typeEl) return false;
+      if (typeEl.value === 'meetup') return true;
+      return !!document.querySelector('input[name="deliveryTier"]:checked');
+    }
+
     // ─── RENTAL CALC ─────────────────────────────────────────────────────────
     function updateRentalCalc() {
-      const pickup = document.getElementById('pickupDate').value;
-      const ret = document.getElementById('returnDate').value;
-      const calc = document.getElementById('rentalCalc');
+      const pickup     = document.getElementById('pickupDate').value;
+      const ret        = document.getElementById('returnDate').value;
+      const calc       = document.getElementById('rentalCalc');
+      const trailerKey = document.getElementById('trailerSelect').value;
 
       if (!pickup || !ret) { calc.style.display = 'none'; return; }
 
       const pickupMs = new Date(pickup).getTime();
-      const retMs = new Date(ret).getTime();
+      const retMs    = new Date(ret).getTime();
       if (retMs <= pickupMs) { calc.style.display = 'none'; return; }
 
-      const hours = (retMs - pickupMs) / 3600000;
-      const days = Math.ceil(hours / 24);
-      const rental = days * 60;
-      const total = rental + 100;
+      const t       = (trailerKey && TRAILERS[trailerKey]) ? TRAILERS[trailerKey] : { rate: 60, deposit: 100 };
+      const rate    = t.rate;
+      const deposit = t.deposit;
 
-      document.getElementById('calcDuration').textContent = days === 1 ? '1 day' : `${days} days`;
-      document.getElementById('calcRental').textContent = `$${rental}`;
-      document.getElementById('calcTotal').textContent = `$${total}`;
+      const totalMinutes = (retMs - pickupMs) / 60000;
+      const fullDays     = Math.floor(totalMinutes / 1440);
+      const remMinutes   = totalMinutes % 1440;
+      const extraHours   = remMinutes > 0 ? Math.ceil(remMinutes / 60) : 0;
+
+      const dayCharge   = fullDays * rate;
+      const rawExtra    = extraHours * 10;
+      const extraCharge = extraHours > 0 ? Math.min(rawExtra, rate) : 0;
+      const capped      = rawExtra > rate;
+      const delivFee    = getDeliveryFee();
+      const total       = dayCharge + extraCharge + delivFee + deposit;
+
+      // Full days row
+      const fullDaysRow = document.getElementById('calcFullDaysRow');
+      if (fullDays > 0) {
+        document.getElementById('calcFullDays').textContent =
+          fullDays + (fullDays === 1 ? ' full day' : ' full days') + ' × $' + rate + '/day';
+        document.getElementById('calcFullDaysAmt').textContent = '$' + dayCharge;
+        fullDaysRow.style.display = '';
+      } else {
+        fullDaysRow.style.display = 'none';
+      }
+
+      // Extra hours row
+      const extraRow = document.getElementById('calcExtraHoursRow');
+      if (extraHours > 0) {
+        document.getElementById('calcExtraHoursLabel').textContent = capped
+          ? extraHours + ' extra hours — capped at 1 day'
+          : extraHours + (extraHours === 1 ? ' extra hour' : ' extra hours') + ' × $10/hr';
+        document.getElementById('calcExtraHoursAmt').textContent = '$' + extraCharge;
+        extraRow.style.display = '';
+      } else {
+        extraRow.style.display = 'none';
+      }
+
+      // Delivery fee row
+      const delivRow = document.getElementById('calcDeliveryRow');
+      if (delivFee > 0) {
+        document.getElementById('calcDeliveryAmt').textContent = '$' + delivFee;
+        delivRow.style.display = '';
+      } else {
+        delivRow.style.display = 'none';
+      }
+
+      document.getElementById('calcDepositAmt').textContent = '$' + deposit + ' (refundable)';
+      document.getElementById('calcTotal').textContent = '$' + total;
       calc.style.display = 'block';
     }
 
@@ -1879,6 +2136,7 @@
     function updateValidation() {
       const renter    = isRenterDone();
       const dates     = isDatesDone();
+      const delivery  = isDeliveryDone();
       const condition = isConditionDone();
       const terms     = isTermsDone();
       const sig       = hasSig;
@@ -1891,7 +2149,7 @@
       setCheck('chk-sig',       sig);
       setCheck('chk-name',      name);
 
-      const allDone = isTrailerDone() && renter && dates && condition && terms && sig && name;
+      const allDone = isTrailerDone() && renter && dates && delivery && condition && terms && sig && name;
       const btn = document.getElementById('submitBtn');
       btn.disabled = !allDone;
       btn.classList.toggle('ready', allDone);
@@ -2052,6 +2310,7 @@
           returnDate:  document.getElementById('returnDate').value,
           totalCharge: document.getElementById('calcTotal').textContent
         },
+        delivery: getDeliveryState(),
         condition: {
           noDamage:     document.getElementById('noDamageCheck').checked,
           damageAreas,
