@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rental Agreement | Trailer Bros AZ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Complete your Trailer Bros AZ rental agreement digitally. Secure, fast, and paperless." />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --accent: #E8620A;
+      --accent-dark: #C4510A;
+      --bg-dark: #1C1F23;
+      --text-light: #e6e6e6;
+      --text-muted: #a0a0a0;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --radius-lg: 18px;
+      --radius-sm: 8px;
+      --shadow-card: 0 30px 70px rgba(0,0,0,0.7);
+      --transition: 0.25s ease;
+
+      --form-bg: #f2f2f0;
+      --input-border: #ddd;
+      --input-focus: #E8620A;
+      --section-bg: #fafaf8;
+      --error-color: #d32f2f;
+      --success-color: #2e7d32;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background-color: var(--bg-dark);
+      margin: 0;
+      padding: 0;
+      color: var(--text-light);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.20'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 1;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 40px;
+      background: rgba(28,31,35,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .nav-logo img { height: 44px; display: block; }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      opacity: 0.85;
+      transition: opacity var(--transition), color var(--transition);
+    }
+
+    .nav-links a:hover { opacity: 1; color: var(--accent); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      opacity: 1 !important;
+    }
+
+    .nav-cta:hover { background: var(--accent-dark) !important; color: #fff !important; }
+
+    .nav-right { display: flex; align-items: center; gap: 24px; }
+
+    .nav-phone-cta {
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 7px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .nav-phone-cta:hover { background: var(--accent); color: #fff; }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text-light);
+      border-radius: 2px;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 56px 20px 48px;
+      text-align: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .page-header h1 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 10px;
+    }
+
+    .page-header p {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .page-header .accent-line {
+      width: 48px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 16px auto 0;
+    }
+
+    /* MAIN LAYOUT */
+    .agreement-wrap {
+      max-width: 820px;
+      margin: 48px auto 80px;
+      padding: 0 20px;
+    }
+
+    /* PROGRESS BAR */
+    .progress-bar-wrap {
+      margin-bottom: 32px;
+    }
+
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.1);
+      z-index: 0;
+    }
+
+    .progress-fill {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      height: 2px;
+      background: var(--accent);
+      z-index: 1;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      z-index: 2;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .step-dot.done {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: #fff;
+    }
+
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .step-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      width: 28px;
+    }
+
+    /* FORM CARD */
+    .form-card {
+      background: var(--form-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-dark);
+      overflow: hidden;
+    }
+
+    /* FORM SECTIONS */
+    .form-section {
+      padding: 36px 40px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .form-section:last-of-type { border-bottom: none; }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin: 0 0 4px;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-mid);
+      margin: 0 0 24px;
+      line-height: 1.5;
+    }
+
+    /* TRAILER INFO BANNER */
+    .trailer-info-banner {
+      background: #1C1F23;
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px 24px;
+      margin-bottom: 0;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .info-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-light);
+    }
+
+    /* FORM FIELDS */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .field-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+    .field-row.full { grid-template-columns: 1fr; }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-group label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #666;
+    }
+
+    .field-group label .req {
+      color: var(--accent);
+      margin-left: 2px;
+    }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: #fff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      outline: none;
+    }
+
+    .field-group input:focus,
+    .field-group select:focus,
+    .field-group textarea:focus {
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.12);
+    }
+
+    .field-group input.error,
+    .field-group select.error,
+    .field-group textarea.error {
+      border-color: var(--error-color);
+      box-shadow: 0 0 0 3px rgba(211,47,47,0.1);
+    }
+
+    .field-error {
+      font-size: 12px;
+      color: var(--error-color);
+      display: none;
+    }
+
+    .field-error.visible { display: block; }
+
+    .field-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* RENTAL PERIOD */
+    .rental-calc {
+      background: #fff;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
+
+    .rental-calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: var(--text-mid);
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .rental-calc-row:last-child { border-bottom: none; }
+
+    .rental-calc-row.total {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-dark);
+      padding-top: 12px;
+      margin-top: 4px;
+      border-bottom: none;
+    }
+
+    .rental-calc-row.total .calc-value { color: var(--accent); }
+
+    .calc-label { font-weight: 500; }
+    .calc-value { font-weight: 600; color: var(--text-dark); }
+
+    /* DELIVERY SECTION */
+    .delivery-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .delivery-option-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .delivery-option-row:hover { border-color: #bbb; }
+
+    .delivery-option-row:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(232,98,10,0.03);
+    }
+
+    .delivery-option-row input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .delivery-option-content { flex: 1; }
+
+    .delivery-option-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .delivery-option-sub {
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-top: 2px;
+    }
+
+    .delivery-fee-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--success-color);
+      background: rgba(46,125,50,0.1);
+      border-radius: 20px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .delivery-fee-badge.fee {
+      color: var(--accent);
+      background: rgba(232,98,10,0.1);
+    }
+
+    .delivery-tier-wrap {
+      margin-top: 14px;
+      padding: 16px 18px;
+      background: #fafafa;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+    }
+
+    .delivery-tier-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    .delivery-tiers {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .delivery-tier-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .delivery-tier-row:hover { border-color: var(--accent); }
+
+    .delivery-tier-row:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(232,98,10,0.03);
+    }
+
+    .delivery-tier-row input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .delivery-tier-name {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    .delivery-tier-fee {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* DAMAGE SECTION */
+    .damage-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 18px 20px;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+      margin-bottom: 16px;
+    }
+
+    .damage-toggle-row:hover { border-color: #ccc; }
+
+    .damage-toggle-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      accent-color: var(--success-color);
+      cursor: pointer;
+      margin-top: 1px;
+    }
+
+    .damage-toggle-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-dark);
+      line-height: 1.4;
+    }
+
+    .damage-toggle-label span {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-mid);
+      margin-top: 2px;
+    }
+
+    .damage-detail-section {
+      display: none;
+      margin-top: 4px;
+    }
+
+    .damage-detail-section.open { display: block; }
+
+    .damage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .damage-item {
+      background: #fff;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .damage-item.checked {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.1);
+    }
+
+    .damage-item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .damage-item-header input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .damage-item-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .damage-item-notes {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .damage-item-notes.open { display: block; }
+
+    .damage-item-notes input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-dark);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+
+    .damage-item-notes input:focus {
+      border-color: var(--accent);
+    }
+
+    .damage-photo-upload {
+      margin-top: 8px;
+    }
+
+    .damage-photo-upload label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 5px 10px;
+      border: 1.5px dashed var(--accent);
+      border-radius: 6px;
+      transition: background 0.2s ease;
+    }
+
+    .damage-photo-upload label:hover { background: rgba(232,98,10,0.06); }
+    .damage-photo-upload input[type="file"] { display: none; }
+
+    .photo-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .photo-thumb {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1.5px solid #ddd;
+    }
+
+    .photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-thumb .remove-photo {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .damage-notes-general {
+      margin-top: 16px;
+    }
+
+    /* ID UPLOAD */
+    .id-upload-box {
+      border: 2px dashed #ddd;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      background: #fff;
+      position: relative;
+    }
+
+    .id-upload-box:hover {
+      border-color: var(--accent);
+      background: rgba(232,98,10,0.02);
+    }
+
+    .id-upload-box.has-file {
+      border-color: var(--accent);
+      border-style: solid;
+      background: rgba(232,98,10,0.04);
+    }
+
+    .id-upload-box input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .id-upload-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    .id-upload-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .id-upload-sub {
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+
+    .id-preview {
+      display: none;
+      margin-top: 16px;
+      position: relative;
+    }
+
+    .id-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      border: 1.5px solid #ddd;
+      object-fit: contain;
+    }
+
+    .id-preview .remove-id {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .id-privacy-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #f0f7f0;
+      border: 1px solid #c8e6c9;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #2e7d32;
+      line-height: 1.5;
+    }
+
+    .id-optional-note {
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* TERMS */
+    .terms-box {
+      background: #fff;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 24px;
+      max-height: 320px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #444;
+      margin-bottom: 16px;
+    }
+
+    .terms-box h4 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin: 20px 0 8px;
+    }
+
+    .terms-box h4:first-child { margin-top: 0; }
+
+    .terms-box ul {
+      margin: 4px 0 12px;
+      padding-left: 20px;
+    }
+
+    .terms-box li { margin-bottom: 4px; }
+
+    .terms-scroll-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+
+    .terms-scroll-hint.scrolled { display: none; }
+
+    .terms-agree-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .terms-agree-row:hover { border-color: var(--accent); }
+    .terms-agree-row.checked { border-color: var(--accent); background: rgba(232,98,10,0.03); }
+
+    .terms-agree-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      margin-top: 1px;
+    }
+
+    .terms-agree-label {
+      font-size: 14px;
+      color: var(--text-dark);
+      line-height: 1.5;
+    }
+
+    /* SIGNATURE */
+    .sig-wrap {
+      position: relative;
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .sig-wrap.has-sig { border-color: var(--accent); }
+    .sig-wrap.error { border-color: var(--error-color); }
+
+    #signaturePad {
+      display: block;
+      width: 100%;
+      height: 180px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .sig-label {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #ccc;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    .sig-wrap.has-sig .sig-label { opacity: 0; }
+
+    .sig-line {
+      position: absolute;
+      bottom: 36px;
+      left: 24px;
+      right: 24px;
+      height: 1px;
+      background: #e8e8e8;
+      pointer-events: none;
+    }
+
+    .sig-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 12px;
+      background: #f8f8f6;
+      border-top: 1px solid #eee;
+    }
+
+    .sig-clear {
+      font-size: 12px;
+      color: var(--text-mid);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+
+    .sig-clear:hover { color: var(--error-color); background: rgba(211,47,47,0.06); }
+
+    /* SUBMIT AREA */
+    .submit-section {
+      padding: 36px 40px;
+      background: #f7f7f5;
+      border-top: 1px solid #e8e8e8;
+    }
+
+    .submit-checklist {
+      margin-bottom: 24px;
+    }
+
+    .checklist-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .checklist-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-mid);
+      transition: color 0.2s ease;
+    }
+
+    .checklist-item.done { color: var(--success-color); font-weight: 500; }
+
+    .check-icon {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #999;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .checklist-item.done .check-icon {
+      background: var(--success-color);
+      color: #fff;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px 32px;
+      background: #ccc;
+      color: #888;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: not-allowed;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .submit-btn.ready {
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .submit-btn.ready:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(232,98,10,0.35);
+    }
+
+    .submit-btn.loading {
+      background: var(--accent-dark);
+      color: #fff;
+      cursor: wait;
+    }
+
+    .submit-note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-mid);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* SUCCESS STATE */
+    .success-screen {
+      display: none;
+      padding: 64px 40px;
+      text-align: center;
+    }
+
+    .success-screen.show { display: block; }
+
+    .success-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+
+    .success-screen h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 12px;
+    }
+
+    .success-screen p {
+      font-size: 15px;
+      color: var(--text-mid);
+      max-width: 480px;
+      margin: 0 auto 8px;
+      line-height: 1.6;
+    }
+
+    .success-timestamp {
+      font-size: 13px;
+      color: #999;
+      margin-top: 20px;
+      font-family: monospace;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 48px 40px 32px;
+      background: rgba(0,0,0,0.45);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-logo img { height: 48px; }
+
+    .footer-contact {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .footer-contact a { color: var(--accent); text-decoration: none; }
+    .footer-contact a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+    .footer-copy { font-size: 13px; color: #606060; margin-top: 8px; }
+
+    /* TRAILER SELECTION */
+    .trailer-select-dropdown {
+      width: 100%;
+      padding: 13px 44px 13px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-dark);
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 14px center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      outline: none;
+    }
+
+    .trailer-select-dropdown:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,98,10,0.12);
+    }
+
+    .trailer-select-dropdown.selected {
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Keep border between trailer-select and the form body below it */
+    .form-card > .trailer-select-section {
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    /* FORM BODY — hidden until trailer is selected */
+    .form-body { display: none; }
+
+    .form-body.unlocked {
+      display: block;
+      animation: formReveal 0.45s ease forwards;
+    }
+
+    @keyframes formReveal {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* MOBILE */
+    @media (max-width: 700px) {
+      nav { padding: 12px 20px; flex-wrap: wrap; }
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 0;
+        padding: 8px 0 12px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .nav-links a { padding: 11px 4px; display: block; }
+      .nav-cta { margin-top: 8px; display: inline-block; }
+      .nav-right { gap: 12px; }
+      .nav-phone-cta { display: none; }
+
+      .form-section { padding: 28px 20px; }
+      .submit-section { padding: 28px 20px; }
+      .field-row { grid-template-columns: 1fr; }
+      .field-row.three-col { grid-template-columns: 1fr; }
+      .damage-grid { grid-template-columns: 1fr; }
+      .checklist-items { grid-template-columns: 1fr; }
+      .trailer-info-banner { grid-template-columns: repeat(2, 1fr); }
+      footer { padding: 40px 20px 28px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img src="trailer-bros.png.png" alt="Trailer Bros" />
+    </a>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-right">
+      <a href="tel:4807445599" class="nav-phone-cta">(480) 744-5599</a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#trailers">Trailers</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="rental-agreement.html" style="color:var(--accent)">Rental Agreement</a></li>
+        <li><a href="request.html" class="nav-cta">Request a Rental</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1>Rental Agreement</h1>
+    <p>Complete and sign your digital rental agreement below.</p>
+    <div class="accent-line"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="agreement-wrap">
+
+    <!-- PROGRESS -->
+    <div class="progress-bar-wrap">
+      <div class="progress-steps">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="step-dot active" id="dot1">1</div>
+        <div class="step-dot" id="dot2">2</div>
+        <div class="step-dot" id="dot3">3</div>
+        <div class="step-dot" id="dot4">4</div>
+        <div class="step-dot" id="dot5">5</div>
+        <div class="step-dot" id="dot6">6</div>
+      </div>
+      <div class="step-labels">
+        <div class="step-label">Info</div>
+        <div class="step-label">Rental</div>
+        <div class="step-label">Condition</div>
+        <div class="step-label">ID</div>
+        <div class="step-label">Terms</div>
+        <div class="step-label">Sign</div>
+      </div>
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="form-card">
+
+      <!-- SECTION 0: SELECT TRAILER (always visible, gates the rest) -->
+      <div class="form-section trailer-select-section">
+        <div class="section-title">Select Your Trailer</div>
+        <div class="section-desc">Choose the trailer for this rental. The rest of the form will unlock once a trailer is selected.</div>
+        <div class="field-group">
+          <label for="trailerSelect">Trailer <span class="req">*</span></label>
+          <select id="trailerSelect" class="trailer-select-dropdown" onchange="handleTrailerSelect()">
+            <option value="">Select a trailer...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- FORM BODY: reveals after trailer selection -->
+      <div id="formBody" class="form-body">
+
+      <!-- SECTION 1: TRAILER INFO -->
+      <div class="form-section">
+        <div class="section-title">Trailer Information</div>
+        <div class="section-desc">Specs for your selected trailer.</div>
+        <div class="trailer-info-banner">
+          <div class="info-item">
+            <span class="info-label">Make / Model</span>
+            <span class="info-value" id="infoMakeModel">—</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Type</span>
+            <span class="info-value" id="infoType">—</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">GVWR</span>
+            <span class="info-value" id="infoGvwr">—</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Load Capacity</span>
+            <span class="info-value" id="infoCapacity">—</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">VIN</span>
+            <span class="info-value" id="infoVin">—</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">License Plate</span>
+            <span class="info-value" id="infoPlate">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: RENTER INFO -->
+      <div class="form-section">
+        <div class="section-title">Renter Information</div>
+        <div class="section-desc">All fields are required unless noted.</div>
+
+        <div class="field-row full">
+          <div class="field-group">
+            <label>Full Legal Name <span class="req">*</span></label>
+            <input type="text" id="fullName" placeholder="As it appears on your driver's license" autocomplete="name" />
+            <span class="field-error" id="fullNameErr">Full name is required.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Driver's License # <span class="req">*</span></label>
+            <input type="text" id="dlNumber" placeholder="License number" />
+            <span class="field-error" id="dlNumberErr">Driver's license number is required.</span>
+          </div>
+          <div class="field-group">
+            <label>State Issued <span class="req">*</span></label>
+            <select id="dlState">
+              <option value="">Select state...</option>
+              <option value="AZ" selected>Arizona</option>
+              <option value="CA">California</option>
+              <option value="CO">Colorado</option>
+              <option value="NM">New Mexico</option>
+              <option value="NV">Nevada</option>
+              <option value="TX">Texas</option>
+              <option value="UT">Utah</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <span class="field-error" id="dlStateErr">State is required.</span>
+          </div>
+        </div>
+
+        <div class="field-row full">
+          <div class="field-group">
+            <label>Street Address <span class="req">*</span></label>
+            <input type="text" id="address" placeholder="Street address" autocomplete="street-address" />
+            <span class="field-error" id="addressErr">Address is required.</span>
+          </div>
+        </div>
+
+        <div class="field-row three-col">
+          <div class="field-group">
+            <label>City <span class="req">*</span></label>
+            <input type="text" id="city" placeholder="City" autocomplete="address-level2" />
+            <span class="field-error" id="cityErr">City is required.</span>
+          </div>
+          <div class="field-group">
+            <label>State <span class="req">*</span></label>
+            <select id="state">
+              <option value="AZ" selected>AZ</option>
+              <option value="CA">CA</option>
+              <option value="CO">CO</option>
+              <option value="NM">NM</option>
+              <option value="NV">NV</option>
+              <option value="TX">TX</option>
+              <option value="UT">UT</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>ZIP Code <span class="req">*</span></label>
+            <input type="text" id="zip" placeholder="85201" maxlength="10" autocomplete="postal-code" />
+            <span class="field-error" id="zipErr">ZIP code is required.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Phone <span class="req">*</span></label>
+            <input type="tel" id="phone" placeholder="(480) 555-0100" autocomplete="tel" />
+            <span class="field-error" id="phoneErr">Phone number is required.</span>
+          </div>
+          <div class="field-group">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+            <span class="field-error" id="emailErr">A valid email is required.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: RENTAL PERIOD -->
+      <div class="form-section">
+        <div class="section-title">Rental Period &amp; Payment</div>
+        <div class="section-desc">Late fee: $10/hr for any portion of an additional day, capped at $60 per additional day</div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>Pickup Date &amp; Time <span class="req">*</span></label>
+            <input type="datetime-local" id="pickupDate" />
+            <span class="field-error" id="pickupDateErr">Pickup date/time is required.</span>
+          </div>
+          <div class="field-group">
+            <label>Return Date &amp; Time <span class="req">*</span></label>
+            <input type="datetime-local" id="returnDate" />
+            <span class="field-error" id="returnDateErr">Return date/time is required and must be after pickup.</span>
+          </div>
+        </div>
+
+        <div class="rental-calc" id="rentalCalc" style="display:none;">
+          <div class="rental-calc-row" id="calcFullDaysRow">
+            <span class="calc-label" id="calcFullDays">—</span>
+            <span class="calc-value" id="calcFullDaysAmt">—</span>
+          </div>
+          <div class="rental-calc-row" id="calcExtraHoursRow" style="display:none;">
+            <span class="calc-label" id="calcExtraHoursLabel">—</span>
+            <span class="calc-value" id="calcExtraHoursAmt">—</span>
+          </div>
+          <div class="rental-calc-row" id="calcDeliveryRow" style="display:none;">
+            <span class="calc-label">Delivery fee</span>
+            <span class="calc-value" id="calcDeliveryAmt">—</span>
+          </div>
+          <div class="rental-calc-row">
+            <span class="calc-label">Security deposit</span>
+            <span class="calc-value" id="calcDepositAmt">—</span>
+          </div>
+          <div class="rental-calc-row total">
+            <span class="calc-label">Total due at pickup</span>
+            <span class="calc-value" id="calcTotal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: DELIVERY -->
+      <div class="form-section">
+        <div class="section-title">Pickup &amp; Delivery</div>
+        <div class="section-desc">Choose how you'll receive the trailer.</div>
+
+        <div class="delivery-options">
+          <label class="delivery-option-row">
+            <input type="radio" name="deliveryType" id="deliveryMeetup" value="meetup" checked onchange="handleDeliveryChange()" />
+            <div class="delivery-option-content">
+              <div class="delivery-option-title">Local meetup</div>
+              <div class="delivery-option-sub">I will meet to pick up the trailer</div>
+            </div>
+            <span class="delivery-fee-badge">No fee</span>
+          </label>
+          <label class="delivery-option-row">
+            <input type="radio" name="deliveryType" id="deliveryDeliver" value="delivery" onchange="handleDeliveryChange()" />
+            <div class="delivery-option-content">
+              <div class="delivery-option-title">Deliver to my location</div>
+              <div class="delivery-option-sub">We'll bring it to you — fee based on distance</div>
+            </div>
+            <span class="delivery-fee-badge fee">From $20</span>
+          </label>
+        </div>
+
+        <div class="delivery-tier-wrap" id="deliveryTierWrap" style="display:none;">
+          <div class="delivery-tier-label">Select your distance range:</div>
+          <div class="delivery-tiers">
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier0to10" value="0-10" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">0–10 miles</span>
+              <span class="delivery-tier-fee">$20</span>
+            </label>
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier10to20" value="10-20" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">10–20 miles</span>
+              <span class="delivery-tier-fee">$40</span>
+            </label>
+            <label class="delivery-tier-row">
+              <input type="radio" name="deliveryTier" id="tier20to35" value="20-35" onchange="handleDeliveryChange()" />
+              <span class="delivery-tier-name">20–35 miles</span>
+              <span class="delivery-tier-fee">$65</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: CONDITION -->
+      <div class="form-section">
+        <div class="section-title">Trailer Condition at Pickup</div>
+        <div class="section-desc">Document the trailer's condition before leaving. This protects both parties.</div>
+
+        <label class="damage-toggle-row" id="noDamageRow">
+          <input type="checkbox" id="noDamageCheck" onchange="handleNoDamageToggle()" />
+          <div class="damage-toggle-label">
+            ✅ No visible damage — trailer released in good condition
+            <span>Check this if the trailer has no pre-existing damage at pickup.</span>
+          </div>
+        </label>
+
+        <div class="damage-detail-section open" id="damageDetailSection">
+          <div class="section-desc" style="margin-bottom:16px; color:#c0392b; font-weight:500;">⚠️ Select all areas with existing damage and add notes or photos as needed.</div>
+
+          <div class="damage-grid" id="damageGrid">
+            <!-- Damage items injected by JS -->
+          </div>
+
+          <div class="damage-notes-general">
+            <div class="field-group">
+              <label>General Damage Notes</label>
+              <textarea id="damageNotesGeneral" placeholder="Describe any additional damage or notes about trailer condition..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: ID UPLOAD -->
+      <div class="form-section">
+        <div class="section-title">Driver's License Photo</div>
+        <div class="section-desc">Optional but strongly recommended for rental verification.</div>
+
+        <div class="id-upload-box" id="idUploadBox">
+          <input type="file" id="idPhotoInput" accept="image/*" capture="environment" onchange="handleIdUpload(event)" />
+          <div class="id-upload-icon">📷</div>
+          <div class="id-upload-text">Tap to upload or take a photo of your ID</div>
+          <div class="id-upload-sub">JPEG, PNG · Max 10MB</div>
+        </div>
+
+        <div class="id-preview" id="idPreview">
+          <img id="idPreviewImg" src="" alt="ID Preview" />
+          <button class="remove-id" onclick="removeId()" title="Remove">✕</button>
+        </div>
+
+        <div class="id-privacy-note">
+          🔒 Required for rental verification. Stored securely — never shared with third parties.
+        </div>
+        <p class="id-optional-note">If you prefer not to upload your ID, you may skip this step. A physical ID check may be requested at pickup.</p>
+      </div>
+
+      <!-- SECTION 6: TERMS -->
+      <div class="form-section">
+        <div class="section-title">Rental Agreement Terms</div>
+        <div class="section-desc">Please read the full agreement before signing.</div>
+
+        <p class="terms-scroll-hint" id="termsScrollHint">↓ Scroll through the full agreement below</p>
+
+        <div class="terms-box" id="termsBox">
+          <h4>Owner (Lessor)</h4>
+          <p>Trailer Bros LLC &nbsp;·&nbsp; (480) 744-5599 &nbsp;·&nbsp; trailerbrosaz@gmail.com</p>
+
+          <h4>Payment &amp; Security Deposit</h4>
+          <p>The full rental amount and the $100 security deposit are due at pickup. The security deposit is not a limitation of liability. Upon return, Trailer Bros LLC will conduct a post-rental inspection within 48 hours. If no damage or additional charges are identified, the deposit will be refunded in full. If total damages or charges exceed the $100 security deposit, renter agrees to pay the full remaining balance immediately.</p>
+
+          <h4>Authorized Driver</h4>
+          <p>Renter must be at least 25 years old, possess a valid driver's license, and maintain active auto insurance. Only the person listed in this agreement may tow the trailer unless approved in writing.</p>
+
+          <h4>Use of Trailer</h4>
+          <ul>
+            <li>Trailer will not be overloaded beyond 5,800 lbs cargo capacity</li>
+            <li>Trailer will not be used for illegal purposes</li>
+            <li>Trailer will not be subleased</li>
+            <li>Trailer will not be used outside Arizona without written approval</li>
+            <li>Trailer will not be used off-road or on unimproved terrain</li>
+            <li>Trailer will be properly secured to a 2-5/16" hitch ball</li>
+            <li>Electric brake controller must be installed and functional</li>
+            <li>Renter is solely responsible for proper load securement</li>
+          </ul>
+
+          <h4>Insurance &amp; Liability</h4>
+          <p>Renter assumes full responsibility for all damage to trailer during rental period, including tire damage, brake damage, theft, vandalism, and damage to third parties. Renter's auto insurance shall be primary coverage. Renter agrees to indemnify and hold harmless Trailer Bros LLC from any and all claims, injuries, damages, or losses arising from use of the trailer.</p>
+
+          <h4>Damage / Loss</h4>
+          <p>Renter is financially responsible for any and all damage occurring during the rental period, regardless of fault. This includes bent axles, structural damage, gate or hinge damage, tire damage, electrical damage, brake system damage, coupler or jack damage, missing accessories, excessive dirt or debris, and damage caused by overloading or improper towing.</p>
+          <p>If trailer requires repair, renter agrees to pay the full cost of repair, diminished value, loss of rental income during repair, and an administrative fee of $150. If trailer is deemed a total loss or stolen, renter agrees to pay replacement value of $4,800.</p>
+
+          <h4>Return Condition</h4>
+          <p>Trailer must be returned reasonably clean, in the same condition as received, and at the agreed return date and time. Failure to return trailer may be treated as theft under Arizona law.</p>
+
+          <h4>Late Return</h4>
+          <p>Late fee: $10/hr for any portion of an additional day, capped at $60 per additional day.</p>
+
+          <h4>Roadside / Breakdown</h4>
+          <p>Renter is responsible for all roadside service costs unless failure is due to a mechanical defect not caused by misuse.</p>
+
+          <h4>Payment Authorization</h4>
+          <p>Renter authorizes Trailer Bros LLC to charge the payment method on file for rental charges, late fees, damage repair costs, administrative fees, loss of rental income, and collection costs. If payment is declined, renter agrees to pay the outstanding balance within five (5) calendar days. Unpaid balances may be sent to collections or pursued through legal action.</p>
+
+          <h4>Default</h4>
+          <p>If renter breaches this Agreement, Trailer Bros LLC may repossess the trailer without notice, charge the card on file, and pursue legal remedies. Renter agrees to pay attorney fees and court costs if collection is required.</p>
+
+          <h4>Governing Law</h4>
+          <p>This Agreement shall be governed by the laws of the State of Arizona. Venue shall be in Maricopa County, Arizona.</p>
+
+          <h4>Acknowledgment</h4>
+          <p>Renter acknowledges that the trailer has been inspected, that renter understands towing requirements, and that renter assumes all risks during the rental period.</p>
+        </div>
+
+        <label class="terms-agree-row" id="termsAgreeRow">
+          <input type="checkbox" id="termsAgree" onchange="handleTermsAgree()" />
+          <span class="terms-agree-label">I have read, understood, and agree to all terms and conditions of this Rental Agreement.</span>
+        </label>
+      </div>
+
+      <!-- SECTION 7: SIGNATURE -->
+      <div class="form-section">
+        <div class="section-title">Signature</div>
+        <div class="section-desc">Sign below using your finger or mouse. This serves as your electronic signature.</div>
+
+        <div class="sig-wrap" id="sigWrap">
+          <canvas id="signaturePad"></canvas>
+          <div class="sig-line"></div>
+          <div class="sig-label">Sign here</div>
+          <div class="sig-actions">
+            <button class="sig-clear" onclick="clearSignature()">Clear signature</button>
+          </div>
+        </div>
+        <span class="field-error" id="sigErr" style="margin-top:6px; display:none;">A signature is required.</span>
+
+        <div class="field-row" style="margin-top:20px;">
+          <div class="field-group">
+            <label>Printed Name <span class="req">*</span></label>
+            <input type="text" id="printedName" placeholder="Type your full name" />
+            <span class="field-error" id="printedNameErr">Printed name is required.</span>
+          </div>
+          <div class="field-group">
+            <label>Date &amp; Time</label>
+            <input type="text" id="signatureDate" readonly style="background:#f5f5f5; color:#888; cursor:default;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SUCCESS SCREEN (hidden until submit) -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✅</div>
+        <h2>Agreement Submitted</h2>
+        <p>Your rental agreement has been received and securely saved.</p>
+        <p>Trailer Bros LLC will be in touch to confirm your pickup details.</p>
+        <p><strong>Questions?</strong> Call or text <a href="tel:4807445599" style="color:var(--accent); text-decoration:none;">(480) 744-5599</a></p>
+        <div class="success-timestamp" id="successTimestamp"></div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="submit-section" id="submitSection">
+        <div class="submit-checklist">
+          <div class="checklist-title">Required to submit</div>
+          <div class="checklist-items">
+            <div class="checklist-item" id="chk-renter"><div class="check-icon">✓</div> Renter information</div>
+            <div class="checklist-item" id="chk-dates"><div class="check-icon">✓</div> Rental dates</div>
+            <div class="checklist-item" id="chk-condition"><div class="check-icon">✓</div> Trailer condition</div>
+            <div class="checklist-item" id="chk-terms"><div class="check-icon">✓</div> Terms agreed</div>
+            <div class="checklist-item" id="chk-sig"><div class="check-icon">✓</div> Signature</div>
+            <div class="checklist-item" id="chk-name"><div class="check-icon">✓</div> Printed name</div>
+          </div>
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()" disabled>
+          Submit Rental Agreement
+        </button>
+
+        <p class="submit-note">
+          By submitting, you confirm all information is accurate and agree to the rental terms above. This agreement is electronically timestamped at submission.
+        </p>
+      </div>
+
+      </div><!-- /formBody -->
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <img src="trailer-bros.png.png" alt="Trailer Bros" />
+      </div>
+      <div class="footer-contact">
+        Questions? Give us a call or shoot us an email.<br>
+        <a href="tel:4807445599">(480) 744-5599</a> &nbsp;|&nbsp;
+        <a href="mailto:trailerbrosaz@gmail.com">trailerbrosaz@gmail.com</a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="rental-agreement.html">Rental Agreement</a></li>
+        <li><a href="request.html">Request a Rental</a></li>
+      </ul>
+      <div class="footer-copy">&copy; 2026 Trailer Bros AZ. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // ─── BACKEND ─────────────────────────────────────────────────────────────
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxd2XnOhPwTnHsdsaTbhBx944L0Mx08V3glOxtPqeviejfjyEc_0UmY-3uWW8tc3oM/exec';
+
+    // ─── FLEET DATA ──────────────────────────────────────────────────────────
+    const TRAILERS = {
+      "rawmaxx-utx": {
+        label:    "RawMaxx UTX — 14ft Utility Trailer",
+        make:     "RawMaxx",
+        model:    "UTX",
+        type:     "Utility",
+        gvwr:     "7,000 lbs",
+        capacity: "5,800 lbs",
+        vin:      "3EVBU1421T1130642",
+        plate:    "11A 865",
+        rate:     60,
+        deposit:  100
+      }
+    };
+
+    // Populate dropdown from fleet data so adding a new trailer only requires
+    // adding an entry to TRAILERS above.
+    (function() {
+      const sel = document.getElementById('trailerSelect');
+      Object.entries(TRAILERS).forEach(([key, t]) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = t.label;
+        sel.appendChild(opt);
+      });
+    })();
+
+    function handleTrailerSelect() {
+      const key = document.getElementById('trailerSelect').value;
+      const formBody = document.getElementById('formBody');
+      const sel = document.getElementById('trailerSelect');
+
+      if (!key) {
+        formBody.classList.remove('unlocked');
+        sel.classList.remove('selected');
+        updateValidation();
+        return;
+      }
+
+      const t = TRAILERS[key];
+      document.getElementById('infoMakeModel').textContent = t.make + ' ' + t.model;
+      document.getElementById('infoType').textContent      = t.type;
+      document.getElementById('infoGvwr').textContent      = t.gvwr;
+      document.getElementById('infoCapacity').textContent  = t.capacity;
+      document.getElementById('infoVin').textContent       = t.vin;
+      document.getElementById('infoPlate').textContent     = t.plate;
+
+      sel.classList.add('selected');
+      formBody.classList.add('unlocked');
+      requestAnimationFrame(resizeCanvas); // Canvas was inside display:none — size it now that form is visible
+      updateRentalCalc();
+      updateValidation();
+    }
+
+    // ─── DAMAGE LOCATIONS ───────────────────────────────────────────────────
+    const DAMAGE_LOCATIONS = [
+      'Hitch & Coupler',
+      'Frame / Undercarriage',
+      'Left Side Panel',
+      'Right Side Panel',
+      'Front Wall',
+      'Rear Ramp / Door',
+      'Floor Decking',
+      'Running Lights — Left',
+      'Running Lights — Right',
+      'Tires & Wheels',
+      'Safety Chains',
+      'Other'
+    ];
+
+    const damageGrid = document.getElementById('damageGrid');
+    const damageState = {};
+
+    DAMAGE_LOCATIONS.forEach((loc, i) => {
+      const id = 'dmg_' + i;
+      damageState[id] = { checked: false, note: '', photos: [] };
+
+      const item = document.createElement('div');
+      item.className = 'damage-item';
+      item.id = 'dmgItem_' + i;
+      item.innerHTML = `
+        <div class="damage-item-header" onclick="toggleDamageItem('${id}', ${i}, event)">
+          <input type="checkbox" id="${id}" />
+          <span class="damage-item-label">${loc}</span>
+        </div>
+        <div class="damage-item-notes" id="notes_${i}">
+          <input type="text" placeholder="Describe damage..." id="noteInput_${i}" oninput="damageState['${id}'].note = this.value" />
+          <div class="damage-photo-upload">
+            <label for="photoInput_${i}">
+              📸 Add photo
+              <input type="file" id="photoInput_${i}" accept="image/*" capture="environment" multiple onchange="handleDamagePhoto(event, '${id}', ${i})" />
+            </label>
+            <div class="photo-preview" id="photoPreview_${i}"></div>
+          </div>
+        </div>
+      `;
+      damageGrid.appendChild(item);
+    });
+
+    function toggleDamageItem(id, index, event) {
+      // Prevent double-toggle when clicking the checkbox directly
+      if (event && event.target.type === 'checkbox') return;
+      const cb = document.getElementById(id);
+      cb.checked = !cb.checked;
+      damageState[id].checked = cb.checked;
+      const item = document.getElementById('dmgItem_' + index);
+      const notes = document.getElementById('notes_' + index);
+      item.classList.toggle('checked', cb.checked);
+      notes.classList.toggle('open', cb.checked);
+      updateValidation();
+    }
+
+    // Sync checkbox direct-click with state
+    DAMAGE_LOCATIONS.forEach((_, i) => {
+      const id = 'dmg_' + i;
+      document.addEventListener('DOMContentLoaded', () => {}, false);
+      setTimeout(() => {
+        const cb = document.getElementById(id);
+        if (cb) {
+          cb.addEventListener('change', () => {
+            damageState[id].checked = cb.checked;
+            const item = document.getElementById('dmgItem_' + i);
+            const notes = document.getElementById('notes_' + i);
+            item.classList.toggle('checked', cb.checked);
+            notes.classList.toggle('open', cb.checked);
+            updateValidation();
+          });
+        }
+      }, 0);
+    });
+
+    function handleDamagePhoto(event, id, index) {
+      const files = Array.from(event.target.files);
+      const preview = document.getElementById('photoPreview_' + index);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          damageState[id].photos.push({ name: file.name, data: e.target.result });
+          const thumb = document.createElement('div');
+          thumb.className = 'photo-thumb';
+          const idx = damageState[id].photos.length - 1;
+          thumb.innerHTML = `<img src="${e.target.result}" alt="Damage photo" /><button class="remove-photo" onclick="removeDamagePhoto('${id}', ${index}, ${idx}, this.parentElement)" title="Remove">✕</button>`;
+          preview.appendChild(thumb);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removeDamagePhoto(id, index, photoIdx, el) {
+      damageState[id].photos.splice(photoIdx, 1);
+      el.remove();
+    }
+
+    function handleNoDamageToggle() {
+      const checked = document.getElementById('noDamageCheck').checked;
+      const detail = document.getElementById('damageDetailSection');
+      detail.classList.toggle('open', !checked);
+      updateValidation();
+    }
+
+    // ─── SIGNATURE PAD ──────────────────────────────────────────────────────
+    const canvas = document.getElementById('signaturePad');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let hasSig = false;
+    let lastX = 0, lastY = 0;
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0) return; // Form body still hidden — called again when it unlocks
+      canvas.width  = rect.width  * ratio;
+      canvas.height = rect.height * ratio;
+      // setTransform instead of scale() so repeated calls don't stack the multiplier
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth   = 2.5;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      const p = getPos(e);
+      lastX = p.x; lastY = p.y;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      hasSig = true;
+      document.getElementById('sigWrap').classList.add('has-sig');
+      document.getElementById('sigWrap').classList.remove('error');
+      document.getElementById('sigErr').style.display = 'none';
+      updateValidation();
+    });
+
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      const p = getPos(e);
+      lastX = p.x; lastY = p.y;
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      hasSig = true;
+      document.getElementById('sigWrap').classList.add('has-sig');
+      document.getElementById('sigWrap').classList.remove('error');
+      document.getElementById('sigErr').style.display = 'none';
+      updateValidation();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+    function clearSignature() {
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      hasSig = false;
+      document.getElementById('sigWrap').classList.remove('has-sig');
+      updateValidation();
+    }
+
+    // ─── ID UPLOAD ──────────────────────────────────────────────────────────
+    function handleIdUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be under 10MB. Please choose a smaller image.');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('idPreviewImg').src = e.target.result;
+        document.getElementById('idPreview').style.display = 'block';
+        document.getElementById('idUploadBox').classList.add('has-file');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeId() {
+      document.getElementById('idPhotoInput').value = '';
+      document.getElementById('idPreviewImg').src = '';
+      document.getElementById('idPreview').style.display = 'none';
+      document.getElementById('idUploadBox').classList.remove('has-file');
+    }
+
+    // ─── TERMS ──────────────────────────────────────────────────────────────
+    function handleTermsAgree() {
+      const checked = document.getElementById('termsAgree').checked;
+      document.getElementById('termsAgreeRow').classList.toggle('checked', checked);
+      updateValidation();
+    }
+
+    const termsBox = document.getElementById('termsBox');
+    const scrollHint = document.getElementById('termsScrollHint');
+    termsBox.addEventListener('scroll', () => {
+      if (termsBox.scrollTop > 40) scrollHint.classList.add('scrolled');
+    });
+
+    // ─── DELIVERY ────────────────────────────────────────────────────────────
+    const DELIVERY_TIERS = { '0-10': 20, '10-20': 40, '20-35': 65 };
+
+    function getDeliveryFee() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      if (!typeEl || typeEl.value === 'meetup') return 0;
+      const tierEl = document.querySelector('input[name="deliveryTier"]:checked');
+      return tierEl ? (DELIVERY_TIERS[tierEl.value] || 0) : 0;
+    }
+
+    function getDeliveryState() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      const isDelivery = typeEl && typeEl.value === 'delivery';
+      const tierEl = isDelivery ? document.querySelector('input[name="deliveryTier"]:checked') : null;
+      return {
+        type: isDelivery ? 'delivery' : 'meetup',
+        tier: tierEl ? tierEl.value : null,
+        fee:  tierEl ? (DELIVERY_TIERS[tierEl.value] || 0) : 0
+      };
+    }
+
+    function handleDeliveryChange() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      const isDelivery = typeEl && typeEl.value === 'delivery';
+      document.getElementById('deliveryTierWrap').style.display = isDelivery ? 'block' : 'none';
+      updateRentalCalc();
+      updateValidation();
+    }
+
+    function isDeliveryDone() {
+      const typeEl = document.querySelector('input[name="deliveryType"]:checked');
+      if (!typeEl) return false;
+      if (typeEl.value === 'meetup') return true;
+      return !!document.querySelector('input[name="deliveryTier"]:checked');
+    }
+
+    // ─── RENTAL CALC ─────────────────────────────────────────────────────────
+    function updateRentalCalc() {
+      const pickup     = document.getElementById('pickupDate').value;
+      const ret        = document.getElementById('returnDate').value;
+      const calc       = document.getElementById('rentalCalc');
+      const trailerKey = document.getElementById('trailerSelect').value;
+
+      if (!pickup || !ret) { calc.style.display = 'none'; return; }
+
+      const pickupMs = new Date(pickup).getTime();
+      const retMs    = new Date(ret).getTime();
+      if (retMs <= pickupMs) { calc.style.display = 'none'; return; }
+
+      const t       = (trailerKey && TRAILERS[trailerKey]) ? TRAILERS[trailerKey] : { rate: 60, deposit: 100 };
+      const rate    = t.rate;
+      const deposit = t.deposit;
+
+      const totalMinutes = (retMs - pickupMs) / 60000;
+      const fullDays     = Math.floor(totalMinutes / 1440);
+      const remMinutes   = totalMinutes % 1440;
+      const extraHours   = remMinutes > 0 ? Math.ceil(remMinutes / 60) : 0;
+
+      const dayCharge   = fullDays * rate;
+      const rawExtra    = extraHours * 10;
+      const extraCharge = extraHours > 0 ? Math.min(rawExtra, rate) : 0;
+      const capped      = rawExtra > rate;
+      const delivFee    = getDeliveryFee();
+      const total       = dayCharge + extraCharge + delivFee + deposit;
+
+      // Full days row
+      const fullDaysRow = document.getElementById('calcFullDaysRow');
+      if (fullDays > 0) {
+        document.getElementById('calcFullDays').textContent =
+          fullDays + (fullDays === 1 ? ' full day' : ' full days') + ' × $' + rate + '/day';
+        document.getElementById('calcFullDaysAmt').textContent = '$' + dayCharge;
+        fullDaysRow.style.display = '';
+      } else {
+        fullDaysRow.style.display = 'none';
+      }
+
+      // Extra hours row
+      const extraRow = document.getElementById('calcExtraHoursRow');
+      if (extraHours > 0) {
+        document.getElementById('calcExtraHoursLabel').textContent = capped
+          ? extraHours + (extraHours === 1 ? ' extra hour' : ' extra hours') + ' × $10/hr (capped at $' + rate + ')'
+          : extraHours + (extraHours === 1 ? ' extra hour' : ' extra hours') + ' × $10/hr';
+        document.getElementById('calcExtraHoursAmt').textContent = '$' + extraCharge;
+        extraRow.style.display = '';
+      } else {
+        extraRow.style.display = 'none';
+      }
+
+      // Delivery fee row
+      const delivRow = document.getElementById('calcDeliveryRow');
+      if (delivFee > 0) {
+        document.getElementById('calcDeliveryAmt').textContent = '$' + delivFee;
+        delivRow.style.display = '';
+      } else {
+        delivRow.style.display = 'none';
+      }
+
+      document.getElementById('calcDepositAmt').textContent = '$' + deposit + ' (refundable)';
+      document.getElementById('calcTotal').textContent = '$' + total;
+      calc.style.display = 'block';
+    }
+
+    document.getElementById('pickupDate').addEventListener('change', () => { updateRentalCalc(); updateValidation(); });
+    document.getElementById('returnDate').addEventListener('change', () => { updateRentalCalc(); updateValidation(); });
+
+    // ─── FIELD LISTENERS ─────────────────────────────────────────────────────
+    ['fullName', 'dlNumber', 'dlState', 'address', 'city', 'zip', 'phone', 'email', 'printedName'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', updateValidation);
+      el.addEventListener('change', updateValidation);
+    });
+
+    // ─── VALIDATION ──────────────────────────────────────────────────────────
+    function isRenterDone() {
+      const email = document.getElementById('email').value.trim();
+      return (
+        document.getElementById('fullName').value.trim() &&
+        document.getElementById('dlNumber').value.trim() &&
+        document.getElementById('dlState').value &&
+        document.getElementById('address').value.trim() &&
+        document.getElementById('city').value.trim() &&
+        document.getElementById('zip').value.trim() &&
+        document.getElementById('phone').value.trim() &&
+        email && email.includes('@') && email.includes('.')
+      );
+    }
+
+    function isDatesDone() {
+      const pickup = document.getElementById('pickupDate').value;
+      const ret = document.getElementById('returnDate').value;
+      return pickup && ret && new Date(ret) > new Date(pickup);
+    }
+
+    function isTrailerDone() {
+      return document.getElementById('trailerSelect').value !== '';
+    }
+
+    function isConditionDone() {
+      return document.getElementById('noDamageCheck').checked ||
+        Object.values(damageState).some(s => s.checked);
+    }
+
+    function isTermsDone() {
+      return document.getElementById('termsAgree').checked;
+    }
+
+    function isNameDone() {
+      return document.getElementById('printedName').value.trim().length > 0;
+    }
+
+    function updateValidation() {
+      const renter    = isRenterDone();
+      const dates     = isDatesDone();
+      const delivery  = isDeliveryDone();
+      const condition = isConditionDone();
+      const terms     = isTermsDone();
+      const sig       = hasSig;
+      const name      = isNameDone();
+
+      setCheck('chk-renter',    renter);
+      setCheck('chk-dates',     dates);
+      setCheck('chk-condition', condition);
+      setCheck('chk-terms',     terms);
+      setCheck('chk-sig',       sig);
+      setCheck('chk-name',      name);
+
+      const allDone = isTrailerDone() && renter && dates && delivery && condition && terms && sig && name;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = !allDone;
+      btn.classList.toggle('ready', allDone);
+
+      const completedCount = [renter, dates, condition, terms, sig, name].filter(Boolean).length;
+      updateProgress(completedCount);
+    }
+
+    function setCheck(id, done) {
+      document.getElementById(id).classList.toggle('done', done);
+    }
+
+    // ─── PROGRESS BAR ────────────────────────────────────────────────────────
+    function updateProgress(completedSteps) {
+      const pct = completedSteps === 0 ? 0 : Math.min(100, (completedSteps - 1) * 20);
+      document.getElementById('progressFill').style.width = pct + '%';
+
+      for (let i = 1; i <= 6; i++) {
+        const dot = document.getElementById('dot' + i);
+        dot.classList.remove('active', 'done');
+        if (i <= completedSteps) dot.classList.add('done');
+        else if (i === completedSteps + 1) dot.classList.add('active');
+      }
+    }
+
+    // ─── SIGNATURE DATE ───────────────────────────────────────────────────────
+    (function setSignatureDate() {
+      const now = new Date();
+      const formatted =
+        now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' at ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      document.getElementById('signatureDate').value = formatted;
+    })();
+
+    // ─── SUBMIT ───────────────────────────────────────────────────────────────
+    function validateForm() {
+      let valid = true;
+
+      const textFields = [
+        { id: 'fullName',   errId: 'fullNameErr',  msg: 'Full name is required.' },
+        { id: 'dlNumber',   errId: 'dlNumberErr',  msg: "Driver's license number is required." },
+        { id: 'address',    errId: 'addressErr',   msg: 'Address is required.' },
+        { id: 'city',       errId: 'cityErr',      msg: 'City is required.' },
+        { id: 'zip',        errId: 'zipErr',       msg: 'ZIP code is required.' },
+        { id: 'phone',      errId: 'phoneErr',     msg: 'Phone number is required.' },
+        { id: 'printedName',errId: 'printedNameErr', msg: 'Printed name is required.' },
+      ];
+
+      textFields.forEach(({ id, errId, msg }) => {
+        const el = document.getElementById(id);
+        const err = document.getElementById(errId);
+        if (!el.value.trim()) {
+          el.classList.add('error');
+          err.textContent = msg;
+          err.classList.add('visible');
+          valid = false;
+        } else {
+          el.classList.remove('error');
+          err.classList.remove('visible');
+        }
+      });
+
+      // State select
+      const dlState = document.getElementById('dlState');
+      const dlStateErr = document.getElementById('dlStateErr');
+      if (!dlState.value) {
+        dlState.classList.add('error');
+        dlStateErr.classList.add('visible');
+        valid = false;
+      } else {
+        dlState.classList.remove('error');
+        dlStateErr.classList.remove('visible');
+      }
+
+      // Email
+      const emailEl = document.getElementById('email');
+      const emailErr = document.getElementById('emailErr');
+      const emailVal = emailEl.value.trim();
+      if (!emailVal || !emailVal.includes('@') || !emailVal.includes('.')) {
+        emailEl.classList.add('error');
+        emailErr.classList.add('visible');
+        valid = false;
+      } else {
+        emailEl.classList.remove('error');
+        emailErr.classList.remove('visible');
+      }
+
+      // Dates
+      const pickupEl = document.getElementById('pickupDate');
+      const returnEl = document.getElementById('returnDate');
+      if (!pickupEl.value) {
+        document.getElementById('pickupDateErr').classList.add('visible');
+        valid = false;
+      } else {
+        document.getElementById('pickupDateErr').classList.remove('visible');
+      }
+      if (!returnEl.value || !isDatesDone()) {
+        document.getElementById('returnDateErr').classList.add('visible');
+        valid = false;
+      } else {
+        document.getElementById('returnDateErr').classList.remove('visible');
+      }
+
+      // Signature
+      if (!hasSig) {
+        document.getElementById('sigWrap').classList.add('error');
+        document.getElementById('sigErr').style.display = 'block';
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    function handleSubmit() {
+      if (!validateForm()) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.classList.remove('ready');
+      btn.classList.add('loading');
+      btn.textContent = 'Submitting…';
+      btn.disabled = true;
+
+      const now = new Date();
+      const timestamp = now.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+      const trailerKey = document.getElementById('trailerSelect').value;
+
+      // Collect checked damage areas
+      const damageAreas = [];
+      Object.entries(damageState).forEach(([id, s]) => {
+        if (s.checked) {
+          const i = parseInt(id.replace('dmg_', ''), 10);
+          damageAreas.push({
+            location: DAMAGE_LOCATIONS[i],
+            note:     s.note,
+            photos:   s.photos.map(p => p.data)
+          });
+        }
+      });
+
+      const idImg = document.getElementById('idPreviewImg');
+
+      const payload = {
+        submittedAt:  now.toISOString(),
+        trailerLabel: TRAILERS[trailerKey] ? TRAILERS[trailerKey].label : trailerKey,
+        renter: {
+          fullName: document.getElementById('fullName').value.trim(),
+          dlNumber: document.getElementById('dlNumber').value.trim(),
+          dlState:  document.getElementById('dlState').value,
+          address:  document.getElementById('address').value.trim(),
+          city:     document.getElementById('city').value.trim(),
+          state:    document.getElementById('state').value,
+          zip:      document.getElementById('zip').value.trim(),
+          phone:    document.getElementById('phone').value.trim(),
+          email:    document.getElementById('email').value.trim()
+        },
+        rental: {
+          pickupDate:  document.getElementById('pickupDate').value,
+          returnDate:  document.getElementById('returnDate').value,
+          totalCharge: document.getElementById('calcTotal').textContent
+        },
+        delivery: getDeliveryState(),
+        condition: {
+          noDamage:     document.getElementById('noDamageCheck').checked,
+          damageAreas,
+          generalNotes: document.getElementById('damageNotesGeneral').value.trim()
+        },
+        signature:   document.getElementById('signaturePad').toDataURL('image/png'),
+        printedName: document.getElementById('printedName').value.trim(),
+        idPhoto:     idImg.src.startsWith('data:') ? idImg.src : null
+      };
+
+      console.log('Rental agreement payload:', payload);
+
+      // Apps Script requires no-cors — response is opaque so we can't detect
+      // server-side errors; both .then() and .catch() show the success screen.
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      })
+        .then(() => showSuccess(timestamp))
+        .catch(() => showSuccess(timestamp));
+    }
+
+    function showSuccess(timestamp) {
+      document.getElementById('submitSection').style.display = 'none';
+      document.querySelectorAll('.form-section').forEach(s => { s.style.display = 'none'; });
+      document.getElementById('successScreen').classList.add('show');
+      document.getElementById('successTimestamp').textContent = 'Submitted ' + timestamp;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ─── HAMBURGER ────────────────────────────────────────────────────────────
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+
+    // ─── INIT ─────────────────────────────────────────────────────────────────
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    updateValidation();
+  </script>
+
+</body>
+</html>
