@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-label="TB Logo">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="12" dy="14" stdDeviation="4" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+    <linearGradient id="whiteBevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="58%" stop-color="#F2F2EF"/>
+      <stop offset="100%" stop-color="#C9C9C6"/>
+    </linearGradient>
+    <linearGradient id="orangeBevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF7A24"/>
+      <stop offset="58%" stop-color="#F25B1C"/>
+      <stop offset="100%" stop-color="#B93B0E"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#shadow)" font-family="Impact, 'Arial Black', 'DejaVu Sans Condensed', sans-serif" font-style="italic" font-weight="900" font-size="430">
+    <!-- black outside -->
+    <text x="75" y="445" fill="none" stroke="#050505" stroke-width="54" paint-order="stroke">T</text>
+    <text x="390" y="445" fill="none" stroke="#050505" stroke-width="54" paint-order="stroke">B</text>
+
+    <!-- white outline -->
+    <text x="75" y="445" fill="none" stroke="#F5F5F2" stroke-width="34" paint-order="stroke">T</text>
+    <text x="390" y="445" fill="none" stroke="#F5F5F2" stroke-width="34" paint-order="stroke">B</text>
+
+    <!-- charcoal separation -->
+    <text x="75" y="445" fill="url(#whiteBevel)" stroke="#161819" stroke-width="12" paint-order="stroke">T</text>
+    <text x="390" y="445" fill="url(#orangeBevel)" stroke="#161819" stroke-width="12" paint-order="stroke">B</text>
+  </g>
+</svg>
