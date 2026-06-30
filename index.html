@@ -157,11 +157,14 @@
     header::before {
       content: "";
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 220px;
-      background: linear-gradient(to bottom, transparent, var(--bg-dark));
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        transparent 65%,
+        rgba(28,31,35,0.55) 85%,
+        var(--bg-dark) 100%
+      );
       z-index: 1;
       pointer-events: none;
     }
