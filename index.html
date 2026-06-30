@@ -721,11 +721,48 @@
       text-align: center;
     }
 
-    .testimonial-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+    .testimonial-carousel-wrap {
+      position: relative;
       margin-top: 32px;
+      overflow: hidden;
+    }
+
+    .testimonial-carousel-wrap::before,
+    .testimonial-carousel-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .testimonial-carousel-wrap::before {
+      left: 0;
+      background: linear-gradient(to right, var(--bg-dark, #1C1F23), transparent);
+    }
+
+    .testimonial-carousel-wrap::after {
+      right: 0;
+      background: linear-gradient(to left, var(--bg-dark, #1C1F23), transparent);
+    }
+
+    .testimonial-grid {
+      display: flex;
+      gap: 24px;
+      width: max-content;
+      animation: testimonialScroll 18s linear infinite;
+      padding: 8px 4px;
+    }
+
+    .testimonial-carousel-wrap:hover .testimonial-grid {
+      animation-play-state: paused;
+    }
+
+    @keyframes testimonialScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     .testimonial-card {
@@ -734,13 +771,20 @@
       border-radius: 16px;
       padding: 36px 28px;
       text-align: left;
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      width: 340px;
+      flex-shrink: 0;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .testimonial-card:hover {
-      transform: translateY(-4px);
       border-color: var(--accent);
       box-shadow: 0 8px 32px rgba(232,98,10,0.15);
+    }
+
+    @media (max-width: 700px) {
+      .testimonial-card {
+        width: 80vw;
+      }
     }
 
     .testimonial-stars {
@@ -793,11 +837,6 @@
       text-decoration: underline;
     }
 
-    @media (max-width: 700px) {
-      .testimonial-grid {
-        grid-template-columns: 1fr;
-      }
-    }
 
     .service-area-section {
       max-width: 900px;
@@ -869,10 +908,6 @@
 
     .trust-item:hover {
       transform: translateY(-3px);
-    }
-
-    .testimonial-card {
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
     .hero-cta {
@@ -959,29 +994,57 @@
   <!-- TESTIMONIALS -->
   <section id="testimonials" class="testimonial-section">
     <h2 class="section-heading fade-in-up">What Renters Say</h2>
-    <div class="testimonial-grid">
-      <div class="testimonial-card fade-in-up" style="transition-delay:0s">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-quote">"On time, great pricing, nice trailer, and easy to communicate with. Would highly recommend Colton for your trailer rental needs."</p>
-        <div class="testimonial-author">
-          <span class="testimonial-name">Bob</span>
-          <span class="testimonial-source">Facebook Marketplace</span>
+    <div class="testimonial-carousel-wrap">
+      <div class="testimonial-grid">
+        <!-- original set -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"On time, great pricing, nice trailer, and easy to communicate with. Would highly recommend Colton for your trailer rental needs."</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Bob</span>
+            <span class="testimonial-source">Facebook Marketplace</span>
+          </div>
         </div>
-      </div>
-      <div class="testimonial-card fade-in-up" style="transition-delay:0.15s">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-quote">"Quick, easy and perfect for what we needed!"</p>
-        <div class="testimonial-author">
-          <span class="testimonial-name">Anastasia F.</span>
-          <span class="testimonial-source">Google Review</span>
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"Quick, easy and perfect for what we needed!"</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Anastasia F.</span>
+            <span class="testimonial-source">Google Review</span>
+          </div>
         </div>
-      </div>
-      <div class="testimonial-card fade-in-up" style="transition-delay:0.3s">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-quote">"The trailer was in really good condition and perfect what I needed. Colton was responsive and helpful as well!"</p>
-        <div class="testimonial-author">
-          <span class="testimonial-name">Jordan S.</span>
-          <span class="testimonial-source">Neighborstrailer.com</span>
+        <div class="testimonial-card">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"The trailer was in really good condition and perfect what I needed. Colton was responsive and helpful as well!"</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Jordan S.</span>
+            <span class="testimonial-source">Neighborstrailer.com</span>
+          </div>
+        </div>
+        <!-- duplicate set for seamless loop -->
+        <div class="testimonial-card" aria-hidden="true">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"On time, great pricing, nice trailer, and easy to communicate with. Would highly recommend Colton for your trailer rental needs."</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Bob</span>
+            <span class="testimonial-source">Facebook Marketplace</span>
+          </div>
+        </div>
+        <div class="testimonial-card" aria-hidden="true">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"Quick, easy and perfect for what we needed!"</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Anastasia F.</span>
+            <span class="testimonial-source">Google Review</span>
+          </div>
+        </div>
+        <div class="testimonial-card" aria-hidden="true">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"The trailer was in really good condition and perfect what I needed. Colton was responsive and helpful as well!"</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Jordan S.</span>
+            <span class="testimonial-source">Neighborstrailer.com</span>
+          </div>
         </div>
       </div>
     </div>
