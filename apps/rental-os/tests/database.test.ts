@@ -13,3 +13,22 @@ describe('authoritative overlap protection',()=>{
  it('allows cancelled reservations to release availability',()=>{addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z','CANCELLED');expect(()=>addReservation('2027-01-10T09:00:00Z','2027-01-10T10:00:00Z')).not.toThrow()});
  it('prevents an update from moving into occupied time',()=>{addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z');addReservation('2027-01-11T08:00:00Z','2027-01-11T12:00:00Z');expect(()=>db.prepare("UPDATE reservations SET pickup_at='2027-01-10T09:00:00Z',return_at='2027-01-10T11:00:00Z' WHERE id=2").run()).toThrow(/TRAILER_SCHEDULE_CONFLICT/)});
 });
+
+describe('Version 1B persistence rules',()=>{
+ it('creates lifecycle records and tracks both migrations',()=>{
+  const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row=>(row as {name:string}).name);
+  expect(tables).toEqual(expect.arrayContaining(['condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events']));
+  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:2});
+ });
+ it('requires damage notes for a retained deposit decision',()=>{
+  addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z','INSPECTION_PENDING');
+  expect(()=>db.prepare("INSERT INTO deposit_decisions(reservation_id,decision,amount_cents,reason,decided_at) VALUES (1,'RETAIN_RECORDED',10000,'Damage','2027-01-10T13:00:00Z')").run()).toThrow();
+  expect(()=>db.prepare("INSERT INTO deposit_decisions(reservation_id,decision,amount_cents,reason,damage_notes,decided_at) VALUES (1,'RETAIN_RECORDED',10000,'Damage','Bent fender','2027-01-10T13:00:00Z')").run()).not.toThrow();
+ });
+ it('stores cancellation outcomes separately from return inspections',()=>{
+  addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z','CANCELLED');
+  db.prepare("INSERT INTO cancellation_outcomes(reservation_id,type,decided_at,notice_hours,rental_refund_cents,retained_cents,notes) VALUES (1,'CANCELLATION','2027-01-10T07:00:00Z',1,18000,10000,'Late cancellation')").run();
+  expect(db.prepare('SELECT rental_refund_cents,retained_cents,payment_action FROM cancellation_outcomes').get()).toEqual({rental_refund_cents:18000,retained_cents:10000,payment_action:'NOT_EXECUTED'});
+  expect(db.prepare('SELECT count(*) count FROM condition_inspections').get()).toEqual({count:0});
+ });
+});

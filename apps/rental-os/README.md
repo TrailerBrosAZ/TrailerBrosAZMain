@@ -1,4 +1,4 @@
-# Trailer Bros Rental OS — Version 1A
+# Trailer Bros Rental OS — Version 1B
 
 Owner-facing local development checkpoint. This application is isolated from the production GitHub Pages site and does not connect to Stripe, email, SMS, Google Calendar, or Google Drive.
 
@@ -7,6 +7,10 @@ Owner-facing local development checkpoint. This application is isolated from the
 - Responsive operations dashboard, upcoming schedule, summary metrics, and attention queue
 - Manual external bookings for Big Rentals, Neighbors Trailer, Facebook Marketplace, and Other
 - Manual availability blackouts
+- Owner-controlled reservation edit/reschedule and lifecycle actions
+- Pickup and return condition inspections with notes, damage documentation, and local-only photo references
+- Auditable cancellation/no-show outcomes and deliberate post-return deposit decisions; no payment actions execute
+- Reservation/source filters, blackout edit/delete controls, and reservation audit history
 - SQLite persistence with Drizzle schema and a checked-in SQL migration
 - Database triggers that reject overlapping active reservations and blackouts on inserts and updates
 - Reservation lifecycle, cancellation, renter qualification, and operating-window rules with automated tests
@@ -40,7 +44,7 @@ npm run build
 npm run db:generate
 ```
 
-`db:generate` should report that the checked-in schema has no new changes. Database overlap tests cover reservation-to-reservation, external-to-direct, blackout-to-reservation, reservation-to-blackout, adjacency, cancellation release, and conflicting updates.
+Database tests cover reservation-to-reservation, external-to-direct, blackout-to-reservation, reservation-to-blackout, adjacency, cancellation release, conflicting updates, Version 1B lifecycle tables, and deposit/cancellation record constraints.
 
 ## Architecture and safety
 
@@ -53,4 +57,4 @@ npm run db:generate
 
 SQLite serializes writes. Overlap triggers run inside the same write transaction as each insert/update, preventing two committed records from claiming the same trailer time. Endpoint transactions also keep customer, reservation, and audit creation atomic.
 
-This is not production-ready authentication or payment infrastructure. Payment records are modeled, but the only permitted processor value for this checkpoint is development data. Future Stripe, immutable agreement PDF, archive, fixed-template email, and calendar-copy integrations remain intentionally unimplemented.
+This is not production-ready authentication or payment infrastructure. Cancellation and deposit decisions are explicitly owner-recorded placeholders with `payment_action = NOT_EXECUTED`. Future Stripe, immutable agreement PDF, archive, fixed-template email, and calendar-copy integrations remain intentionally unimplemented.

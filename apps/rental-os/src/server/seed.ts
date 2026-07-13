@@ -11,7 +11,7 @@ if (count === 0) {
   const addCustomer = db.prepare('INSERT INTO customers (first_name,last_name,email,phone) VALUES (?,?,?,?)');
   const addReservation = db.prepare(`INSERT INTO reservations (confirmation_code,trailer_id,customer_id,channel,external_source,status,pickup_at,return_at,rental_charge_cents,renter_age,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
   const samples = [
-    ['Maria','Santos','maria@example.test','480-555-0101','DEV-1001','DIRECT',null,'CONFIRMED','2027-03-12T08:00:00-07:00','2027-03-14T18:00:00-07:00',12000,34,'Agreement signed · paid in development mode'],
+    ['Maria','Santos','maria@example.test','480-555-0101','DEV-1001','DIRECT',null,'CONFIRMED','2027-03-12T08:00:00-07:00','2027-03-14T18:00:00-07:00',12000,34,'Development sample only; agreement and payment workflows not captured'],
     ['Jordan','Lee','jordan@example.test','480-555-0102','DEV-1002','EXTERNAL','BIG_RENTALS','PENDING_REVIEW','2027-03-18T07:30:00-07:00','2027-03-19T17:00:00-07:00',6000,29,'Verify external reference and qualification'],
     ['Avery','Cole','avery@example.test','480-555-0103','DEV-1003','EXTERNAL','FACEBOOK_MARKETPLACE','CONFIRMED','2027-03-25T09:00:00-07:00','2027-03-27T19:30:00-07:00',12000,41,'Manual marketplace booking'],
   ];
