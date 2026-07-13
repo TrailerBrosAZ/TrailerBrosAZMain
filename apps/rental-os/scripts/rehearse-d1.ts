@@ -1,0 +1,34 @@
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { exportData } from './export-sqlite-data.js';
+import { migrate, openDatabase } from '../src/server/db/database.js';
+
+const root = resolve('data/rehearsal'); const source = resolve(root, 'source.db'); const exported = resolve(root, 'import.sql'); const persist = resolve(root, 'd1');
+rmSync(root, { recursive: true, force: true }); mkdirSync(root, { recursive: true });
+const db = openDatabase(source); migrate(db);
+db.exec(`INSERT INTO trailers(name,unit_code,published_payload_lbs,plate_verified) VALUES ('Rehearsal trailer','REHEARSAL',5200,0);
+INSERT INTO customers(first_name,last_name) VALUES ('Existing','Owner Data');
+INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,external_source,status,pickup_at,return_at,rental_charge_cents) VALUES ('REHEARSAL-1',1,1,'EXTERNAL','OTHER','CONFIRMED','2027-08-01T06:00:00-07:00','2027-08-02T10:00:00-07:00',10000);
+INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-08-05T06:00:00-07:00','2027-08-05T12:00:00-07:00','Existing blackout');
+INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('RESERVATION',1,'EXISTING_EVENT','owner@example.test','{}');
+INSERT INTO condition_inspections(reservation_id,type,condition_notes,damage_found,inspected_at,actor) VALUES (1,'PICKUP','Existing condition',0,'2027-08-01T06:00:00-07:00','owner@example.test');
+INSERT INTO inspection_photos(inspection_id,local_reference,caption) VALUES (1,'legacy-local-reference','Metadata only');`);
+db.close(); const exportedCounts=exportData(source, exported);
+const run = (args: string[]) => execFileSync(process.execPath, [resolve('node_modules/wrangler/bin/wrangler.js'), ...args], { cwd: resolve('.'), encoding: 'utf8', stdio: ['ignore','pipe','pipe'] });
+run(['d1','migrations','apply','rental-os-local','--local','--persist-to',persist]);
+run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--file',exported]);
+const output = run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT (SELECT count(*) FROM reservations) reservations,(SELECT count(*) FROM availability_blocks) blackouts,(SELECT count(*) FROM audit_events) audit_events,(SELECT count(*) FROM inspection_photos) photo_metadata",'--json']);
+const parsed = JSON.parse(output) as Array<{ results: Array<Record<string, number>> }>; const counts = parsed[0]?.results[0];
+if (!counts || counts.reservations !== 1 || counts.blackouts !== 1 || counts.audit_events !== 1 || counts.photo_metadata !== 1) throw new Error(`D1 rehearsal count mismatch: ${JSON.stringify(counts)}`);
+const valuesOutput=run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT r.confirmation_code,r.status,b.reason,a.action,p.local_reference FROM reservations r,availability_blocks b,audit_events a,inspection_photos p WHERE r.id=1 AND b.id=1 AND a.id=1 AND p.id=1",'--json']);
+const values=(JSON.parse(valuesOutput) as Array<{results:Array<Record<string,string>>}>)[0]?.results[0];
+if(!values||values.confirmation_code!=='REHEARSAL-1'||values.status!=='CONFIRMED'||values.reason!=='Existing blackout'||values.action!=='EXISTING_EVENT'||values.local_reference!=='legacy-local-reference')throw new Error(`D1 recovery values changed: ${JSON.stringify(values)}`);
+let overlapRejected=false;
+try{run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('OVERLAP',1,1,'DIRECT','CONFIRMED','2027-08-01T07:00:00-07:00','2027-08-01T09:00:00-07:00',1000)"]);}catch{overlapRejected=true;}
+if(!overlapRejected)throw new Error('Local D1 overlap trigger did not reject a conflicting reservation.');
+const afterOutput=run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT count(*) reservations FROM reservations",'--json']);
+const after=(JSON.parse(afterOutput) as Array<{results:Array<{reservations:number}>}>)[0]?.results[0];
+if(after?.reservations!==1)throw new Error(`Failed D1 overlap write was not atomic: ${JSON.stringify(after)}`);
+if(exportedCounts.reservations!==1||exportedCounts.availability_blocks!==1||exportedCounts.audit_events!==1||exportedCounts.inspection_photos!==1)throw new Error(`SQLite export counts changed: ${JSON.stringify(exportedCounts)}`);
+console.log(`Fresh D1 migration, Version 1B import, recovery values, photo metadata, and overlap rollback passed: ${JSON.stringify(counts)}`);

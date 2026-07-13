@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import type { DatabasePort, SqlStatement, SqlValue } from './port.js';
 
 export function openDatabase(filename = resolve('data/rental-os.db')) {
   if (filename !== ':memory:') mkdirSync(dirname(filename), { recursive: true });
@@ -8,6 +9,20 @@ export function openDatabase(filename = resolve('data/rental-os.db')) {
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = WAL');
   return db;
+}
+
+export function createLocalDatabasePort(db: Database.Database): DatabasePort {
+  const values = (params: SqlValue[] = []) => params;
+  const run = (statement: SqlStatement) => {
+    const result = db.prepare(statement.sql).run(...values(statement.params));
+    return { changes: result.changes, lastRowId: Number(result.lastInsertRowid) };
+  };
+  return {
+    async all<T extends Record<string, unknown>>(sql: string, params: SqlValue[] = []) { return db.prepare(sql).all(...values(params)) as T[]; },
+    async first<T extends Record<string, unknown>>(sql: string, params: SqlValue[] = []) { return db.prepare(sql).get(...values(params)) as T | undefined; },
+    async run(sql: string, params: SqlValue[] = []) { return run({ sql, params }); },
+    async batch(statements: SqlStatement[]) { return db.transaction(() => statements.map(run))(); },
+  };
 }
 
 export function migrate(db: Database.Database) {

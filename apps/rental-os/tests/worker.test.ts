@@ -1,0 +1,17 @@
+import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { worker, validateWorkerEnvironment, type WorkerEnvironment } from '../src/worker/index.js';
+import type { D1DatabaseLike } from '../src/worker/d1.js';
+
+const unusedDb = { prepare:vi.fn(),batch:vi.fn() } as unknown as D1DatabaseLike;
+const assets = { fetch:vi.fn(async()=>new Response('<main>private</main>',{headers:{'cache-control':'public, max-age=3600'}})) };
+const development = ():WorkerEnvironment=>({ENVIRONMENT:'development',AUTH_MODE:'mock',ALLOWED_OWNER_EMAIL:'owner@example.test',DB:unusedDb,ASSETS:assets});
+
+describe('Worker privacy boundary',()=>{
+  it('configures the Worker to authenticate before every static asset',()=>{const config=JSON.parse(readFileSync(resolve('wrangler.jsonc'),'utf8')) as {assets?:{run_worker_first?:boolean}};expect(config.assets?.run_worker_first).toBe(true);});
+  it('protects static assets and does not invoke the asset binding when unauthorized',async()=>{assets.fetch.mockClear();const response=await worker.fetch(new Request('https://private.example.test/'),development());expect(response.status).toBe(401);expect(response.headers.get('cache-control')).toBe('no-store');expect(assets.fetch).not.toHaveBeenCalled();});
+  it('protects every API route before routing',async()=>{const response=await worker.fetch(new Request('https://private.example.test/api/dashboard'),development());expect(response.status).toBe(401);expect(await response.json()).toEqual({error:'Local owner header is required.'});expect(response.headers.get('cache-control')).toBe('no-store');});
+  it('serves authenticated assets privately without preserving public caching',async()=>{const response=await worker.fetch(new Request('https://private.example.test/schedule',{headers:{'x-dev-owner-email':'owner@example.test'}}),development());expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('x-content-type-options')).toBe('nosniff');});
+  it('fails closed when bindings or non-development configuration are placeholders',async()=>{expect(()=>validateWorkerEnvironment({...development(),DB:undefined})).toThrow();const response=await worker.fetch(new Request('https://private.example.test/'),{...development(),ENVIRONMENT:'staging',AUTH_MODE:'cloudflare-access',ALLOWED_OWNER_EMAIL:'CONFIGURE_DURING_PHASE_3',ACCESS_TEAM_DOMAIN:'CONFIGURE_DURING_PHASE_3',ACCESS_AUD:'CONFIGURE_DURING_PHASE_3'});expect(response.status).toBe(503);expect(response.headers.get('cache-control')).toBe('no-store');});
+});

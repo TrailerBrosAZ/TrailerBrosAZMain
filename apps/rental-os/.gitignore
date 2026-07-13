@@ -3,6 +3,11 @@ dist/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/wrangler/
+data/rehearsal/
+data/worker-dry-run/
+data/preflight/
+data/*.sql
 .env
 .env.*
 !.env.example
