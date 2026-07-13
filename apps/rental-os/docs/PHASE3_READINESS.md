@@ -10,7 +10,7 @@ Before any staging release, verify private-by-design behavior locally:
 4. Confirm `wrangler.jsonc` has no real account ID, database ID, hostname, token, secret, Access audience, team domain, or owner identity.
 5. Confirm the public website and root repository files have no diff.
 
-The existing staging environment must remain fail-closed behind Cloudflare Access, allow only the approved owner identity, protect application assets and API routes, use synthetic data, disable public caching of authenticated responses, and preserve the D1 overlap triggers. Staging releases require a full local preflight plus authenticated, unauthenticated, persistence, overlap, and browser-console checks.
+The existing staging environment must remain fail-closed behind Cloudflare Access, allow only the approved owner identity, protect application assets and API routes, use explicitly marked synthetic data, exclude those records from analytics by default, disable public caching of authenticated responses, and preserve the D1 overlap triggers. Staging releases require a full local preflight plus authenticated, unauthenticated, persistence, overlap, analytics, and browser-console checks.
 
 Before any production pilot is considered, obtain separate owner approval for production resources and configuration, a backup and restore policy, owner-lockout recovery, monitoring and alerts, real-data migration controls, retention and privacy procedures, secret rotation, incident response, and rollback. Staging acceptance does not authorize production provisioning or deployment.
 

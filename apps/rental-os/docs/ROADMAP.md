@@ -6,15 +6,14 @@ The Rental OS remains the authoritative reservation and availability calendar. R
 
 ## Analytics & Owner Intelligence
 
-### Next owner-dashboard phase
+### Owner-dashboard intelligence checkpoint
 
-- Make dashboard summary cards actionable. **Needs Attention** opens an action drawer; the other cards open the relevant filtered Schedule or Reservations view.
-- Add a private, owner-only Analytics section. All calculations must be deterministic, database-backed, and explicitly use `America/Phoenix` date boundaries rather than the viewer's device timezone.
-- Report booking count, booked rental revenue, confirmed-booking revenue, cancellations and no-shows, average rental duration, utilization, lead-source performance, weekly and monthly trends, day-of-week demand, delivery and dolly uptake, and upcoming unbooked availability.
-- Label **booked revenue** separately from **collected revenue**. Collected revenue is unavailable and must not be inferred until payment integration exists.
-- Provide date-range and comparison controls with documented inclusive/exclusive boundaries and Arizona-time behavior.
-- Generate deterministic insight cards only from measured thresholds. Define each metric, denominator, threshold, comparison period, and insufficient-data behavior. Exclude synthetic/sample records by default, with any inclusion override clearly visible.
-- Add automated coverage for analytics calculations, empty states, cancellations and no-shows, source attribution, date boundaries, Arizona time, synthetic-data exclusion, and comparison periods.
+- Implemented on the feature branch: actionable dashboard summary cards, an accessible **Needs Attention** drawer, and direct reservation links.
+- Implemented on the feature branch: a private owner-only Analytics route with deterministic database calculations and explicit `America/Phoenix` boundaries.
+- Implemented metrics: reservation requests, active/completed rentals, booked rental revenue, confirmed-booking revenue, cancellations and no-shows, average rental duration, utilization, lead-source performance, weekly and monthly request trends, requested pickup day of week, delivery and dolly uptake, and upcoming unbooked availability.
+- Implemented safeguards: booked revenue is separated from collected revenue; collected revenue, fees, refunds, and net revenue remain explicitly unavailable until Stripe exists.
+- Implemented controls and evidence: date-range presets, custom dates, adjacent comparison, documented metric contracts, deterministic threshold insights, explicit insufficient-data states, synthetic exclusion by default, and automated analytics coverage.
+- The exact definitions and thresholds are maintained in [Analytics metric contracts](ANALYTICS_METRICS.md).
 
 ### Later financial-data phase
 

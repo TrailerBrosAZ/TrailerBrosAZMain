@@ -5,6 +5,8 @@ Owner-facing Rental OS with local development support and a protected Cloudflare
 ## Included
 
 - Responsive operations dashboard, upcoming schedule, summary metrics, and attention queue
+- Owner-only Analytics route with Arizona-aware date and comparison controls, deterministic metric contracts, explainable threshold insights, and synthetic-data exclusion by default
+- Actionable dashboard shortcuts and an accessible Needs Attention drawer with direct reservation links
 - Manual external bookings for Big Rentals, Neighbors Trailer, Facebook Marketplace, and Other
 - Manual availability blackouts
 - Owner-controlled reservation edit/reschedule and lifecycle actions
@@ -15,6 +17,7 @@ Owner-facing Rental OS with local development support and a protected Cloudflare
 - Database triggers that reject overlapping active reservations and blackouts on inserts and updates
 - Reservation lifecycle, cancellation, renter qualification, and operating-window rules with automated tests
 - Development-only sample data
+- Explicit `is_synthetic` classification and audit events for seed and staging-QA reservations and blackouts
 
 The published payload capacity is recorded as 5,200 lb with `plate_verified = false` until physically verified. Instants are stored as ISO timestamps while owner-entered and displayed booking times are interpreted explicitly in `America/Phoenix`. The owner interface enforces Arizona operating hours and 30-minute increments.
 
@@ -34,7 +37,7 @@ Open `http://127.0.0.1:5173`. The API listens only on `127.0.0.1:4174`. Sample i
 
 See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import, D1 recovery rehearsal, and the single fail-fast preflight command. See [Protected staging operations](docs/PHASE3_READINESS.md) for the private-by-design staging controls and production prerequisites. Protected staging is configured separately from source control; production remains unconfigured and must not be improvised.
 
-See the [Rental OS roadmap](docs/ROADMAP.md) for the approved priority order and phased Analytics & Owner Intelligence scope.
+See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md) for the approved priority order and later financial-data and private-analyst phases.
 
 To reset local data, remove `data/rental-os.db*`, then run migration and seed again. Never use real customer information in this checkpoint.
 

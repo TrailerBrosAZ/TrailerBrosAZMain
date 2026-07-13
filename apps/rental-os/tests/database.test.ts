@@ -18,7 +18,8 @@ describe('Version 1B persistence rules',()=>{
  it('creates lifecycle records and tracks both migrations',()=>{
   const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row=>(row as {name:string}).name);
   expect(tables).toEqual(expect.arrayContaining(['condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events']));
-  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:2});
+  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:3});
+  expect(db.prepare("SELECT name,dflt_value FROM pragma_table_info('reservations') WHERE name='is_synthetic'").get()).toEqual({name:'is_synthetic',dflt_value:'false'});
  });
  it('requires damage notes for a retained deposit decision',()=>{
   addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z','INSPECTION_PENDING');

@@ -21,9 +21,9 @@ run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--file',
 const output = run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT (SELECT count(*) FROM reservations) reservations,(SELECT count(*) FROM availability_blocks) blackouts,(SELECT count(*) FROM audit_events) audit_events,(SELECT count(*) FROM inspection_photos) photo_metadata",'--json']);
 const parsed = JSON.parse(output) as Array<{ results: Array<Record<string, number>> }>; const counts = parsed[0]?.results[0];
 if (!counts || counts.reservations !== 1 || counts.blackouts !== 1 || counts.audit_events !== 1 || counts.photo_metadata !== 1) throw new Error(`D1 rehearsal count mismatch: ${JSON.stringify(counts)}`);
-const valuesOutput=run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT r.confirmation_code,r.status,b.reason,a.action,p.local_reference FROM reservations r,availability_blocks b,audit_events a,inspection_photos p WHERE r.id=1 AND b.id=1 AND a.id=1 AND p.id=1",'--json']);
-const values=(JSON.parse(valuesOutput) as Array<{results:Array<Record<string,string>>}>)[0]?.results[0];
-if(!values||values.confirmation_code!=='REHEARSAL-1'||values.status!=='CONFIRMED'||values.reason!=='Existing blackout'||values.action!=='EXISTING_EVENT'||values.local_reference!=='legacy-local-reference')throw new Error(`D1 recovery values changed: ${JSON.stringify(values)}`);
+const valuesOutput=run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"SELECT r.confirmation_code,r.status,r.is_synthetic reservation_synthetic,b.reason,b.is_synthetic blackout_synthetic,a.action,p.local_reference FROM reservations r,availability_blocks b,audit_events a,inspection_photos p WHERE r.id=1 AND b.id=1 AND a.id=1 AND p.id=1",'--json']);
+const values=(JSON.parse(valuesOutput) as Array<{results:Array<Record<string,string|number>>}>)[0]?.results[0];
+if(!values||values.confirmation_code!=='REHEARSAL-1'||values.status!=='CONFIRMED'||values.reservation_synthetic!==0||values.reason!=='Existing blackout'||values.blackout_synthetic!==0||values.action!=='EXISTING_EVENT'||values.local_reference!=='legacy-local-reference')throw new Error(`D1 recovery values changed: ${JSON.stringify(values)}`);
 let overlapRejected=false;
 try{run(['d1','execute','rental-os-local','--local','--persist-to',persist,'--command',"INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('OVERLAP',1,1,'DIRECT','CONFIRMED','2027-08-01T07:00:00-07:00','2027-08-01T09:00:00-07:00',1000)"]);}catch{overlapRejected=true;}
 if(!overlapRejected)throw new Error('Local D1 overlap trigger did not reject a conflicting reservation.');
@@ -31,4 +31,4 @@ const afterOutput=run(['d1','execute','rental-os-local','--local','--persist-to'
 const after=(JSON.parse(afterOutput) as Array<{results:Array<{reservations:number}>}>)[0]?.results[0];
 if(after?.reservations!==1)throw new Error(`Failed D1 overlap write was not atomic: ${JSON.stringify(after)}`);
 if(exportedCounts.reservations!==1||exportedCounts.availability_blocks!==1||exportedCounts.audit_events!==1||exportedCounts.inspection_photos!==1)throw new Error(`SQLite export counts changed: ${JSON.stringify(exportedCounts)}`);
-console.log(`Fresh D1 migration, Version 1B import, recovery values, photo metadata, and overlap rollback passed: ${JSON.stringify(counts)}`);
+console.log(`Fresh D1 migration, Owner Intelligence import defaults, recovery values, photo metadata, and overlap rollback passed: ${JSON.stringify(counts)}`);
