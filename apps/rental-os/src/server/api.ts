@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseArizonaDateTime } from '../shared/arizonaTime.js';
 import { cancellationOutcome, canTransition, externalSources, operationalStatus, reservationStatuses, validateBookingWindow, type ReservationStatus } from '../shared/domain.js';
 import { AuthorizationError, authorizeOwner, type AuthEnvironment, type OwnerIdentity, type TokenVerifier } from './auth.js';
 import type { DatabasePort, SqlStatement, SqlValue } from './db/port.js';
@@ -18,9 +19,10 @@ const failure = (error: unknown) => {
 const audit = (identity: OwnerIdentity, type: string, id: number, action: string, payload: unknown = {}): SqlStatement => ({ sql: 'INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES (?,?,?,?,?)', params: [type,id,action,identity.email,JSON.stringify(payload)] });
 const reservation = (db: DatabasePort, id: number) => db.first('SELECT * FROM reservations WHERE id=?', [id]);
 
-const manualBooking = z.object({ trailerId:z.coerce.number().int().positive(),customerName:z.string().trim().min(2),source:z.enum(externalSources),externalReference:z.string().trim().optional(),pickupAt:z.coerce.date(),returnAt:z.coerce.date(),rentalChargeCents:z.coerce.number().int().nonnegative().default(0),notes:z.string().trim().optional() });
-const blackout = z.object({ trailerId:z.coerce.number().int().positive(),startAt:z.coerce.date(),endAt:z.coerce.date(),reason:z.string().trim().min(2),notes:z.string().trim().optional() });
-const editReservation = z.object({ version:z.coerce.number().int().positive(),pickupAt:z.coerce.date(),returnAt:z.coerce.date(),notes:z.string().trim().optional(),externalReference:z.string().trim().optional(),rentalChargeCents:z.coerce.number().int().nonnegative(),dollyDays:z.coerce.number().int().nonnegative().default(0),reason:z.string().trim().min(2) });
+const arizonaDateTime=z.unknown().transform((value,context)=>{try{return parseArizonaDateTime(value)}catch(error){context.addIssue({code:'custom',message:(error as Error).message});return z.NEVER}});
+const manualBooking = z.object({ trailerId:z.coerce.number().int().positive(),customerName:z.string().trim().min(2),source:z.enum(externalSources),externalReference:z.string().trim().optional(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,rentalChargeCents:z.coerce.number().int().nonnegative().default(0),notes:z.string().trim().optional() });
+const blackout = z.object({ trailerId:z.coerce.number().int().positive(),startAt:arizonaDateTime,endAt:arizonaDateTime,reason:z.string().trim().min(2),notes:z.string().trim().optional() });
+const editReservation = z.object({ version:z.coerce.number().int().positive(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,notes:z.string().trim().optional(),externalReference:z.string().trim().optional(),rentalChargeCents:z.coerce.number().int().nonnegative(),dollyDays:z.coerce.number().int().nonnegative().default(0),reason:z.string().trim().min(2) });
 const localPhotoReference = z.string().trim().min(1).max(120).refine(value=>! /^(?:[a-z][a-z0-9+.-]*:|[\\/]|\.\.?[\\/]|.*[\\/].*)/i.test(value),'URLs and filesystem paths are not accepted. Store a short metadata label only.');
 const inspection = z.object({ conditionNotes:z.string().trim().min(2),usageTripNotes:z.string().trim().optional(),damageFound:z.boolean().default(false),damageNotes:z.string().trim().optional(),photoReferences:z.array(localPhotoReference).max(12).default([]) }).superRefine((value,context)=>{if(value.damageFound&&!value.damageNotes)context.addIssue({code:'custom',message:'Damage notes are required when damage is found.'})});
 const body = async (request: Request) => { const length=Number(request.headers.get('content-length')||0);if(length>2_000_000)throw new Error('Request body is too large.');return request.json(); };

@@ -1,6 +1,8 @@
 export const externalSources = ['BIG_RENTALS', 'NEIGHBORS_TRAILER', 'FACEBOOK_MARKETPLACE', 'OTHER'] as const;
 export type ExternalSource = (typeof externalSources)[number];
 
+import { arizonaParts } from './arizonaTime.js';
+
 export const reservationStatuses = ['PENDING_REVIEW', 'CONFIRMED', 'CHECKED_OUT', 'INSPECTION_PENDING', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] as const;
 export type ReservationStatus = (typeof reservationStatuses)[number];
 export type OperationalStatus = ReservationStatus | 'PICKUP_DUE' | 'RETURN_DUE';
@@ -30,9 +32,9 @@ export function cancellationOutcome(input: { pickupAt: Date; decidedAt: Date; re
 export function validateBookingWindow(startAt: Date, endAt: Date) {
   if (endAt <= startAt) throw new Error('Return must be after pickup.');
   for (const date of [startAt, endAt]) {
-    if (![0, 30].includes(date.getMinutes())) throw new Error('Times must use 30-minute increments.');
-    const hour = date.getHours();
-    if (hour < 6 || hour > 22 || (hour === 22 && date.getMinutes() > 0)) throw new Error('Times must be between 6:00 AM and 10:00 PM Arizona time.');
+    const {hour,minute}=arizonaParts(date);
+    if (![0, 30].includes(minute)) throw new Error('Times must use 30-minute increments.');
+    if (hour < 6 || hour > 22 || (hour === 22 && minute > 0)) throw new Error('Times must be between 6:00 AM and 10:00 PM Arizona time.');
   }
 }
 export function qualifiesRenter(input: { age: number; internationalUse: boolean; namedRenterWillTow: boolean }) { return input.age >= 25 && !input.internationalUse && input.namedRenterWillTow; }

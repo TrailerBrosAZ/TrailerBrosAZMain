@@ -8,6 +8,7 @@ data/rehearsal/
 data/worker-dry-run/
 data/preflight/
 data/*.sql
+wrangler.staging.local.jsonc
 .env
 .env.*
 !.env.example
