@@ -41,11 +41,22 @@ async function reservationDetail(db: DatabasePort, id: number, now: Date) {
 
 async function analytics(db:DatabasePort,url:URL,now:Date){const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/,'Use YYYY-MM-DD dates.');const defaults=defaultAnalyticsRange(now);const parsed=z.object({startDate:date.default(defaults.startDate),endDate:date.default(defaults.endDate),includeSynthetic:z.enum(['true','false']).default('false')}).safeParse(Object.fromEntries(url.searchParams));if(!parsed.success)throw new Error(parsed.error.issues[0]?.message||'Invalid analytics range.');const range=analyticsRange(parsed.data.startDate,parsed.data.endDate);const previous=comparisonRange(range);const horizon=analyticsRange(defaults.endDate,addArizonaDays(defaults.endDate,29));const startAt=[previous.startAt,horizon.startAt].sort()[0];const endAt=[range.endAtExclusive,horizon.endAtExclusive].sort().at(-1) as string;const reservations=await db.all<AnalyticsReservation>('SELECT id,trailer_id,status,pickup_at,return_at,rental_charge_cents,channel,external_source,delivery_requested,dolly_days,is_synthetic FROM reservations WHERE pickup_at < ? AND return_at > ? ORDER BY pickup_at',[endAt,startAt]);const blocks=await db.all<AnalyticsBlock>('SELECT id,trailer_id,start_at,end_at,is_synthetic FROM availability_blocks WHERE start_at < ? AND end_at > ? ORDER BY start_at',[endAt,startAt]);const trailers=await db.all<{id:number}>('SELECT id FROM trailers WHERE active=1 ORDER BY id');return calculateAnalytics({reservations,blocks,activeTrailerIds:trailers.map(trailer=>Number(trailer.id)),range,now,includeSynthetic:parsed.data.includeSynthetic==='true'})}
 
+async function health(db:DatabasePort,environment:string,now:Date){
+  const requiredTables=['audit_events','availability_blocks','cancellation_outcomes','condition_inspections','customers','deposit_decisions','inspection_photos','payments','reservations','trailers'];
+  const rows=await db.all<{name:string;type:string}>("SELECT name,type FROM sqlite_schema WHERE (type='table' OR type='trigger') AND name NOT LIKE 'sqlite_%'");
+  const names=new Set(rows.map(row=>row.name));
+  const missing=requiredTables.filter(name=>!names.has(name));
+  const scheduleTriggers=rows.filter(row=>row.type==='trigger'&&['reservations_no_overlap_insert','reservations_no_overlap_update','blocks_no_overlap_insert','blocks_no_overlap_update'].includes(row.name)).length;
+  if(missing.length||scheduleTriggers<4)throw new Error('Database schema is unavailable.');
+  return {status:'ok',checkedAt:now.toISOString(),environment,database:{readable:true,schemaReady:true,requiredTableCount:requiredTables.length,scheduleTriggerCount:scheduleTriggers}};
+}
+
 export async function handleApiRequest(request: Request, environment: ApiEnvironment, dependencies: ApiDependencies = {}): Promise<Response> {
   let identity: OwnerIdentity;
   try { identity=await authorizeOwner(request,environment,dependencies.verifier); } catch(error){if(error instanceof AuthorizationError)return json({error:error.message},error.status);throw error;}
   const db=environment.DB;const url=new URL(request.url);const method=request.method.toUpperCase();const now=dependencies.now?.()||new Date();
   try {
+    if(method==='GET'&&url.pathname==='/api/health'){try{return json(await health(db,environment.ENVIRONMENT,now))}catch{return json({status:'unavailable',checkedAt:now.toISOString(),environment:environment.ENVIRONMENT},503)}}
     if(method==='GET'&&url.pathname==='/api/dashboard')return json(await dashboard(db,now));
     if(method==='GET'&&url.pathname==='/api/analytics')return json(await analytics(db,url,now));
     let match=url.pathname.match(/^\/api\/reservations\/(\d+)$/);

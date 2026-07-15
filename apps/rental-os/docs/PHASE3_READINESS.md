@@ -14,4 +14,6 @@ The existing staging environment must remain fail-closed behind Cloudflare Acces
 
 Before any production pilot is considered, obtain separate owner approval for production resources and configuration, a backup and restore policy, owner-lockout recovery, monitoring and alerts, real-data migration controls, retention and privacy procedures, secret rotation, incident response, and rollback. Staging acceptance does not authorize production provisioning or deployment.
 
+The implemented local controls and operating procedures are defined in [Backup, recovery, and incident runbook](BACKUP_AND_INCIDENT_RUNBOOK.md). The authenticated `/api/health` route reports only non-sensitive schema readiness; unauthenticated requests are denied before it runs. `npm run ops:validate-config` rejects committed real identifiers and unsafe staging/production exposure settings. These controls support staging verification but do not provision monitoring, create a recovery administrator, or authorize production.
+
 No Stripe, Gmail, Drive, Calendar, Voice, SMS, customer access, or hosted inspection-photo storage belongs in this phase.

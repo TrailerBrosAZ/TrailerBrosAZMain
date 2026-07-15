@@ -35,9 +35,9 @@ npm run dev
 
 Open `http://127.0.0.1:5173`. The API listens only on `127.0.0.1:4174`. Sample identities use the reserved `.test` domain and dates in 2027.
 
-See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import, D1 recovery rehearsal, and the single fail-fast preflight command. See [Protected staging operations](docs/PHASE3_READINESS.md) for the private-by-design staging controls and production prerequisites. Protected staging is configured separately from source control; production remains unconfigured and must not be improvised.
+See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import, D1 recovery rehearsal, and the single fail-fast preflight command. See [Protected staging operations](docs/PHASE3_READINESS.md) and the [backup and incident runbook](docs/BACKUP_AND_INCIDENT_RUNBOOK.md) for private-by-design staging, recovery, monitoring, lockout, promotion, and rollback controls. Protected staging is configured separately from source control; production remains unconfigured and must not be improvised.
 
-See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md) for the approved priority order and later financial-data and private-analyst phases.
+See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md) and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for approved future scope.
 
 To reset local data, remove `data/rental-os.db*`, then run migration and seed again. Never use real customer information in this checkpoint.
 

@@ -19,6 +19,9 @@
     "worker:dry-run": "npm run build && wrangler deploy --dry-run --env= --outdir data/worker-dry-run",
     "d1:migrate:local": "wrangler d1 migrations apply rental-os-local --local --persist-to data/wrangler",
     "d1:rehearse": "tsx scripts/rehearse-d1.ts",
+    "backup:export:staging": "tsx scripts/backup-d1.ts",
+    "backup:verify": "tsx scripts/verify-d1-backup.ts",
+    "ops:validate-config": "tsx scripts/validate-environment-config.ts",
     "smoke:http": "tsx scripts/http-smoke.ts",
     "preflight": "tsx scripts/preflight.ts"
   },

@@ -5,6 +5,8 @@ data/*.db-shm
 data/*.db-wal
 data/wrangler/
 data/rehearsal/
+data/backups/
+data/backup-rehearsal/
 data/worker-dry-run/
 data/preflight/
 data/*.sql

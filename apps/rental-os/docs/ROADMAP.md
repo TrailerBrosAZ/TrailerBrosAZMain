@@ -31,3 +31,11 @@ The Rental OS remains the authoritative reservation and availability calendar. R
 - Before enabling the feature, document data minimization, prompt and response retention, access logging, deletion policy, cost limits and alerts, failure behavior, prompt-injection controls, and test/evaluation requirements.
 
 This sequence does not move analytics or AI ahead of the core owner and customer workflows. Autonomous or customer-facing AI remains out of scope until the authoritative calendar, safe booking, Stripe, agreements, communications, authentication, hosting, backups, monitoring, and production-hardening requirements are complete and approved.
+
+## Rental Agreement fallback and walk-in requirements
+
+The future agreement phase must include a permanent dashboard **Rental Agreement** quick action, **Send Agreement** on every reservation, secure reservation-specific links, reviewed email delivery, manual copy-link support for Google Voice/texting, and an in-person open/sign option. Statuses are **Not Sent**, **Sent**, **Opened**, **Signed**, and **Expired**. A signed immutable artifact must attach automatically to its reservation. A fast manual/walk-in path must create the minimum customer and reservation record before signing. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No signing or external communication is implemented in this hardening phase.
+
+## Backup and operational hardening
+
+Protected staging uses authenticated health diagnostics, repeatable D1 export verification and restore rehearsal, environment-isolation checks, and documented owner-lockout, incident, promotion, rollback, RPO, and RTO procedures. Production resources, monitoring services, recovery administrators, and policy changes remain subject to separate approval. See [Backup, recovery, and incident runbook](BACKUP_AND_INCIDENT_RUNBOOK.md).
