@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const tables = ['trailers','customers','reservations','availability_blocks','booking_intents','delivery_quote_usage','payments','condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events'];
+const tables = ['trailers','customers','reservations','availability_blocks','booking_intents','delivery_quote_usage','payments','condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','agreement_templates','agreement_instances','pickup_condition_choices','audit_events'];
 const quote = (value: unknown) => value === null ? 'NULL' : typeof value === 'number' ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
 
 export function exportData(databasePath: string, outputPath: string) {

@@ -11,6 +11,7 @@ Owner-facing Rental OS with local development support and a protected Cloudflare
 - Manual availability blackouts
 - Owner-controlled reservation edit/reschedule and lifecycle actions
 - Pickup and return condition inspections with notes, damage documentation, and preserved local-only photo metadata. Hosted photo attachments are disabled; secure photo storage belongs to a later phase.
+- Protected synthetic agreement and pickup-condition foundation with versioned snapshots, explicit consent choices, immutable signed records, and audited completion or decline. No public link, message delivery, PDF archive, or legal-finality claim is enabled.
 - Auditable cancellation/no-show outcomes and deliberate post-return deposit decisions; no payment actions execute
 - Reservation/source filters, blackout edit/delete controls, and reservation audit history
 - SQLite persistence with Drizzle schema and a checked-in SQL migration
@@ -38,7 +39,7 @@ Open `http://127.0.0.1:5173`. The API listens only on `127.0.0.1:4174`. Sample i
 
 See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import, D1 recovery rehearsal, and the single fail-fast preflight command. See [Protected staging operations](docs/PHASE3_READINESS.md) and the [backup and incident runbook](docs/BACKUP_AND_INCIDENT_RUNBOOK.md) for private-by-design staging, recovery, monitoring, lockout, promotion, and rollback controls. Protected staging is configured separately from source control; production remains unconfigured and must not be improvised.
 
-See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md) and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for approved future scope.
+See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md), [agreement foundation](docs/AGREEMENT_INSPECTION_FOUNDATION.md), and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for implemented and future scope.
 
 See the [Customer Booking Foundation contract](docs/CUSTOMER_BOOKING_FOUNDATION.md) for availability, qualification, pricing, expiration, idempotency, privacy, and future conversion rules. The `/customer-preview` route remains behind the same owner-only Cloudflare Access boundary and uses synthetic data only.
 
@@ -74,4 +75,4 @@ SQLite and D1 run the checked-in overlap triggers inside atomic write batches, p
 
 Local authorization uses a development-only mock owner identity supplied by the loopback adapter. Protected staging verifies Cloudflare Access JWT issuer, audience, signature, and the exact approved owner identity; mock authorization fails closed outside development. Staging uses a separate Worker and D1 database with synthetic data only. No production Worker, database, hostname, customer access, or production configuration has been created.
 
-This is not production-ready authentication or payment infrastructure. Cancellation and deposit decisions are explicitly owner-recorded placeholders with `payment_action = NOT_EXECUTED`. Future Stripe, immutable agreement PDF, archive, fixed-template email, and calendar-copy integrations remain intentionally unimplemented.
+This is not production-ready authentication or payment infrastructure. Cancellation and deposit decisions are explicitly owner-recorded placeholders with `payment_action = NOT_EXECUTED`. Signed synthetic agreement records are database-immutable, but attorney-approved final text, PDF/archive delivery, public signing links, Stripe, fixed-template email, and calendar-copy integrations remain intentionally unimplemented.

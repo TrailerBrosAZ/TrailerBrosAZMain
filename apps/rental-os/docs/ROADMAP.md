@@ -34,7 +34,7 @@ This sequence does not move analytics or AI ahead of the core owner and customer
 
 ## Rental Agreement fallback and walk-in requirements
 
-The future agreement phase must include a permanent dashboard **Rental Agreement** quick action, **Send Agreement** on every reservation, secure reservation-specific links, reviewed email delivery, manual copy-link support for Google Voice/texting, and an in-person open/sign option. Statuses are **Not Sent**, **Sent**, **Opened**, **Signed**, and **Expired**. A signed immutable artifact must attach automatically to its reservation. A fast manual/walk-in path must create the minimum customer and reservation record before signing. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No signing or external communication is implemented in this hardening phase.
+Implemented in protected synthetic staging: a permanent dashboard **Rental Agreement** quick action, reservation-bound owner open/sign flow, explicit consent evidence, immutable versioned snapshots, pickup-condition completion or affirmative decline, status display, and audit history. Still required: secure reservation-specific links, **Send Agreement**, reviewed email delivery, manual copy-link support, final PDF artifacts, archive copies, and legal approval. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No external communication or public signing access is enabled.
 
 ## Customer Booking Foundation
 

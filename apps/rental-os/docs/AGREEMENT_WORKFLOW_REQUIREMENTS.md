@@ -1,11 +1,11 @@
 # Rental Agreement workflow requirements
 
-This is a future owner/customer workflow requirement, not an implemented signing or communication feature.
+The protected staging foundation now implements owner-driven synthetic agreement opening/signing, immutable snapshots, explicit consent evidence, pickup-condition completion/decline, status display, and audit history. Public links, delivery, final PDFs, external storage, and communications remain future requirements.
 
 ## Required owner entry points
 
-- A permanent **Rental Agreement** quick action on the owner dashboard.
-- A **Send Agreement** action on every reservation detail view.
+- A permanent **Rental Agreement** quick action on the owner dashboard is implemented and opens owner reservations.
+- Reservation detail provides protected open/sign/inspection actions. A future **Send Agreement** action remains disabled until secure links and reviewed delivery exist.
 - A fast manual/walk-in flow that creates the minimum customer and reservation record before an agreement may be opened or signed. No orphan agreement is permitted.
 
 ## Delivery and signing options
@@ -18,6 +18,6 @@ This is a future owner/customer workflow requirement, not an implemented signing
 
 ## Status and evidence
 
-Track `Not Sent`, `Sent`, `Opened`, `Signed`, and `Expired` with timestamped audit events. Link status to one reservation and agreement version. A signed agreement becomes an immutable artifact automatically attached to that reservation, with integrity metadata and owner/customer copies. Future Google Drive storage is secondary archive only; the Rental OS record remains authoritative.
+The foundation tracks `Opened` and `Signed` with timestamped audit events and binds each instance to one reservation and template version/hash. Future secure delivery adds `Not Sent`, `Sent`, and `Expired`. A signed agreement record is immutable and attached to its reservation; owner/customer PDF copies and Google Drive secondary archive are not yet implemented.
 
 The workflow must define link expiration/revocation, authenticated owner access, customer session protection, document versioning, signature consent/evidence, retry and delivery-failure handling, privacy/retention, seven-year record retention, and a no-network fallback before implementation. Email, Google Voice/text copy, signature, PDF creation, and archive integrations remain disabled in this phase.
