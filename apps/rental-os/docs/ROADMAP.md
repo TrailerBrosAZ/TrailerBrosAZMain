@@ -34,7 +34,7 @@ This sequence does not move analytics or AI ahead of the core owner and customer
 
 ## Rental Agreement fallback and walk-in requirements
 
-Implemented in protected synthetic staging: a permanent dashboard **Rental Agreement** quick action, reservation-bound owner open/sign flow, explicit consent evidence, immutable versioned snapshots, pickup-condition completion or affirmative decline, status display, and audit history. Still required: secure reservation-specific links, **Send Agreement**, reviewed email delivery, manual copy-link support, final PDF artifacts, archive copies, and legal approval. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No external communication or public signing access is enabled.
+Implemented in protected synthetic staging: a permanent dashboard **Rental Agreement** quick action, reservation-bound owner open/sign flow, explicit consent evidence, immutable versioned snapshots, deterministic print-ready agreement rendering and hashes, pickup-condition completion or affirmative decline, status display, audit history, and opaque hashed/revocable/expiring reservation links. Links remain synthetic-only behind Access. Still required: public customer-access approval, **Send Agreement**, reviewed delivery, final attorney-approved PDF/e-sign acceptance, archive copies, and legal approval. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No external communication or public signing access is enabled.
 
 ## Customer Booking Foundation
 
@@ -42,4 +42,8 @@ Implemented for protected synthetic staging: customer schedule selection, author
 
 ## Backup and operational hardening
 
-Protected staging uses authenticated health diagnostics, repeatable D1 export verification and restore rehearsal, environment-isolation checks, and documented owner-lockout, incident, promotion, rollback, RPO, and RTO procedures. Production resources, monitoring services, recovery administrators, and policy changes remain subject to separate approval. See [Backup, recovery, and incident runbook](BACKUP_AND_INCIDENT_RUNBOOK.md).
+Protected staging uses authenticated health diagnostics, repeatable D1 export verification and restore rehearsal, environment-isolation checks, and documented owner-lockout, incident, promotion, rollback, RPO, and RTO procedures. Production resources, monitoring services, recovery administrators, and policy changes remain subject to separate approval. See [Backup, recovery, and incident runbook](BACKUP_AND_INCIDENT_RUNBOOK.md) and [Production readiness, threat model, and data map](PRODUCTION_READINESS_AND_DATA.md).
+
+## Owner communication preparation
+
+Implemented in protected synthetic staging: stored, audited owner previews for six deterministic fixed templates and an explicit copy-text action. No message is sent and no Gmail, Google Voice, SMS, or other delivery integration is connected. See [Deterministic communication preparation](COMMUNICATION_PREPARATION.md).
