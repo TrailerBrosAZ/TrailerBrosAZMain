@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { AlertTriangle, CheckCircle2, Clipboard, ClipboardCheck, Edit3, FileSignature, Link2, LogOut, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { AlertTriangle, CheckCircle2, Clipboard, ClipboardCheck, Edit3, FileSignature, Link2, LogOut, MessageSquareText, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
 import { toArizonaInput } from '../shared/arizonaTime';
 
 type RecordLike = Record<string, unknown>;
@@ -29,10 +29,14 @@ export default function ReservationOperations({reservation,onChanged}:{reservati
     </div>
     {error&&<div className="form-error"><AlertTriangle/>{error}</div>}
     <SecureLinkPanel reservation={reservation} onChanged={onChanged}/>
+    <CommunicationPanel reservationId={reservation.id}/>
     {!!reservation.agreement_documents?.length&&<p className="operation-note">Immutable synthetic document · renderer {String(reservation.agreement_documents[0].renderer_version)} · hash {String(reservation.agreement_documents[0].document_hash).slice(0,12)}…</p>}
     {mode&&<OperationForm mode={mode} reservation={reservation} busy={busy} close={()=>{setMode(null);setError('');}} submit={(path,method,body)=>void send(path,method,body)}/>}
   </section>;
 }
+
+const communicationOptions=[['BOOKING_REQUEST_RECEIVED','Booking request received'],['AGREEMENT_ACTION_NEEDED','Agreement action needed'],['PICKUP_INSPECTION_REMINDER','Pickup inspection reminder'],['PICKUP_INSTRUCTIONS','Pickup instructions'],['RETURN_REMINDER','Return reminder'],['DEPOSIT_OUTCOME','Deposit outcome']];
+function CommunicationPanel({reservationId}:{reservationId:number}){const [records,setRecords]=useState<RecordLike[]>([]);const [selected,setSelected]=useState(communicationOptions[0][0]);const [error,setError]=useState('');const load=()=>fetch(`/api/reservations/${reservationId}/communications`).then(response=>response.json()).then(setRecords).catch(()=>setError('Communication previews are unavailable.'));useEffect(()=>{void load()},[reservationId]);async function preview(){setError('');const response=await fetch(`/api/reservations/${reservationId}/communications`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({templateKey:selected})});const result=await response.json();if(!response.ok)return setError(result.error||'Preview could not be created.');await load()}async function copy(record:RecordLike){await navigator.clipboard.writeText(`${record.subject_text}\n\n${record.body_text}`);await fetch(`/api/communications/${record.id}/copied`,{method:'POST'});await load()}return <div className="communication-panel"><div className="operations-head"><div><p>OWNER PREVIEW ONLY</p><h3>Fixed communications</h3></div><span>No message is sent</span></div><div className="operation-buttons"><select aria-label="Communication template" value={selected} onChange={event=>setSelected(event.target.value)}>{communicationOptions.map(([key,name])=><option key={key} value={key}>{name}</option>)}</select><button onClick={()=>void preview()}><MessageSquareText/>Create preview</button></div>{records[0]&&<article className="communication-preview"><strong>{String(records[0].subject_text)}</strong><p>{String(records[0].body_text)}</p><div className="operation-buttons"><button onClick={()=>void copy(records[0])}><Clipboard/>Copy text</button><span>{String(records[0].status)} · template {String(records[0].template_version)}</span></div></article>}{!records.length&&<p className="operation-note">No communication preview recorded.</p>}{error&&<div className="form-error"><AlertTriangle/>{error}</div>}<p className="operation-note">Deterministic approved variables only. Gmail, text messaging, and all delivery integrations remain disconnected.</p></div>}
 
 function SecureLinkPanel({reservation,onChanged}:{reservation:OperationalReservation;onChanged:()=>Promise<void>}){
   const [token,setToken]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);const links=reservation.secure_links||[];

@@ -78,3 +78,7 @@ export const secureLinks = sqliteTable('secure_links', {
 export const secureLinkAttempts = sqliteTable('secure_link_attempts', {
   id: integer('id').primaryKey({ autoIncrement: true }), actorHash: text('actor_hash').notNull(), windowStartedAt: text('window_started_at').notNull(), attemptCount: integer('attempt_count').notNull().default(0), ...timestamps,
 }, table => [uniqueIndex('secure_link_attempt_window_idx').on(table.actorHash, table.windowStartedAt)]);
+
+export const communicationRecords = sqliteTable('communication_records', {
+  id: integer('id').primaryKey({ autoIncrement: true }), reservationId: integer('reservation_id').notNull().references(() => reservations.id), templateKey: text('template_key').notNull(), templateVersion: text('template_version').notNull(), subjectText: text('subject_text').notNull(), bodyText: text('body_text').notNull(), status: text('status', { enum: ['PREVIEWED','COPIED'] }).notNull().default('PREVIEWED'), renderedAt: text('rendered_at').notNull(), copiedAt: text('copied_at'), actor: text('actor').notNull(), isSynthetic: integer('is_synthetic', { mode: 'boolean' }).notNull().default(true), createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
