@@ -57,6 +57,13 @@
       "when": 1784205399979,
       "tag": "0007_sudden_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1784206063021,
+      "tag": "0008_amusing_killmonger",
+      "breakpoints": true
     }
   ]
 }

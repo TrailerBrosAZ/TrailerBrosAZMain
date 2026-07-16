@@ -1,0 +1,8 @@
+import { describe,expect,it } from 'vitest';
+import { agreementDocumentHash, AGREEMENT_RENDERER_VERSION, renderAgreementDocument } from '../src/shared/agreementRenderer.js';
+
+const input={agreement:{template_id:1,template_version:'legal-v1',template_hash:'source-hash',renter_snapshot_json:'{"name":"Synthetic Renter"}',reservation_snapshot_json:'{"confirmationCode":"TEST-1"}',quote_snapshot_json:'{"rentalChargeCents":6000}',signature_evidence_json:'{"method":"SYNTHETIC"}',electronic_consent_at:'2027-01-01T00:00:00Z',terms_acknowledged_at:'2027-01-01T00:00:00Z',driver_insurance_acknowledged_at:'2027-01-01T00:00:00Z',inspection_opportunity_acknowledged_at:'2027-01-01T00:00:00Z',signed_at:'2027-01-01T00:00:00Z',printed_name:'Synthetic Renter'},template:{content_json:'{"sections":["Terms"]}',legal_review_status:'ATTORNEY_REVIEW_REQUIRED'},pickupCondition:{status:'DECLINED',decline_acknowledgment:'Synthetic decline'}};
+describe('agreement renderer',()=>{
+  it('produces deterministic print-ready output with legal-review and signature evidence',async()=>{const first=renderAgreementDocument(input);const second=renderAgreementDocument(input);expect(first.html).toBe(second.html);expect(first.html).toContain('ATTORNEY_REVIEW_REQUIRED');expect(first.html).toContain('Synthetic Renter');expect(first.model.rendererVersion).toBe(AGREEMENT_RENDERER_VERSION);expect(await agreementDocumentHash(first.html)).toBe(await agreementDocumentHash(second.html));});
+  it('escapes snapshot content',()=>{const result=renderAgreementDocument({...input,agreement:{...input.agreement,renter_snapshot_json:'{"name":"<script>bad()</script>"}'}});expect(result.html).not.toContain('<script>bad()');expect(result.html).toContain('&lt;script&gt;');});
+});

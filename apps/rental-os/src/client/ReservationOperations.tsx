@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Clipboard, ClipboardCheck, Edit3, FileSign
 import { toArizonaInput } from '../shared/arizonaTime';
 
 type RecordLike = Record<string, unknown>;
-export type OperationalReservation = RecordLike & { id:number;status:string;operational_status?:string;pickup_at:string;return_at:string;rental_charge_cents:number;dolly_days:number;notes?:string;external_reference?:string;version:number;inspections?:RecordLike[];agreements?:RecordLike[];secure_links?:RecordLike[];pickup_condition?:RecordLike|null;cancellation_outcome?:RecordLike|null;deposit_decision?:RecordLike|null;audit_events?:RecordLike[] };
+export type OperationalReservation = RecordLike & { id:number;status:string;operational_status?:string;pickup_at:string;return_at:string;rental_charge_cents:number;dolly_days:number;notes?:string;external_reference?:string;version:number;inspections?:RecordLike[];agreements?:RecordLike[];agreement_documents?:RecordLike[];secure_links?:RecordLike[];pickup_condition?:RecordLike|null;cancellation_outcome?:RecordLike|null;deposit_decision?:RecordLike|null;audit_events?:RecordLike[] };
 const label = (status:string) => status.toLowerCase().replaceAll('_',' ').replace(/\b\w/g,character=>character.toUpperCase());
 
 export default function ReservationOperations({reservation,onChanged}:{reservation:OperationalReservation;onChanged:()=>Promise<void>}) {
@@ -15,6 +15,8 @@ export default function ReservationOperations({reservation,onChanged}:{reservati
     <div className="operation-buttons">
       <button className="positive" onClick={()=>void send(`/api/reservations/${reservation.id}/agreements`,'POST',{})}><FileSignature/>Open agreement</button>
       {reservation.agreements?.[0]?.status==='OPENED'&&<button onClick={()=>setMode('sign_agreement')}><FileSignature/>Record synthetic signature</button>}
+      {reservation.agreements?.[0]?.status==='SIGNED'&&!reservation.agreement_documents?.length&&<button onClick={()=>void send(`/api/agreements/${reservation.agreements?.[0]?.id}/render-document`,'POST',{})}><FileSignature/>Generate print-ready agreement</button>}
+      {!!reservation.agreement_documents?.length&&<a className="button-link" href={`/api/agreement-documents/${reservation.agreement_documents[0].id}`}><FileSignature/>Download print-ready agreement</a>}
       {(!reservation.pickup_condition||reservation.pickup_condition.status==='PENDING')&&<><button onClick={()=>setMode('condition_complete')}><ClipboardCheck/>Pickup condition</button><button onClick={()=>setMode('condition_decline')}><XCircle/>Record inspection decline</button></>}
       {!['COMPLETED','CANCELLED','NO_SHOW'].includes(reservation.status)&&<button onClick={()=>setMode('edit')}><Edit3/>Edit / reschedule</button>}
       {reservation.status==='PENDING_REVIEW'&&<button className="positive" onClick={()=>void transition('CONFIRMED','Owner approved reservation')}><CheckCircle2/>Confirm</button>}
@@ -27,6 +29,7 @@ export default function ReservationOperations({reservation,onChanged}:{reservati
     </div>
     {error&&<div className="form-error"><AlertTriangle/>{error}</div>}
     <SecureLinkPanel reservation={reservation} onChanged={onChanged}/>
+    {!!reservation.agreement_documents?.length&&<p className="operation-note">Immutable synthetic document · renderer {String(reservation.agreement_documents[0].renderer_version)} · hash {String(reservation.agreement_documents[0].document_hash).slice(0,12)}…</p>}
     {mode&&<OperationForm mode={mode} reservation={reservation} busy={busy} close={()=>{setMode(null);setError('');}} submit={(path,method,body)=>void send(path,method,body)}/>}
   </section>;
 }
