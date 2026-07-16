@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Edit3, FileSignature, LogOut, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clipboard, ClipboardCheck, Edit3, FileSignature, Link2, LogOut, RotateCcw, ShieldCheck, XCircle } from 'lucide-react';
 import { toArizonaInput } from '../shared/arizonaTime';
 
 type RecordLike = Record<string, unknown>;
-export type OperationalReservation = RecordLike & { id:number;status:string;operational_status?:string;pickup_at:string;return_at:string;rental_charge_cents:number;dolly_days:number;notes?:string;external_reference?:string;version:number;inspections?:RecordLike[];agreements?:RecordLike[];pickup_condition?:RecordLike|null;cancellation_outcome?:RecordLike|null;deposit_decision?:RecordLike|null;audit_events?:RecordLike[] };
+export type OperationalReservation = RecordLike & { id:number;status:string;operational_status?:string;pickup_at:string;return_at:string;rental_charge_cents:number;dolly_days:number;notes?:string;external_reference?:string;version:number;inspections?:RecordLike[];agreements?:RecordLike[];secure_links?:RecordLike[];pickup_condition?:RecordLike|null;cancellation_outcome?:RecordLike|null;deposit_decision?:RecordLike|null;audit_events?:RecordLike[] };
 const label = (status:string) => status.toLowerCase().replaceAll('_',' ').replace(/\b\w/g,character=>character.toUpperCase());
 
 export default function ReservationOperations({reservation,onChanged}:{reservation:OperationalReservation;onChanged:()=>Promise<void>}) {
@@ -26,8 +26,16 @@ export default function ReservationOperations({reservation,onChanged}:{reservati
       {reservation.status==='CONFIRMED'&&<button className="danger" onClick={()=>setMode('no_show')}><XCircle/>No show</button>}
     </div>
     {error&&<div className="form-error"><AlertTriangle/>{error}</div>}
+    <SecureLinkPanel reservation={reservation} onChanged={onChanged}/>
     {mode&&<OperationForm mode={mode} reservation={reservation} busy={busy} close={()=>{setMode(null);setError('');}} submit={(path,method,body)=>void send(path,method,body)}/>}
   </section>;
+}
+
+function SecureLinkPanel({reservation,onChanged}:{reservation:OperationalReservation;onChanged:()=>Promise<void>}){
+  const [token,setToken]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);const links=reservation.secure_links||[];
+  async function request(path:string,method:string,body:unknown){setBusy(true);setError('');try{const response=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Secure-link action failed.');setToken(String(result.token||''));await onChanged()}catch(caught){setError((caught as Error).message)}finally{setBusy(false)}}
+  const generate=(purpose:string)=>request(`/api/reservations/${reservation.id}/secure-links`,'POST',{purpose,expiresInMinutes:60});
+  return <div className="secure-link-panel"><div className="operations-head"><div><p>PROTECTED SYNTHETIC LINKS</p><h3>Secure-link status</h3></div><span>Raw tokens display once</span></div><div className="operation-buttons"><button disabled={busy} onClick={()=>void generate('AGREEMENT_SIGNING')}><Link2/>Agreement link</button><button disabled={busy} onClick={()=>void generate('PICKUP_INSPECTION')}><Link2/>Pickup link</button><button disabled={busy} onClick={()=>void generate('RETURN_INSPECTION')}><Link2/>Return link</button></div>{token&&<div className="one-time-token"><strong>Copy now — this token will not be shown again.</strong><code>{token}</code><div className="operation-buttons"><button onClick={()=>void navigator.clipboard.writeText(token)}><Clipboard/>Copy token</button><button onClick={()=>setToken('')}>Hide permanently</button></div></div>}<div className="secure-link-list">{links.map(link=><article key={String(link.id)}><div><strong>{label(String(link.purpose))}</strong><span>{String(link.status)} · expires {new Date(String(link.expires_at)).toLocaleString('en-US',{timeZone:'America/Phoenix'})} · fingerprint {String(link.token_fingerprint)}</span></div><div className="operation-buttons">{link.status==='ACTIVE'&&<button disabled={busy} onClick={()=>void request(`/api/secure-links/${link.id}`,'DELETE',{confirm:true,reason:'Owner revoked synthetic link'})}>Revoke</button>}<button disabled={busy} onClick={()=>void request(`/api/secure-links/${link.id}/regenerate`,'POST',{expiresInMinutes:60})}>Regenerate</button></div></article>)}{!links.length&&<p className="operation-note">No secure links created for this reservation.</p>}</div>{error&&<div className="form-error"><AlertTriangle/>{error}</div>}<p className="operation-note">All links remain behind Cloudflare Access. No email, text, public route, or workflow action is enabled.</p></div>
 }
 
 function OperationForm({mode,reservation,busy,close,submit}:{mode:string;reservation:OperationalReservation;busy:boolean;close:()=>void;submit:(path:string,method:string,body:unknown)=>void}) {

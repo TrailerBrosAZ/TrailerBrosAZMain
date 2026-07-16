@@ -67,3 +67,11 @@ export const agreementInstances = sqliteTable('agreement_instances', {
 export const pickupConditionChoices = sqliteTable('pickup_condition_choices', {
   id: integer('id').primaryKey({ autoIncrement: true }), reservationId: integer('reservation_id').notNull().references(() => reservations.id).unique(), status: text('status', { enum: ['PENDING','COMPLETED','DECLINED'] }).notNull().default('PENDING'), checklistJson: text('checklist_json').notNull().default('{}'), generalNotes: text('general_notes'), markedDamageJson: text('marked_damage_json').notNull().default('[]'), customerAcknowledgedAt: text('customer_acknowledged_at'), declineAcknowledgment: text('decline_acknowledgment'), decidedAt: text('decided_at'), actor: text('actor').notNull().default('owner'), isSynthetic: integer('is_synthetic', { mode: 'boolean' }).notNull().default(true), ...timestamps,
 });
+
+export const secureLinks = sqliteTable('secure_links', {
+  id: integer('id').primaryKey({ autoIncrement: true }), reservationId: integer('reservation_id').notNull().references(() => reservations.id), purpose: text('purpose', { enum: ['AGREEMENT_SIGNING','PICKUP_INSPECTION','RETURN_INSPECTION'] }).notNull(), tokenHash: text('token_hash').notNull().unique(), tokenFingerprint: text('token_fingerprint').notNull(), expiresAt: text('expires_at').notNull(), revokedAt: text('revoked_at'), usedAt: text('used_at'), useCount: integer('use_count').notNull().default(0), lastUsedAt: text('last_used_at'), createdBy: text('created_by').notNull(), isSynthetic: integer('is_synthetic', { mode: 'boolean' }).notNull().default(true), ...timestamps,
+});
+
+export const secureLinkAttempts = sqliteTable('secure_link_attempts', {
+  id: integer('id').primaryKey({ autoIncrement: true }), actorHash: text('actor_hash').notNull(), windowStartedAt: text('window_started_at').notNull(), attemptCount: integer('attempt_count').notNull().default(0), ...timestamps,
+}, table => [uniqueIndex('secure_link_attempt_window_idx').on(table.actorHash, table.windowStartedAt)]);

@@ -50,6 +50,13 @@
       "when": 1784190381995,
       "tag": "0006_messy_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1784205399979,
+      "tag": "0007_sudden_whistler",
+      "breakpoints": true
     }
   ]
 }
