@@ -2,6 +2,8 @@
 
 This checkpoint is a protected staging preview. Cloudflare Access continues to protect the complete Worker, assets, customer-preview route, and APIs. It is not linked from the public website and cannot accept real customer traffic.
 
+The customer launch preview now presents the complete intended journey: authoritative availability, deterministic quote, qualification, delivery quote/review, agreement action, payment readiness, and booking outcome. Agreement and payment stages are explicitly blocked—not simulated as complete—until legal/public-link and live-Stripe approvals exist. The visual treatment reuses the checked-in Trailer Bros brand asset; it does not change the public website.
+
 ## Availability and intent lifecycle
 
 - Reservations and availability blocks in the Rental OS remain the authoritative calendar.

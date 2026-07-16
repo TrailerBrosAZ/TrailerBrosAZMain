@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, ChevronRight, Clock3, ShieldCheck, Truck }
 import { formatArizona, parseArizonaDateTime } from '../shared/arizonaTime';
 import { BOOKING_TIME_OPTIONS, calculateBookingQuote, type BookingQuote } from '../shared/booking';
 import { ownerDeliveryPresentation } from '../shared/deliveryPresentation';
+import { customerLaunchStages } from '../shared/customerLaunch';
 
 type Trailer={id:number;name:string;published_payload_lbs:number};
 export type BookingIntent=Record<string,unknown>&{id:number;status:'SUBMITTED'|'REVIEW_REQUIRED'|'EXPIRED';legal_name:string;email:string;phone:string;trailer_name:string;operational_status:string;pickup_at:string;return_at:string;expires_at:string;rental_charge_cents:number;dolly_charge_cents:number;security_deposit_cents:number;estimated_due_before_delivery_cents:number;trip_type:string;fulfillment_type:string;exceptions:string[];audit_events?:Record<string,unknown>[]};
@@ -69,7 +70,8 @@ export function CustomerBookingPreview({trailers,onSubmitted}:{trailers:Trailer[
  }
 
  return <div className="customer-preview">
-  <section className="customer-hero"><div><span>PROTECTED STAGING PREVIEW</span><h2>Reserve the Trailer Bros utility trailer</h2><p>Preview availability and submit a synthetic request for owner review. This does not confirm a reservation.</p></div><ShieldCheck/></section>
+  <section className="customer-hero"><div className="customer-brand-lockup"><img src="/tb-logo.svg" alt="Trailer Bros"/><div><span>PROTECTED STAGING PREVIEW</span><h2>Reserve the Trailer Bros utility trailer</h2><p>Preview availability and submit a synthetic request for owner review. This does not confirm a reservation.</p></div></div><ShieldCheck/></section>
+  <LaunchJourney hasWindow={Boolean(pickupAt&&returnAt)} hasQuote={Boolean(quoteState.quote)} deliveryRequested={fulfillment==='DELIVERY'} deliveryQuoted={Boolean(deliveryQuote)} submitted={Boolean(submitted)}/>
   <div className="preview-grid"><form className="panel customer-form" onSubmit={event=>void submit(event)} noValidate>
    <fieldset><legend>Requested schedule</legend><label>Trailer<select name="trailerId" required>{trailers.map(trailer=><option key={trailer.id} value={trailer.id}>{trailer.name} · {trailer.published_payload_lbs.toLocaleString()} lb published payload</option>)}</select></label>
     <div className="two booking-date-time"><DateTimeChoice prefix="Pickup" date={pickupDate} time={pickupTime} onDate={setPickupDate} onTime={setPickupTime}/><DateTimeChoice prefix="Return" date={returnDate} time={returnTime} onDate={setReturnDate} onTime={setReturnTime}/></div>
@@ -82,8 +84,11 @@ export function CustomerBookingPreview({trailers,onSubmitted}:{trailers:Trailer[
    <button className="primary customer-submit" disabled={tripType==='INTERNATIONAL'}>Check availability and submit request</button>
   </form><QuoteCard quote={quoteState.quote} available={available} fulfillment={fulfillment} deliveryQuote={deliveryQuote}/></div>
   <section className="preview-disclaimer"><AlertTriangle/><div><strong>Staging preview only</strong><p>No payment is collected. A standard request has a 30-minute quote/checkout-validity window; delivery or interstate requests remain in owner review for 24 hours. Estimates do not hold availability or confirm a reservation.</p></div></section>
+  <section className="panel launch-readiness"><div><p>FUTURE LAUNCH GATES</p><h3>What happens after a request</h3></div><div className="launch-gate-grid"><article><strong>Agreement action</strong><span>Prepared interface only</span><p>A reservation-specific agreement action will remain blocked until attorney-reviewed text, public secure links, and signing acceptance are approved.</p></article><article><strong>Payment readiness</strong><span>Test foundation only</span><p>Live Stripe is disconnected. Browser success alone can never confirm a reservation; signed server reconciliation and all readiness checks remain required.</p></article><article><strong>Booking outcome</strong><span>Owner review</span><p>This preview creates only a synthetic, expiring, nonblocking intent. It sends no message and guarantees no availability.</p></article></div></section>
  </div>
 }
+
+function LaunchJourney(props:{hasWindow:boolean;hasQuote:boolean;deliveryRequested:boolean;deliveryQuoted:boolean;submitted:boolean}){const stages=customerLaunchStages(props);return <section className="launch-journey" aria-label="Customer booking journey">{stages.map((stage,index)=><article className={stage.status.toLowerCase()} key={stage.key}><span>{index+1}</span><div><strong>{stage.label}</strong><small>{stage.status.replaceAll('_',' ')}</small><p>{stage.detail}</p></div></article>)}</section>}
 
 function DateTimeChoice({prefix,date,time,onDate,onTime}:{prefix:string;date:string;time:string;onDate:(value:string)=>void;onTime:(value:string)=>void}){
  return <div className="date-time-choice"><label>{prefix} date<input className="calendar-input" type="date" value={date} onChange={event=>onDate(event.target.value)} required/></label><label>{prefix} time<select value={time} onChange={event=>onTime(event.target.value)} required><option value="">Select time</option>{BOOKING_TIME_OPTIONS.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>
