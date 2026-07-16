@@ -29,5 +29,6 @@ describe('cancellation outcomes', () => {
 
 describe('qualification and operating window',()=>{
   it('requires age 25, named renter towing, and domestic use',()=>{expect(qualifiesRenter({age:25,internationalUse:false,namedRenterWillTow:true})).toBe(true);expect(qualifiesRenter({age:24,internationalUse:false,namedRenterWillTow:true})).toBe(false);expect(qualifiesRenter({age:30,internationalUse:true,namedRenterWillTow:true})).toBe(false)});
-  it('requires 30-minute increments and operating hours',()=>{expect(()=>validateBookingWindow(new Date(2027,1,1,6,0),new Date(2027,1,1,22,0))).not.toThrow();expect(()=>validateBookingWindow(new Date(2027,1,1,5,30),new Date(2027,1,1,8,0))).toThrow(/6:00 AM/);expect(()=>validateBookingWindow(new Date(2027,1,1,8,15),new Date(2027,1,1,9,0))).toThrow(/30-minute/)});
+  it('accepts every 15-minute increment within operating-hour boundaries',()=>{for(const minute of [0,15,30,45])expect(()=>validateBookingWindow(new Date(2027,1,1,6,minute),new Date(2027,1,1,8,minute))).not.toThrow();expect(()=>validateBookingWindow(new Date(2027,1,1,6,0),new Date(2027,1,1,22,0))).not.toThrow()});
+  it('rejects arbitrary minutes and times outside operating hours',()=>{expect(()=>validateBookingWindow(new Date(2027,1,1,8,22),new Date(2027,1,1,9,0))).toThrow(/15-minute/);expect(()=>validateBookingWindow(new Date(2027,1,1,5,45),new Date(2027,1,1,8,0))).toThrow(/6:00 AM/);expect(()=>validateBookingWindow(new Date(2027,1,1,8,0),new Date(2027,1,1,22,15))).toThrow(/6:00 AM/)});
 });

@@ -36,6 +36,10 @@ This sequence does not move analytics or AI ahead of the core owner and customer
 
 The future agreement phase must include a permanent dashboard **Rental Agreement** quick action, **Send Agreement** on every reservation, secure reservation-specific links, reviewed email delivery, manual copy-link support for Google Voice/texting, and an in-person open/sign option. Statuses are **Not Sent**, **Sent**, **Opened**, **Signed**, and **Expired**. A signed immutable artifact must attach automatically to its reservation. A fast manual/walk-in path must create the minimum customer and reservation record before signing. See [Rental Agreement workflow requirements](AGREEMENT_WORKFLOW_REQUIREMENTS.md). No signing or external communication is implemented in this hardening phase.
 
+## Customer Booking Foundation
+
+Implemented for protected synthetic staging: customer schedule selection, authoritative availability checks, qualification and towing requirements, deterministic quotes, international rejection, explicit non-blocking `SUBMITTED` 30-minute quote windows and `REVIEW_REQUIRED` 24-hour approval-review windows, retained expired records, idempotent submission, atomic availability revalidation, minimized audit events, and owner-only intent review. Payment, agreement, communication, reservation conversion, public exposure, and live customer records remain disabled. See [Customer Booking Foundation contract](CUSTOMER_BOOKING_FOUNDATION.md).
+
 ## Backup and operational hardening
 
 Protected staging uses authenticated health diagnostics, repeatable D1 export verification and restore rehearsal, environment-isolation checks, and documented owner-lockout, incident, promotion, rollback, RPO, and RTO procedures. Production resources, monitoring services, recovery administrators, and policy changes remain subject to separate approval. See [Backup, recovery, and incident runbook](BACKUP_AND_INCIDENT_RUNBOOK.md).

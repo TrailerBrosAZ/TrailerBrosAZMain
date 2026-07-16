@@ -18,8 +18,9 @@ Owner-facing Rental OS with local development support and a protected Cloudflare
 - Reservation lifecycle, cancellation, renter qualification, and operating-window rules with automated tests
 - Development-only sample data
 - Explicit `is_synthetic` classification and audit events for seed and staging-QA reservations and blackouts
+- Protected customer-booking preview with authoritative availability, deterministic quote calculation, qualification rules, synthetic non-blocking intents, idempotency, expiration, and owner review
 
-The published payload capacity is recorded as 5,200 lb with `plate_verified = false` until physically verified. Instants are stored as ISO timestamps while owner-entered and displayed booking times are interpreted explicitly in `America/Phoenix`. The owner interface enforces Arizona operating hours and 30-minute increments.
+The published payload capacity is recorded as 5,200 lb with `plate_verified = false` until physically verified. Instants are stored as ISO timestamps while owner-entered and displayed booking times are interpreted explicitly in `America/Phoenix`. Customer and owner workflows enforce Arizona operating hours and 15-minute increments.
 
 ## Local setup
 
@@ -38,6 +39,8 @@ Open `http://127.0.0.1:5173`. The API listens only on `127.0.0.1:4174`. Sample i
 See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import, D1 recovery rehearsal, and the single fail-fast preflight command. See [Protected staging operations](docs/PHASE3_READINESS.md) and the [backup and incident runbook](docs/BACKUP_AND_INCIDENT_RUNBOOK.md) for private-by-design staging, recovery, monitoring, lockout, promotion, and rollback controls. Protected staging is configured separately from source control; production remains unconfigured and must not be improvised.
 
 See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md) and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for approved future scope.
+
+See the [Customer Booking Foundation contract](docs/CUSTOMER_BOOKING_FOUNDATION.md) for availability, qualification, pricing, expiration, idempotency, privacy, and future conversion rules. The `/customer-preview` route remains behind the same owner-only Cloudflare Access boundary and uses synthetic data only.
 
 To reset local data, remove `data/rental-os.db*`, then run migration and seed again. Never use real customer information in this checkpoint.
 

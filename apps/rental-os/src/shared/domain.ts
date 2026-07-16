@@ -33,7 +33,7 @@ export function validateBookingWindow(startAt: Date, endAt: Date) {
   if (endAt <= startAt) throw new Error('Return must be after pickup.');
   for (const date of [startAt, endAt]) {
     const {hour,minute}=arizonaParts(date);
-    if (![0, 30].includes(minute)) throw new Error('Times must use 30-minute increments.');
+    if (minute % 15 !== 0) throw new Error('Pickup and return must use 15-minute increments.');
     if (hour < 6 || hour > 22 || (hour === 22 && minute > 0)) throw new Error('Times must be between 6:00 AM and 10:00 PM Arizona time.');
   }
 }

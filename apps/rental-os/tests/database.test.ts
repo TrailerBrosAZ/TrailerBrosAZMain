@@ -17,10 +17,11 @@ describe('authoritative overlap protection',()=>{
 describe('Version 1B persistence rules',()=>{
  it('creates lifecycle records and tracks both migrations',()=>{
   const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row=>(row as {name:string}).name);
-  expect(tables).toEqual(expect.arrayContaining(['condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events']));
-  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:3});
+  expect(tables).toEqual(expect.arrayContaining(['condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events','booking_intents']));
+  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:5});
   expect(db.prepare("SELECT name,dflt_value FROM pragma_table_info('reservations') WHERE name='is_synthetic'").get()).toEqual({name:'is_synthetic',dflt_value:'false'});
  });
+ it('keeps booking intents separate from schedule blocking and enforces idempotency',()=>{const sql="INSERT INTO booking_intents(idempotency_key,trailer_id,legal_name,email,phone,age_25_confirmed,named_renter_only_towing,tow_vehicle_details,hitch_ball_acknowledged,brake_controller_acknowledged,insurance_acknowledged,intended_use,trip_type,fulfillment_type,pickup_at,return_at,rental_days,rental_charge_cents,dolly_charge_cents,security_deposit_cents,tax_cents,estimated_due_before_delivery_cents,expires_at) VALUES ('ONE',1,'Synthetic','s@example.test','555-0100',1,1,'Truck',1,1,1,'Use','IN_STATE','PICKUP','2027-01-10T08:00:00Z','2027-01-10T12:00:00Z',1,4000,0,10000,0,14000,'2027-01-01T00:30:00Z')";db.exec(sql);expect(()=>addReservation('2027-01-10T09:00:00Z','2027-01-10T10:00:00Z')).not.toThrow();expect(()=>db.exec(sql)).toThrow();});
  it('requires damage notes for a retained deposit decision',()=>{
   addReservation('2027-01-10T08:00:00Z','2027-01-10T12:00:00Z','INSPECTION_PENDING');
   expect(()=>db.prepare("INSERT INTO deposit_decisions(reservation_id,decision,amount_cents,reason,decided_at) VALUES (1,'RETAIN_RECORDED',10000,'Damage','2027-01-10T13:00:00Z')").run()).toThrow();
