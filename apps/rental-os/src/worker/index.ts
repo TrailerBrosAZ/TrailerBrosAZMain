@@ -1,8 +1,8 @@
-import { handleApiRequest } from '../server/api.js';
+import { handleApiRequest, handleStripeWebhookRequest } from '../server/api.js';
 import { AuthorizationError, authorizeOwner, type AuthEnvironment } from '../server/auth.js';
 import { createD1DatabasePort, type D1DatabaseLike } from './d1.js';
 import { createGoogleRoutesDeliveryRouter } from '../server/delivery.js';
-import { createStripeTestPaymentProvider } from '../server/paymentProvider.js';
+import { createStripeTestPaymentProvider, createStripeTestWebhookVerifier } from '../server/paymentProvider.js';
 
 export type WorkerEnvironment = AuthEnvironment & { DB?: D1DatabaseLike; ASSETS?: { fetch(request: Request): Promise<Response> }; GOOGLE_MAPS_API_KEY?: string; DELIVERY_ORIGIN?: string; STRIPE_TEST_SECRET_KEY?: string; STRIPE_TEST_PUBLISHABLE_KEY?: string; STRIPE_TEST_WEBHOOK_SECRET?: string };
 const placeholders = /CONFIGURE_|local-development-only/i;
@@ -15,6 +15,11 @@ export const worker = {
   async fetch(request: Request, env: WorkerEnvironment): Promise<Response> {
     try { validateWorkerEnvironment(env); } catch { return new Response('Service configuration unavailable.', { status: 503, headers: { 'cache-control': 'no-store' } }); }
     const url = new URL(request.url);
+    if(url.pathname==='/api/payments/webhooks/stripe'){
+      if(request.method.toUpperCase()!=='POST')return Response.json({error:'Method not allowed.'},{status:405,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
+      if(!env.STRIPE_TEST_WEBHOOK_SECRET)return Response.json({error:'Webhook unavailable.'},{status:503,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
+      try{return await handleStripeWebhookRequest(request,createD1DatabasePort(env.DB),createStripeTestWebhookVerifier(env.STRIPE_TEST_WEBHOOK_SECRET))}catch{return Response.json({error:'Webhook unavailable.'},{status:503,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}})}
+    }
     if (url.pathname.startsWith('/api/')) {
       const stripeBindingsPresent=Boolean(env.STRIPE_TEST_SECRET_KEY||env.STRIPE_TEST_PUBLISHABLE_KEY||env.STRIPE_TEST_WEBHOOK_SECRET);
       const stripeConfigured=Boolean((env.STRIPE_TEST_SECRET_KEY?.startsWith('sk_test_')||env.STRIPE_TEST_SECRET_KEY?.startsWith('rk_test_'))&&env.STRIPE_TEST_PUBLISHABLE_KEY?.startsWith('pk_test_')&&env.STRIPE_TEST_WEBHOOK_SECRET?.startsWith('whsec_'));
