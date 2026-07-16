@@ -1,5 +1,9 @@
 # Trailer Bros Rental OS roadmap
 
+## Stripe Payment Foundation
+
+Protected staging defines an append-only synthetic payment ledger, deterministic provider contract, payment/refund/deposit policy calculations, sanitized webhook journal, and owner-only mock preview. Stripe credentials, checkout, cards, public webhooks, live money movement, communications, and reservation confirmation remain disabled. See `PAYMENT_FOUNDATION.md` for the contract and launch gates.
+
 ## Priority order
 
 The Rental OS remains the authoritative reservation and availability calendar. Reliable overlap protection, safe customer booking, Stripe payment workflows, immutable agreements, reviewed communications, and production security and recovery hardening take priority over autonomous or customer-facing AI behavior.
