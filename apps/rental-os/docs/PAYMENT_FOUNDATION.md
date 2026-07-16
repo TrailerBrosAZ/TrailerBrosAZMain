@@ -1,24 +1,33 @@
-# Stripe Payment Foundation
+# Stripe test-mode payment integration
 
-Status: protected staging foundation using a deterministic mock provider. No Stripe account, key, webhook, card, live charge, or public checkout is connected.
+Status: real Stripe adapter and Payment Element foundation for protected synthetic staging. It remains mock-only until all three encrypted test-mode bindings are present. No live key, real charge, public checkout, or public webhook is permitted.
 
 ## Authoritative contract
 
 - Total due is approved rental charge + dolly at $10 per rental day + approved delivery fee + a collected $100 refundable security deposit. There is no separate Arizona sales-tax line.
-- Scheduled/booked value remains a reservation analytics measure. Collected, refunded, retained, and net amounts come only from the append-only payment ledger.
-- At least 48 hours before pickup, the refund is the complete collected total. Inside 48 hours or for a no-show, rental, dolly, and delivery are refunded and $100 is retained.
-- Early return creates no automatic refund. A clean-return deposit release requires the return workflow and refunds at most the $100 actually collected.
-- Damage retention requires an owner decision, amount, reason, damage notes, and linked return inspection. It cannot exceed $100 or the originally collected total. No additional damage charge exists.
-- Payment success never changes reservation status and never bypasses agreement, qualification, delivery/interstate approval, authoritative availability, or owner review.
+- The server ignores client amounts and rechecks reservation state, agreement, qualification, delivery/interstate approval, and authoritative availability before creating a PaymentIntent.
+- At least 48 hours before pickup, refund the complete collected total. Inside 48 hours or for a no-show, refund rental, dolly, and delivery and retain $100.
+- Early return creates no automatic refund. A clean-return decision refunds at most the $100 actually collected. Damage retention requires the linked return inspection, owner amount/reason/damage notes, and never exceeds the collected deposit.
+- Payment success never changes reservation status. Browser success is not authoritative; only server reconciliation and verified webhook history can append successful collection.
 
-## State and reconciliation model
+## Adapter and reconciliation
 
-`payment_ledger_entries` is append-only and uses unique idempotency keys. Entries distinguish successful/failed collection, successful/failed refund, deposit retention, disputes, and reconciliation-required states. Every server action appends an immutable audit event. `payment_webhook_events` stores only the provider event ID, type, provider payment ID, sanitized status, timestamps, and a payload hash; raw payloads and card data are never stored.
+`PaymentProvider` has deterministic mock and Stripe-test implementations. The Stripe adapter calls PaymentIntents and Refunds with Stripe idempotency keys, test-key format enforcement, server-calculated amounts, and synthetic metadata. The browser receives only the publishable key and PaymentIntent client secret needed by Stripe.js; card data goes directly to Stripe and never enters Rental OS.
 
-The mock provider implements the intended Stripe server boundary: payment creation, refund creation, and verified webhook normalization. Duplicate requests return the existing ledger record. Duplicate webhook event IDs are ignored. Out-of-order or unmatched future Stripe events must be recorded for owner reconciliation and must never infer a reservation transition.
+`payment_ledger_entries` is append-only. `payment_webhook_events` deduplicates provider event IDs and stores only sanitized identifiers/statuses, timestamps, and a payload hash—not raw payloads or card data. Stripe signatures are verified against the untouched request body and `Stripe-Signature` header with a five-minute timestamp tolerance. Unmatched events are marked for reconciliation; older events cannot overwrite newer conclusions.
 
-## Later Stripe test-mode handoff
+The protected route is `/api/payments/webhooks/stripe`. It intentionally remains behind Cloudflare Access, so Stripe cannot deliver to it. Do not add an Access bypass until separately approved.
 
-No secrets are currently required. A future approved test-mode setup will need encrypted Worker secrets named `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, entered directly with Wrangler secret entry or the Cloudflare dashboard. The future webhook endpoint must verify the raw body before parsing, accept only Stripe signatures, rate-limit abuse, and expose no customer checkout route until separately approved.
+## Encrypted staging bindings
 
-Before live mode: approve legal agreement and displayed refund language; test support and dispute procedures; confirm Stripe business/account readiness; verify privacy notice and fixed customer templates; complete production backups and recovery; conduct payment, refund, reconciliation, failure, and rollback acceptance tests; and explicitly approve public customer access. Live and test keys must use separate environments and D1 databases.
+These names are placeholders only; values must never be committed, written to local files, documentation, chat, or logs:
+
+- `STRIPE_TEST_SECRET_KEY`
+- `STRIPE_TEST_PUBLISHABLE_KEY`
+- `STRIPE_TEST_WEBHOOK_SECRET`
+
+Prefer a restricted test key when Stripe supports the required PaymentIntent and Refund write permissions. The Worker rejects live secret-key prefixes. All three bindings are required together; otherwise the application continues with the deterministic mock provider.
+
+## Public-launch blockers
+
+Before a public webhook or customer checkout: approve an exact Cloudflare Access service-token/bypass design limited to the single webhook path; configure and verify Stripe test webhook delivery; exercise asynchronous, retry, dispute, refund, and reconciliation operations; approve legal/refund language and fixed communications; complete production backups/recovery and privacy review; create separate production resources; and explicitly approve live-mode credentials and public customer access.
