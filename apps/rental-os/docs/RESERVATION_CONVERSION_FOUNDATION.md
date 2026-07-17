@@ -1,5 +1,7 @@
 # Reservation conversion foundation
 
+The future direct-booking contract is: authoritative availability and qualification → signed agreement with explicit pickup-inspection choice → server-authoritative payment/reconciliation → fresh transactional availability revalidation → confirmed reservation → one tailored booking confirmation. Browser-reported agreement or payment success is never evidence. External/Marketplace, Big Rentals, Facebook Marketplace, Neighbors Trailer, interstate, delivery, and owner-created exceptions remain owner-review/manual paths. No public conversion or communication action is enabled.
+
 This server-only foundation converts a synthetic, unexpired booking intent into a `PENDING_REVIEW` reservation inside one database transaction. It is deliberately not exposed by the customer or owner UI and has no HTTP conversion route in this checkpoint.
 
 Conversion requires a fresh authoritative availability query, deterministic quote parity, complete qualification review, explicit delivery/interstate approvals when applicable, and signed-agreement evidence supplied by a future trusted server workflow. Browser-supplied agreement status is never accepted. A unique intent and idempotency record prevents duplicate conversion; database overlap triggers remain the final concurrency guard and roll back the customer, reservation, conversion, and audit writes together.

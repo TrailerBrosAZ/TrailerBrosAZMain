@@ -1,6 +1,6 @@
 # Rental Agreement workflow requirements
 
-The protected staging foundation now implements owner-driven synthetic agreement opening/signing, immutable snapshots, explicit consent evidence, pickup-condition completion/decline, status display, and audit history. Public links, delivery, final PDFs, external storage, and communications remain future requirements.
+The protected staging foundation now implements owner-driven synthetic agreement opening/signing, immutable snapshots, explicit consent evidence, a required mutually exclusive pickup-inspection choice, pickup-condition completion/decline, status display, and audit history. Public links, delivery, final PDFs, and external storage remain future requirements. Deterministic communication previews exist, but delivery is unavailable.
 
 ## Required owner entry points
 

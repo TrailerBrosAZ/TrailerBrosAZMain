@@ -1,5 +1,9 @@
 # Trailer Bros Rental OS roadmap
 
+## Direct confirmation and closeout foundation
+
+Protected staging now prepares exactly two auditable, deterministic previews after authoritative prerequisites: booking confirmation and rental closeout. No message is sent. Public/Gmail enablement remains gated by attorney review, secure customer access, provider credentials, privacy/retention approval, backups, and production acceptance.
+
 ## Stripe Payment Foundation
 
 Protected staging defines an append-only synthetic payment ledger, deterministic provider contract, payment/refund/deposit policy calculations, sanitized webhook journal, and owner-only mock preview. Stripe credentials, checkout, cards, public webhooks, live money movement, communications, and reservation confirmation remain disabled. See `PAYMENT_FOUNDATION.md` for the contract and launch gates.

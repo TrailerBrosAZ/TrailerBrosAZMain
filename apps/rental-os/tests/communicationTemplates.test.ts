@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { communicationTemplateKeys, renderCommunication } from '../src/shared/communicationTemplates.js';
-
-const context={customerName:'Synthetic Owner Test',confirmationCode:'SYN-100',pickupAt:'2026-07-16T13:00:00.000Z',returnAt:'2026-07-17T13:00:00.000Z',trailerName:'Synthetic Trailer'};
-describe('deterministic communication templates',()=>{
-  it('renders every approved template without a delivery action',()=>{for(const key of communicationTemplateKeys){const first=renderCommunication(key,context);expect(renderCommunication(key,context)).toEqual(first);expect(first.subject).toBeTruthy();expect(first.body).toBeTruthy();expect(first.body).not.toMatch(/send|sent via|emailed/i)}});
-  it('uses safe fallbacks and Arizona time',()=>{const result=renderCommunication('PICKUP_INSPECTION_REMINDER',{...context,customerName:''});expect(result.body).toContain('Trailer Bros customer');expect(result.body).toContain('6:00 AM')});
-  it('labels deposit outcomes as records, not payment execution',()=>{const result=renderCommunication('DEPOSIT_OUTCOME',{...context,depositOutcome:'RELEASE_RECORDED'});expect(result.body).toContain('RELEASE_RECORDED');expect(result.body).toContain('does not execute a payment action')});
+import {describe,expect,it} from 'vitest';
+import {communicationHash,communicationTemplateKeys,communicationTemplateManifest,renderCommunication} from '../src/shared/communicationTemplates.js';
+const base={customerName:'Synthetic Owner Test',confirmationCode:'SYN-100',pickupAt:'2026-07-16T13:00:00.000Z',returnAt:'2026-07-17T13:00:00.000Z',trailerName:'Synthetic Trailer',fulfillment:'Customer pickup',rentalCents:6000,dollyCents:1000,deliveryCents:0,depositCents:10000,totalCents:17000,inspectionChoice:'SEND_FORM' as const};
+describe('two deterministic customer communications',()=>{
+ it('defines exactly booking confirmation and rental closeout',()=>expect(communicationTemplateKeys).toEqual(['BOOKING_CONFIRMATION','RENTAL_CLOSEOUT']));
+ it('renders a confirmation with itemized payment and affirmative inspection link only',()=>{const result=renderCommunication('BOOKING_CONFIRMATION',{...base,agreementLinkPlaceholder:'[agreement]',inspectionLinkPlaceholder:'[inspection]'});expect(result.body).toContain('Total collected: $170.00');expect(result.body).toContain('[agreement]');expect(result.body).toContain('[inspection]');expect(result.body).toContain('Arizona time')});
+ it('suppresses the inspection link for an explicit decline',()=>{const result=renderCommunication('BOOKING_CONFIRMATION',{...base,inspectionChoice:'DECLINE_FORM',inspectionLinkPlaceholder:'NEVER_SHOW'});expect(result.body).toContain('explicitly chose to decline');expect(result.body).not.toContain('NEVER_SHOW')});
+ it('never claims refund completion without authoritative ledger evidence',()=>{const pending=renderCommunication('RENTAL_CLOSEOUT',{...base,depositDecision:'RELEASE_RECORDED',refundCompleted:false});expect(pending.body).toContain('does not yet record');const completed=renderCommunication('RENTAL_CLOSEOUT',{...base,depositDecision:'RELEASE_RECORDED',refundCompleted:true});expect(completed.body).toContain('records the $100 security-deposit refund as completed')});
+ it('renders retained outcomes neutrally and hashes deterministically',async()=>{const result=renderCommunication('RENTAL_CLOSEOUT',{...base,depositDecision:'RETAIN_RECORDED',depositAmountCents:5000});expect(result.body).toContain('not legal advice');expect(await communicationHash(communicationTemplateManifest)).toBe(await communicationHash(communicationTemplateManifest))});
 });

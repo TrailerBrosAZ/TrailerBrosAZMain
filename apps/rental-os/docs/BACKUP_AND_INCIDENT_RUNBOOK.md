@@ -30,6 +30,8 @@ Verification checks SQL integrity, foreign keys, required tables, all four autho
 
 For a local isolated rehearsal, run `npm run d1:rehearse`. It migrates a fresh local D1 database, imports synthetic records, verifies preserved reservations, blackouts, audit events, inspections, photo metadata, and synthetic markers, exports the database, restores it into a second local D1 store, and rechecks aggregate integrity and overlap rejection.
 
+Communication records, inspection-choice evidence, template/content hashes, idempotency keys, and their immutable triggers are part of every post-0011 export and restore. Recovery verification must confirm those records remain explainable and cannot be silently rewritten or deleted. Gmail rollback is always a provider change back to `NO_SEND`; it must never rewrite message history.
+
 For a remote rehearsal, after explicit approval:
 
 1. Export and verify staging.
