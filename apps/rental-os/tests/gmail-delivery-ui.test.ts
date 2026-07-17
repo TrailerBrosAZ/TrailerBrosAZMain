@@ -1,0 +1,13 @@
+import {describe,expect,it} from 'vitest';
+import {readFileSync} from 'node:fs';
+import {gmailConnectionCopy,gmailSafeFailure,gmailSendAvailability} from '../src/shared/gmailDeliveryUi.js';
+
+describe('Gmail synthetic delivery owner states',()=>{
+  it('explains the prepared-communication prerequisite instead of silently disabling the action',()=>expect(gmailSendAvailability({connectionStatus:'CONNECTED_HEALTHY',hasPreparedRecord:false})).toEqual({enabled:false,reason:'Prepare an eligible booking-confirmation or rental-closeout preview first.'}));
+  it('allows only a healthy connection with a prepared immutable record',()=>expect(gmailSendAvailability({connectionStatus:'CONNECTED_HEALTHY',hasPreparedRecord:true})).toMatchObject({enabled:true,requiresRetryReason:false}));
+  it.each(['SENDING','ACCEPTED_BY_GMAIL'])('blocks duplicate state %s',state=>expect(gmailSendAvailability({connectionStatus:'CONNECTED_HEALTHY',hasPreparedRecord:true,attemptState:state})).toMatchObject({enabled:false}));
+  it.each(['FAILED','UNKNOWN'])('requires an owner reason before retrying %s',state=>expect(gmailSendAvailability({connectionStatus:'CONNECTED_HEALTHY',hasPreparedRecord:true,attemptState:state})).toMatchObject({enabled:true,requiresRetryReason:true}));
+  it('renders connection-aware copy without claiming Gmail is disconnected',()=>expect(gmailConnectionCopy.CONNECTED_HEALTHY).toContain('Connected and healthy'));
+  it('renders safe actionable failures without internal details',()=>{expect(gmailSafeFailure('Communication prerequisites are incomplete.',['A signed agreement is required.'])).toContain('Complete the listed prerequisites');expect(gmailSafeFailure(undefined,undefined,'PROVIDER_RATE_LIMITED')).toContain('temporarily limited');expect(gmailSafeFailure()).not.toMatch(/stack|database|token/i)});
+  it('refreshes the send control after a prepared communication changes',()=>{const source=readFileSync(new URL('../src/client/ReservationOperations.tsx',import.meta.url),'utf8');expect(source).toContain("window.dispatchEvent(new Event('rental-os-communications-changed'))");expect(source).toContain("window.addEventListener('rental-os-communications-changed',refresh)");expect(source).not.toContain('window.confirm(')});
+});
