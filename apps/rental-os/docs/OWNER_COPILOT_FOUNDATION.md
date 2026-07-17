@@ -2,6 +2,12 @@
 
 This protected owner-only console is deterministic software, not GPT. It converts a narrow command set into read-only answers or structured drafts. A draft never writes until the owner presses the confirmation control. Confirmed writes call the same authenticated reservation or blackout API used by the normal owner interface, so Arizona-time validation, overlap protection, audit events, lifecycle rules, and payment safeguards remain authoritative.
 
+## Operations assistance checkpoint
+
+The console exposes plain-English priorities for reservation and review-required intent records, with direct navigation to the authoritative detail screen. It supports read-only availability checks, attention and requirement lists, monthly-summary navigation, cancellation outcome calculations, delivery-review assistance, and six guided playbooks: cancellation/no-show, reschedule/conflict, pickup/return inspection, deposit decision, delivery review, and agreement/signature/inspection decline.
+
+Only blackout and external-booking drafts can mutate state, and both require the visible owner confirmation control before calling the existing API. Policy answers use the checked-in rules and never execute payment, sign an agreement, approve delivery, infer an acknowledgment, or alter a lifecycle state. Ambiguous or prohibited requests return a safe refusal.
+
 ## Future GPT tool contract
 
 - Approved read tools: daily operations, attention queue, upcoming schedule, reservation requirement status, and aggregate analytics.
