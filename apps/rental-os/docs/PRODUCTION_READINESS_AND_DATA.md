@@ -34,6 +34,8 @@ The future server-only adapter will accept an immutable artifact plus reservatio
 
 D1 exports and restore rehearsals include reservations, intents/conversions, agreements/documents, condition records, secure-link hashes/status, communication previews, and audit events. Raw secure-link tokens are absent by design. Every migration requires a verified pre-migration export, isolated upgrade/restore rehearsal, aggregate/schema/foreign-key/overlap verification, and authenticated workflow smoke tests. Agreement-document immutability triggers and authoritative overlap triggers are recovery acceptance criteria.
 
+Gmail readiness adds hashed OAuth state, encrypted token ciphertext/IV/key-version metadata, sanitized connection status, and delivery-attempt records. Backups must never contain the Worker encryption key; a restore is operationally useful only when the separately protected matching key is available. OAuth codes, raw tokens, client secrets, rendered message logs, and raw Google responses are prohibited from exports and diagnostics. Public customer sends remain blocked by legal/template approval, privacy and retention acceptance, production backup/monitoring, sender/OAuth verification, bounce/support procedures, and production acceptance testing.
+
 ## Remaining public-launch blockers
 
 - Arizona attorney approval of agreement, cancellation, deposit, towing, privacy, electronic-signature, retention, and customer-facing terms.

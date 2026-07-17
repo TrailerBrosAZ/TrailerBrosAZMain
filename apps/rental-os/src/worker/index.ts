@@ -4,7 +4,7 @@ import { createD1DatabasePort, type D1DatabaseLike } from './d1.js';
 import { createGoogleRoutesDeliveryRouter } from '../server/delivery.js';
 import { createStripeTestPaymentProvider, createStripeTestWebhookVerifier } from '../server/paymentProvider.js';
 
-export type WorkerEnvironment = AuthEnvironment & { DB?: D1DatabaseLike; ASSETS?: { fetch(request: Request): Promise<Response> }; GOOGLE_MAPS_API_KEY?: string; DELIVERY_ORIGIN?: string; STRIPE_TEST_SECRET_KEY?: string; STRIPE_TEST_PUBLISHABLE_KEY?: string; STRIPE_TEST_WEBHOOK_SECRET?: string };
+export type WorkerEnvironment = AuthEnvironment & { DB?: D1DatabaseLike; ASSETS?: { fetch(request: Request): Promise<Response> }; GOOGLE_MAPS_API_KEY?: string; DELIVERY_ORIGIN?: string; STRIPE_TEST_SECRET_KEY?: string; STRIPE_TEST_PUBLISHABLE_KEY?: string; STRIPE_TEST_WEBHOOK_SECRET?: string; GMAIL_OAUTH_CLIENT_ID?:string;GMAIL_OAUTH_CLIENT_SECRET?:string;GMAIL_TOKEN_ENCRYPTION_KEY?:string;GMAIL_APPROVED_SENDER?:string;GMAIL_TEST_RECIPIENT?:string };
 const placeholders = /CONFIGURE_|local-development-only/i;
 export function validateWorkerEnvironment(env: WorkerEnvironment): asserts env is WorkerEnvironment & { DB: D1DatabaseLike; ASSETS: { fetch(request: Request): Promise<Response> } } {
   if (!env.DB || !env.ASSETS) throw new Error('Required Worker bindings are missing.');

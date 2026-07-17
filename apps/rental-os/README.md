@@ -25,6 +25,8 @@ The published payload capacity is recorded as 5,200 lb with `plate_verified = fa
 
 ## Local setup
 
+Gmail delivery is intentionally disabled in local development and protected staging until the owner completes the separate setup in `docs/GMAIL_TEST_MODE_RUNBOOK.md`. Preview and copy actions use the fail-closed `NO_SEND` provider by default; never place OAuth credentials or token-encryption keys in tracked files.
+
 Requires Node.js 20.19+ or 22.12+.
 
 ```powershell

@@ -54,4 +54,8 @@ Protected staging uses authenticated health diagnostics, repeatable D1 export ve
 
 ## Owner communication preparation
 
-Implemented in protected synthetic staging: stored, audited owner previews for six deterministic fixed templates and an explicit copy-text action. No message is sent and no Gmail, Google Voice, SMS, or other delivery integration is connected. See [Deterministic communication preparation](COMMUNICATION_PREPARATION.md).
+Implemented in protected synthetic staging: stored, audited owner previews for the two currently approved deterministic templates—booking confirmation and rental closeout—and an explicit copy-text action. No message is sent and no Gmail, Google Voice, SMS, or other delivery integration is connected. See [Deterministic communication preparation](COMMUNICATION_PREPARATION.md).
+
+### Gmail test-mode delivery readiness
+
+The protected staging architecture now defines exact-account OAuth authorization, encrypted D1 token storage, deterministic Gmail delivery attempts, stable message identifiers, retry/resend controls, and an owner-only synthetic self-send gate. `NO_SEND` remains the default until the owner separately configures and authorizes Gmail. No Google resource, credential, authorization, or message send is part of the checkpoint. See [Gmail test-mode integration runbook](GMAIL_TEST_MODE_RUNBOOK.md).
