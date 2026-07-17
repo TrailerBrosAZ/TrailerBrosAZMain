@@ -70,7 +70,7 @@ export function CustomerBookingPreview({trailers,onSubmitted}:{trailers:Trailer[
  }
 
  return <div className="customer-preview">
-  <section className="customer-hero"><div className="customer-brand-lockup"><img src="/tb-logo.svg" alt="Trailer Bros"/><div><span>PROTECTED STAGING PREVIEW</span><h2>Reserve the Trailer Bros utility trailer</h2><p>Preview availability and submit a synthetic request for owner review. This does not confirm a reservation.</p></div></div><ShieldCheck/></section>
+  <section className="customer-hero"><div className="customer-brand-lockup"><img src="/tb-logo-circle.png" alt="Trailer Bros"/><div><span>PROTECTED STAGING PREVIEW</span><h2>Reserve the Trailer Bros utility trailer</h2><p>Preview availability and submit a synthetic request for owner review. This does not confirm a reservation.</p></div></div><ShieldCheck/></section>
   <LaunchJourney hasWindow={Boolean(pickupAt&&returnAt)} hasQuote={Boolean(quoteState.quote)} deliveryRequested={fulfillment==='DELIVERY'} deliveryQuoted={Boolean(deliveryQuote)} submitted={Boolean(submitted)}/>
   <div className="preview-grid"><form className="panel customer-form" onSubmit={event=>void submit(event)} noValidate>
    <fieldset><legend>Requested schedule</legend><label>Trailer<select name="trailerId" required>{trailers.map(trailer=><option key={trailer.id} value={trailer.id}>{trailer.name} · {trailer.published_payload_lbs.toLocaleString()} lb published payload</option>)}</select></label>
