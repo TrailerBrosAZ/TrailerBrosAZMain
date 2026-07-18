@@ -25,7 +25,7 @@ The published payload capacity is recorded as 5,200 lb with `plate_verified = fa
 
 ## Local setup
 
-Gmail delivery is intentionally disabled in local development and protected staging until the owner completes the separate setup in `docs/GMAIL_TEST_MODE_RUNBOOK.md`. Preview and copy actions use the fail-closed `NO_SEND` provider by default; never place OAuth credentials or token-encryption keys in tracked files.
+Gmail delivery remains disabled in local development. Protected staging permits only confirmation-gated synthetic self-send to the exact configured owner test mailbox; all other recipients fail closed. See `docs/GMAIL_TEST_MODE_RUNBOOK.md`, and never place OAuth credentials or token-encryption keys in tracked files.
 
 Requires Node.js 20.19+ or 22.12+.
 
@@ -44,6 +44,8 @@ See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import,
 See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md), [agreement foundation](docs/AGREEMENT_INSPECTION_FOUNDATION.md), and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for implemented and future scope.
 
 See the [Customer Booking Foundation contract](docs/CUSTOMER_BOOKING_FOUNDATION.md) for availability, qualification, pricing, expiration, idempotency, privacy, and future conversion rules. The `/customer-preview` route remains behind the same owner-only Cloudflare Access boundary and uses synthetic data only.
+
+See the [Customer Communication Style Guide](docs/CUSTOMER_COMMUNICATION_STYLE_GUIDE.md) for the two approved deterministic message types, authoritative-data requirements, suppression rules, presentation standards, and staging-only delivery boundary.
 
 To reset local data, remove `data/rental-os.db*`, then run migration and seed again. Never use real customer information in this checkpoint.
 
