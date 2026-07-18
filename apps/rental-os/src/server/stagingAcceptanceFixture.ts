@@ -1,0 +1,28 @@
+import { agreementTemplateHash, internalAgreementSource } from '../shared/agreement.js';
+import { createOpaqueToken, hashSecureToken } from '../shared/secureLinks.js';
+import type { DatabasePort, SqlStatement } from './db/port.js';
+
+export const BOOKING_CONFIRMATION_ACCEPTANCE_CODE='SYN-BOOKING-UTF8';
+const pickupAt='2029-02-01T15:00:00.000Z';
+const returnAt='2029-02-02T15:00:00.000Z';
+
+export async function createBookingConfirmationAcceptanceFixture(db:DatabasePort,actor:string,now=new Date()){
+ const existing=await db.first<{id:number}>('SELECT id FROM reservations WHERE confirmation_code=?',[BOOKING_CONFIRMATION_ACCEPTANCE_CODE]);
+ if(existing)return{reservationId:Number(existing.id),confirmationCode:BOOKING_CONFIRMATION_ACCEPTANCE_CODE,idempotent:true,synthetic:true};
+ const templateHash=await agreementTemplateHash(internalAgreementSource);const signedAt=now.toISOString();const expiresAt=new Date(now.getTime()+24*60*60_000).toISOString();
+ const agreementTokenHash=await hashSecureToken(createOpaqueToken());const inspectionTokenHash=await hashSecureToken(createOpaqueToken());
+ const commands:SqlStatement[]=[
+  {sql:'INSERT OR IGNORE INTO agreement_templates(version,source_manifest_version,content_json,content_hash,is_synthetic) VALUES (?,?,?,?,1)',params:[internalAgreementSource.sourceVersion,internalAgreementSource.sourceVersion,JSON.stringify(internalAgreementSource),templateHash]},
+  {sql:"INSERT INTO customers(first_name,last_name,email,phone) VALUES ('Synthetic','Booking Confirmation','booking-confirmation-qa@example.test','480-555-0100')"},
+  {sql:"INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,dolly_days,renter_age,named_renter_will_tow,interstate_use,interstate_approved,international_use,delivery_requested,delivery_approved,notes,is_synthetic) SELECT ?,id,last_insert_rowid(),'DIRECT','CONFIRMED',?,?,6000,1,30,1,0,0,0,0,0,'Synthetic Booking Confirmation Gmail acceptance fixture',1 FROM trailers WHERE active=1 ORDER BY id LIMIT 1",params:[BOOKING_CONFIRMATION_ACCEPTANCE_CODE,pickupAt,returnAt]},
+  {sql:"INSERT INTO agreement_instances(reservation_id,template_id,status,template_version,template_hash,renter_snapshot_json,reservation_snapshot_json,quote_snapshot_json,rendered_at,electronic_consent_at,terms_acknowledged_at,driver_insurance_acknowledged_at,inspection_opportunity_acknowledged_at,pickup_inspection_choice,pickup_inspection_choice_at,signed_at,printed_name,signature_evidence_json,is_synthetic) SELECT r.id,t.id,'SIGNED',t.version,t.content_hash,?,?,?,?,?,?,?,?,'SEND_FORM',?,?,?,?,1 FROM reservations r JOIN agreement_templates t ON t.content_hash=? WHERE r.confirmation_code=?",params:[JSON.stringify({name:'Synthetic Booking Confirmation',email:'booking-confirmation-qa@example.test'}),JSON.stringify({confirmationCode:BOOKING_CONFIRMATION_ACCEPTANCE_CODE,pickupAt,returnAt,fulfillment:'CUSTOMER_PICKUP'}),JSON.stringify({rentalChargeCents:6000,dollyCents:1000,deliveryCents:0,depositCents:10000,totalCents:17000}),signedAt,signedAt,signedAt,signedAt,signedAt,signedAt,signedAt,'Synthetic Booking Confirmation',JSON.stringify({method:'SYNTHETIC_STAGING_ACCEPTANCE',explicitAffirmativeAction:true,pickupInspectionChoice:'SEND_FORM',attorneyReviewRequired:true}),templateHash,BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+  {sql:"INSERT INTO pickup_condition_choices(reservation_id,status,actor,is_synthetic) SELECT id,'PENDING',?,1 FROM reservations WHERE confirmation_code=?",params:[actor,BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+  {sql:"INSERT INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,idempotency_key,reason,breakdown_json,is_synthetic) SELECT id,'PAYMENT_COLLECTED','SUCCEEDED',17000,'MOCK','booking_confirmation_acceptance_collection','Reconciled synthetic acceptance payment',?,1 FROM reservations WHERE confirmation_code=?",params:[JSON.stringify({rentalCents:6000,dollyCents:1000,deliveryCents:0,depositCents:10000,totalCents:17000,taxCents:0}),BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+  {sql:"INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic,created_at,updated_at) SELECT id,'AGREEMENT_SIGNING',?,?,?,?,1,?,? FROM reservations WHERE confirmation_code=?",params:[agreementTokenHash,agreementTokenHash.slice(0,12),expiresAt,actor,signedAt,signedAt,BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+  {sql:"INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic,created_at,updated_at) SELECT id,'PICKUP_INSPECTION',?,?,?,?,1,?,? FROM reservations WHERE confirmation_code=?",params:[inspectionTokenHash,inspectionTokenHash.slice(0,12),expiresAt,actor,signedAt,signedAt,BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+  {sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',id,'BOOKING_CONFIRMATION_ACCEPTANCE_FIXTURE_CREATED',?,? FROM reservations WHERE confirmation_code=?",params:[actor,JSON.stringify({synthetic:true,direct:true,status:'CONFIRMED',qualificationApproved:true,approvalsSatisfied:true,agreementSigned:true,inspectionChoice:'SEND_FORM',secureLinksEligible:true,paymentReconciled:true,freshAvailabilityRequired:true,deliveryAction:'NOT_EXECUTED'}),BOOKING_CONFIRMATION_ACCEPTANCE_CODE]},
+ ];
+ await db.batch(commands);
+ const created=await db.first<{id:number}>('SELECT id FROM reservations WHERE confirmation_code=?',[BOOKING_CONFIRMATION_ACCEPTANCE_CODE]);if(!created)throw new Error('ACCEPTANCE_FIXTURE_NOT_CREATED');
+ return{reservationId:Number(created.id),confirmationCode:BOOKING_CONFIRMATION_ACCEPTANCE_CODE,idempotent:false,synthetic:true};
+}
