@@ -48,3 +48,6 @@ Gmail readiness adds hashed OAuth state, encrypted token ciphertext/IV/key-versi
 - Production-only Worker, D1, Access, secrets, DNS decision, migration/import controls, real-data validation, rollback window, and explicit owner go-live approval.
 
 The public Trailer Bros website stays unchanged until a controlled rollout is separately approved.
+# Future public direct-checkout gate
+
+The protected direct-checkout foundation must not be made public until the checklist in `DIRECT_CHECKOUT_ORCHESTRATION.md` is approved. In particular, Cloudflare Access must not be bypassed for customer pages until bot controls, public rate limits, privacy/legal text, monitoring, backup automation, live-payment acceptance, transactional-email reliability, rollback, and production acceptance testing are complete.

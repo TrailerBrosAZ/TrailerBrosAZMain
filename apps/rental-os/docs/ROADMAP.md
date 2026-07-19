@@ -59,3 +59,6 @@ Implemented in protected synthetic staging: stored, audited owner previews for t
 ### Gmail test-mode delivery readiness
 
 The protected staging architecture now defines exact-account OAuth authorization, encrypted D1 token storage, deterministic Gmail delivery attempts, stable message identifiers, retry/resend controls, and an owner-only synthetic self-send gate. `NO_SEND` remains the default until the owner separately configures and authorizes Gmail. No Google resource, credential, authorization, or message send is part of the checkpoint. See [Gmail test-mode integration runbook](GMAIL_TEST_MODE_RUNBOOK.md).
+# Direct Checkout Orchestration Foundation
+
+Protected staging now composes availability, authoritative quoting, qualification, immutable pre-reservation agreement evidence, explicit pickup-condition choice, Stripe test payment reconciliation, atomic reservation conversion, secure-link creation, and prepared Booking Confirmation into an expiring synthetic direct-checkout state machine. Public access, live Stripe, attorney approval, customer delivery, and automatic email remain blocked pending separate approval. See `DIRECT_CHECKOUT_ORCHESTRATION.md`.

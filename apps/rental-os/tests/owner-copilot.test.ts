@@ -11,7 +11,7 @@ describe('owner copilot deterministic command paths',()=>{
  it('detects authoritative-window conflicts',()=>expect(windowsOverlap('2026-07-17T08:00','2026-07-19T18:00','2026-07-18T10:00','2026-07-18T12:00')).toBe(true));
 });
 describe('owner playbooks and policy answers',()=>{
- it('defines all six required playbooks',()=>expect(ownerPlaybooks.map(item=>item.key)).toEqual(['CANCELLATION_NO_SHOW','RESCHEDULE_CONFLICT','PICKUP_RETURN_INSPECTION','DEPOSIT_DECISION','DELIVERY_REVIEW','AGREEMENT_DECLINE']));
+ it('defines the required operational and direct-checkout playbooks',()=>expect(ownerPlaybooks.map(item=>item.key)).toEqual(['CANCELLATION_NO_SHOW','RESCHEDULE_CONFLICT','PICKUP_RETURN_INSPECTION','DEPOSIT_DECISION','DELIVERY_REVIEW','AGREEMENT_DECLINE','DIRECT_CHECKOUT']));
  it('marks owner and attorney decisions explicitly',()=>{expect(ownerPlaybooks.some(item=>item.decision==='OWNER_DECISION')).toBe(true);expect(ownerPlaybooks.find(item=>item.key==='AGREEMENT_DECLINE')?.decision).toBe('ATTORNEY_REVIEW')});
  it('searches only documented policy text',()=>expect(helpSearch('delivery owner approval').map(item=>item.key)).toEqual(['DELIVERY_REVIEW']));
  it('returns no invented help when terms do not match',()=>expect(helpSearch('cryptocurrency waiver')).toEqual([]));

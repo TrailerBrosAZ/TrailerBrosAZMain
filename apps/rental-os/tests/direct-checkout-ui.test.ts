@@ -1,0 +1,13 @@
+import {describe,expect,it} from 'vitest';
+import {readFileSync} from 'node:fs';
+
+const checkout=readFileSync(new URL('../src/client/DirectCheckoutPreview.tsx',import.meta.url),'utf8');
+const preview=readFileSync(new URL('../src/client/BookingFoundation.tsx',import.meta.url),'utf8');
+
+describe('protected direct checkout UI contract',()=>{
+ it('requires explicit agreement evidence and exposes both pickup-condition choices',()=>{expect(checkout).toContain('electronically consent');expect(checkout).toContain("'SEND_FORM'");expect(checkout).toContain("'DECLINE_FORM'");expect(checkout).toContain('disabled={!accepted||busy}')});
+ it('states that browser payment success is non-authoritative',()=>{expect(checkout).toContain('Browser success cannot confirm this reservation');expect(checkout).toContain('Signed server reconciliation');expect(checkout).toContain('Refresh payment status')});
+ it('does not claim live payment or automatic customer delivery',()=>{expect(preview).toContain('No live payment is collected');expect(preview).toContain('Stripe test mode only');expect(preview).toContain('no customer message is sent automatically');expect(preview).not.toContain('No payment is collected.')});
+ it('keeps the checkout token in request headers or bodies rather than a URL',()=>{expect(checkout).toContain("'x-checkout-token':token");expect(checkout).not.toMatch(/searchParams.*token|[?&]token=/)});
+ it('can resume a persisted eligible intent from protected owner review',()=>{expect(preview).toContain("intent.operational_status==='SUBMITTED'&&!intent.checkout_session");expect(preview).toContain("status:'SUBMITTED'")});
+});
