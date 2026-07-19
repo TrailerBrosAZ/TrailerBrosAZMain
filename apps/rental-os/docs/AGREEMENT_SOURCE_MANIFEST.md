@@ -1,6 +1,6 @@
 # Agreement source manifest
 
-This manifest records the existing public `rental-agreement.html` as the source reviewed for the protected staging foundation. The public file and its Apps Script submission/PDF workflow are not modified. The internal source identifier is `public-rental-agreement-2026-07`; rendered snapshots must retain its deterministic content hash.
+This manifest records the existing public `rental-agreement.html` as the source reviewed for the protected staging foundation. The public file and its Apps Script submission/PDF workflow are not modified. The current internal source identifier is `public-rental-agreement-2026-07+inspection-choice-v1`; rendered snapshots must retain its deterministic content hash. This describes source provenance and does not claim attorney approval.
 
 ## Preserved source elements
 
