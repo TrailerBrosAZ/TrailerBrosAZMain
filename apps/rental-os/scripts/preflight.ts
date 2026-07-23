@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 const migrations=()=>readdirSync(resolve('drizzle')).filter(name=>name.endsWith('.sql')).sort().join('|');
 const before=migrations();
-const gates=[['lint'],['typecheck'],['test'],['build'],['ops:validate-config'],['worker:dry-run'],['db:generate'],['d1:rehearse'],['smoke:http']];
+const gates=[['lint'],['typecheck'],['test'],['test:readiness'],['build'],['ops:validate-config'],['worker:dry-run'],['db:generate'],['d1:rehearse'],['smoke:http']];
 for(const [gate] of gates){
   console.log(`\n=== PREFLIGHT: ${gate} ===`);
   const windows=process.platform==='win32';const command=windows?(process.env.ComSpec||'cmd.exe'):'npm';const args=windows?['/d','/s','/c',`npm.cmd run ${gate}`]:['run',gate];

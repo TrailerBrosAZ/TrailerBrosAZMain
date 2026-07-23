@@ -22,6 +22,7 @@
     "backup:export:staging": "tsx scripts/backup-d1.ts",
     "backup:verify": "tsx scripts/verify-d1-backup.ts",
     "ops:validate-config": "tsx scripts/validate-environment-config.ts",
+    "test:readiness": "tsx scripts/test-readiness.ts",
     "smoke:http": "tsx scripts/http-smoke.ts",
     "preflight": "tsx scripts/preflight.ts"
   },
