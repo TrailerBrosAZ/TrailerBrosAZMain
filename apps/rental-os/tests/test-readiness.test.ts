@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { customerVisibleRules } from '../src/shared/customerVisibleRules.js';
 import { deliveryZoneForMiles } from '../src/shared/delivery.js';
 import { cancellationOutcome } from '../src/shared/domain.js';
-import { evaluateTestReadiness, verifiedCheckpointEvidence } from '../src/shared/testReadiness.js';
+import { evaluateProtectedPilotReadiness, evaluateTestReadiness, verifiedCheckpointEvidence } from '../src/shared/testReadiness.js';
 import { internalAgreementSource } from '../src/shared/agreement.js';
 
 describe('cross-surface rule contracts', () => {
@@ -46,7 +46,15 @@ describe('fail-closed readiness evaluation', () => {
   it('cannot report ready while critical evidence is blocked or missing', () => {
     const result = evaluateTestReadiness(verifiedCheckpointEvidence);
     expect(result.status).toBe('NOT_READY');
-    expect(result.blocking.map(item => item.id)).toEqual(expect.arrayContaining(['attorney-approval', 'google-calendar', 'stripe-3ds']));
+    expect(result.blocking.map(item => item.id)).toEqual(['attorney-approval']);
+    expect(result.blocking.map(item => item.id)).not.toContain('google-calendar');
+    expect(verifiedCheckpointEvidence.find(item => item.id === 'google-calendar')).toMatchObject({ state: 'DEFERRED', critical: false });
+  });
+
+  it('distinguishes a protected synthetic pilot from public launch approval', () => {
+    expect(evaluateProtectedPilotReadiness(verifiedCheckpointEvidence)).toMatchObject({ status: 'READY', missing: [], blocking: [] });
+    expect(evaluateTestReadiness(verifiedCheckpointEvidence)).toMatchObject({ status: 'NOT_READY' });
+    expect(verifiedCheckpointEvidence.find(item => item.id === 'attorney-approval')).toMatchObject({ state: 'BLOCKED' });
   });
 
   it('fails when a required requirement is absent', () => {

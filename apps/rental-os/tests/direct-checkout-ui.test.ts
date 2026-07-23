@@ -10,4 +10,9 @@ describe('protected direct checkout UI contract',()=>{
  it('does not claim live payment or automatic customer delivery',()=>{expect(preview).toContain('No live payment is collected');expect(preview).toContain('Stripe test mode only');expect(preview).toContain('no customer message is sent automatically');expect(preview).not.toContain('No payment is collected.')});
  it('keeps the checkout token in request headers or bodies rather than a URL',()=>{expect(checkout).toContain("'x-checkout-token':token");expect(checkout).not.toMatch(/searchParams.*token|[?&]token=/)});
  it('can resume a persisted eligible intent from protected owner review',()=>{expect(preview).toContain("intent.operational_status==='SUBMITTED'&&!intent.checkout_session");expect(preview).toContain("status:'SUBMITTED'")});
+ it('prevents nested checkout actions from resubmitting the parent booking form',()=>{
+  const buttons=[...checkout.matchAll(/<button\b([^>]*)>/g)];
+  expect(buttons.length).toBeGreaterThan(0);
+  for(const [,attributes] of buttons)expect(attributes).toContain('type="button"');
+ });
 });

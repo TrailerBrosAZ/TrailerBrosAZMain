@@ -1,5 +1,11 @@
 # Trailer Bros Rental OS roadmap
 
+## Post-pilot: optional Google Calendar informational copy
+
+Google Calendar is formally deferred for the initial controlled pilot and is not a launch dependency. Rental OS remains the sole authoritative availability and reservation system.
+
+A later, separately approved integration may create or update a one-way informational copy of eligible Rental OS reservations in Google Calendar. It must be idempotent, auditable, retryable, and visibly report copy/reconciliation failures. Google Calendar must never create, edit, cancel, block, approve, or write back into Rental OS, and Calendar events must never be treated as availability authority. No Calendar account, credential, API, or external resource is connected by this roadmap entry.
+
 ## Direct confirmation and closeout foundation
 
 Protected staging now prepares exactly two auditable, deterministic previews after authoritative prerequisites: booking confirmation and rental closeout. No message is sent. Public/Gmail enablement remains gated by attorney review, secure customer access, provider credentials, privacy/retention approval, backups, and production acceptance.

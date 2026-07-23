@@ -2,6 +2,8 @@
 
 Owner-facing Rental OS with local development support and a protected Cloudflare staging deployment using synthetic data only. The application remains isolated from the production GitHub Pages site and does not connect to Stripe, email, SMS, Google Calendar, or Google Drive.
 
+Google Calendar is formally deferred for the initial controlled pilot and is not a launch dependency. Rental OS is the sole authoritative reservation and availability system. A future post-pilot Calendar integration may be considered only as a one-way informational copy; Calendar must never write to Rental OS or become an availability authority.
+
 ## Included
 
 - Responsive operations dashboard, upcoming schedule, summary metrics, and attention queue
