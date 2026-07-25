@@ -4,9 +4,17 @@ This checkpoint is a protected staging preview. Cloudflare Access continues to p
 
 The customer launch preview now presents the complete intended journey: authoritative availability, deterministic quote, qualification, delivery quote/review, agreement action, payment readiness, and booking outcome. Agreement and payment stages are explicitly blocked—not simulated as complete—until legal/public-link and live-Stripe approvals exist. The visual treatment reuses the checked-in Trailer Bros brand asset; it does not change the public website.
 
+## Customer experience
+
+The protected preview uses a focused five-step journey: authoritative availability, renter/trip details, review and qualification, agreement plus Stripe test-mode payment, and a clear booking outcome. Each step replaces the previous pane so the customer does not navigate a long implementation ledger. Live payment, public access, and unreviewed legal wording remain blocked.
+
+Payment is the last customer action. A browser success signal never confirms a booking. After signed-webhook reconciliation records collection, the server performs the separately idempotent final availability and evidence transaction. Only that successful server transaction produces the customer-facing confirmed state.
+
 ## Availability and intent lifecycle
 
 - Reservations and availability blocks in the Rental OS remain the authoritative calendar.
+- The customer calendar is a privacy-minimized Rental OS view. It shows only available/unavailable days and never exposes customer names, sources, reasons, confirmation codes, or reservation details.
+- Google Calendar is not used by checkout and is not an availability authority. A future one-way informational copy remains a post-pilot roadmap item.
 - Pickup and return are selected as separate calendar dates and constrained time choices. Times use 15-minute increments from 6:00 AM through 10:00 PM in `America/Phoenix`; arbitrary minute values are rejected by the shared rule and API.
 - Availability checks include persisted reservations in `Pending Review`, `Confirmed`, `Checked Out`, and `Inspection Pending`, plus all availability blocks.
 - Booking intents never block availability and never appear as reservations.
@@ -21,7 +29,9 @@ The customer launch preview now presents the complete intended journey: authorit
 
 ## Qualification contract
 
-Submission requires full legal name, email, phone, confirmation of age 25 or older, confirmation that only the named renter will tow, tow-vehicle details, acknowledgment of a 2-5/16-inch hitch ball and electric brake controller, insurance-requirement acknowledgment, and intended use. International use is rejected. Interstate use requires destination/details and produces an owner-approval exception. Delivery requires an address and produces a calculation/approval exception.
+The customer is not asked to type tow-vehicle year, make, model, or towing details. Instead, the workflow requires an explicit acknowledgment that the renter is responsible for using a properly rated and capable tow vehicle for the intended trailer and load. A neutral compatibility note is retained in the current schema for audit continuity until a future migration removes that legacy field.
+
+Submission requires full legal name, email, phone, confirmation of age 25 or older, confirmation that only the named renter will tow, towing-suitability acknowledgment, acknowledgment of a 2-5/16-inch hitch ball and electric brake controller, insurance-requirement acknowledgment, and intended use. International use is rejected. Interstate use requires destination/details and produces an owner-approval exception. Delivery requires an address and produces a calculation/approval exception.
 
 The acknowledgment fields record only what the synthetic preview form captured. They do not prove insurance coverage, identity, payment authorization, or completion of a future production verification process.
 

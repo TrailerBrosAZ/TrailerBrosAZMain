@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { addArizonaDays, analyticsRange, calculateAnalytics, comparisonRange, defaultAnalyticsRange, type AnalyticsBlock, type AnalyticsReservation } from '../shared/analytics.js';
+import { arizonaDayKey } from '../shared/arizonaTime.js';
 import { parseArizonaDateTime } from '../shared/arizonaTime.js';
 import { bookingIntentPolicy, calculateBookingQuote } from '../shared/booking.js';
 import { agreementTemplateHash, internalAgreementSource } from '../shared/agreement.js';
@@ -141,6 +142,25 @@ export async function handleApiRequest(request: Request, environment: ApiEnviron
     if(method==='GET'&&url.pathname==='/api/dashboard')return json(await dashboard(db,now));
     if(method==='GET'&&url.pathname==='/api/analytics')return json(await analytics(db,url,now));
     if(url.pathname.startsWith('/api/customer-preview')&&environment.ENVIRONMENT==='production')return json({error:'Customer preview is not available.'},404);
+    if(method==='GET'&&url.pathname==='/api/customer-preview/calendar'){
+      const parsed=z.object({trailerId:z.coerce.number().int().positive(),month:z.string().regex(/^\d{4}-\d{2}$/)}).safeParse(Object.fromEntries(url.searchParams));
+      if(!parsed.success)return json({error:'Choose a valid calendar month.'},400);
+      const [year,month]=parsed.data.month.split('-').map(Number);
+      const nextMonth=month===12?`${year+1}-01`:`${year}-${String(month+1).padStart(2,'0')}`;
+      const startAt=new Date(`${parsed.data.month}-01T00:00:00-07:00`).toISOString();
+      const endAt=new Date(`${nextMonth}-01T00:00:00-07:00`).toISOString();
+      const rows=await db.all<{start_at:string;end_at:string}>(`SELECT pickup_at start_at,return_at end_at FROM reservations
+        WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND pickup_at < ? AND return_at > ?
+        UNION ALL SELECT start_at,end_at FROM availability_blocks WHERE trailer_id=? AND start_at < ? AND end_at > ?`,
+        [parsed.data.trailerId,endAt,startAt,parsed.data.trailerId,endAt,startAt]);
+      const unavailableDays=new Set<string>();
+      for(const row of rows){
+        const cursor=new Date(Math.max(Date.parse(row.start_at),Date.parse(startAt)));
+        const limit=Math.min(Date.parse(row.end_at),Date.parse(endAt));
+        while(cursor.getTime()<limit){unavailableDays.add(arizonaDayKey(cursor));cursor.setUTCDate(cursor.getUTCDate()+1)}
+      }
+      return json({month:parsed.data.month,unavailableDays:[...unavailableDays].sort(),authoritativeSource:'RENTAL_OS'});
+    }
     if(method==='GET'&&url.pathname==='/api/customer-preview/availability'){
       const parsed=z.object({trailerId:z.coerce.number().int().positive(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,dollyRequested:z.enum(['true','false']).default('false')}).safeParse(Object.fromEntries(url.searchParams));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);validateBookingWindow(parsed.data.pickupAt,parsed.data.returnAt);const pickupAt=iso(parsed.data.pickupAt),returnAt=iso(parsed.data.returnAt);return json({available:await scheduleAvailable(db,parsed.data.trailerId,pickupAt,returnAt),pickupAt,returnAt,quote:calculateBookingQuote(parsed.data.pickupAt,parsed.data.returnAt,parsed.data.dollyRequested==='true')});
     }

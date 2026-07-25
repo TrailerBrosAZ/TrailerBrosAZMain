@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { AlertTriangle, ArrowLeft, Ban, BarChart3, Bot, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Clock3, FileSignature, LayoutDashboard, Menu, Plus, Search, Truck, UserRound, X } from 'lucide-react';
 import AnalyticsView from './AnalyticsView';
-import { BookingIntentReview, CustomerBookingPreview } from './BookingFoundation';
+import { BookingIntentReview } from './BookingFoundation';
+import { CustomerBookingPreview } from './CustomerBookingWizard';
 import ReservationOperations, { type OperationalReservation } from './ReservationOperations';
 import OwnerCopilot from './OwnerCopilot';
 import AttorneyApprovalGate from './AttorneyApprovalGate';
