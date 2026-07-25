@@ -4,10 +4,12 @@ export type AuthEnvironment = {
   ENVIRONMENT: 'development' | 'staging' | 'production';
   AUTH_MODE: 'mock' | 'cloudflare-access';
   ALLOWED_OWNER_EMAIL: string;
+  ALLOWED_TESTER_EMAILS?: string;
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
 };
-export type OwnerIdentity = { email: string; subject: string; source: 'local-mock' | 'cloudflare-access' };
+export type AuthorizedIdentity = { email: string; subject: string; source: 'local-mock' | 'cloudflare-access'; role: 'owner' | 'external-tester' };
+export type OwnerIdentity = AuthorizedIdentity & { role: 'owner' };
 export type TokenVerifier = (token: string, environment: AuthEnvironment) => Promise<JWTPayload>;
 
 export class AuthorizationError extends Error {
@@ -31,22 +33,34 @@ export const verifyCloudflareAccessToken: TokenVerifier = async (token, environm
   return verifyAccessTokenWithKeySet(token, environment, keySet);
 };
 
-export async function authorizeOwner(request: Request, environment: AuthEnvironment, verifier: TokenVerifier = verifyCloudflareAccessToken): Promise<OwnerIdentity> {
+function testerEmails(environment: AuthEnvironment) {
+  return new Set((environment.ALLOWED_TESTER_EMAILS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
+}
+
+export async function authorizeIdentity(request: Request, environment: AuthEnvironment, verifier: TokenVerifier = verifyCloudflareAccessToken): Promise<AuthorizedIdentity> {
   const allowed = environment.ALLOWED_OWNER_EMAIL.trim().toLowerCase();
   if (!allowed) throw new AuthorizationError('Owner authorization is not configured.', 503);
   if (environment.AUTH_MODE === 'mock') {
     if (environment.ENVIRONMENT !== 'development') throw new AuthorizationError('Mock authorization is limited to local development.', 503);
     const email = request.headers.get('x-dev-owner-email')?.trim().toLowerCase();
     if (!email) throw new AuthorizationError('Local owner header is required.');
-    if (email !== allowed) throw new AuthorizationError('This owner is not approved.', 403);
-    return { email, subject: `local:${email}`, source: 'local-mock' };
+    const role = email === allowed ? 'owner' : testerEmails(environment).has(email) ? 'external-tester' : undefined;
+    if (!role) throw new AuthorizationError('This identity is not approved.', 403);
+    return { email, subject: `local:${email}`, source: 'local-mock', role };
   }
   const token = request.headers.get('cf-access-jwt-assertion');
   if (!token) throw new AuthorizationError('Cloudflare Access assertion is required.');
   let payload: JWTPayload;
   try { payload = await verifier(token, environment); } catch (error) { if (error instanceof AuthorizationError) throw error; throw new AuthorizationError('Cloudflare Access assertion is invalid.'); }
   const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : '';
-  if (email !== allowed) throw new AuthorizationError('This owner is not approved.', 403);
+  const role = email === allowed ? 'owner' : testerEmails(environment).has(email) ? 'external-tester' : undefined;
+  if (!role) throw new AuthorizationError('This identity is not approved.', 403);
   if (!payload.sub) throw new AuthorizationError('Cloudflare Access subject is missing.');
-  return { email, subject: payload.sub, source: 'cloudflare-access' };
+  return { email, subject: payload.sub, source: 'cloudflare-access', role };
+}
+
+export async function authorizeOwner(request: Request, environment: AuthEnvironment, verifier: TokenVerifier = verifyCloudflareAccessToken): Promise<OwnerIdentity> {
+  const identity = await authorizeIdentity(request, environment, verifier);
+  if (identity.role !== 'owner') throw new AuthorizationError('Owner authorization is required.', 403);
+  return { ...identity, role: 'owner' };
 }

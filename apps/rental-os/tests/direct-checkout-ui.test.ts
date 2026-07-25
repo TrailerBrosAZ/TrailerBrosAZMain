@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 
 const checkout=readFileSync(new URL('../src/client/DirectCheckoutPreview.tsx',import.meta.url),'utf8');
 const preview=readFileSync(new URL('../src/client/BookingFoundation.tsx',import.meta.url),'utf8');
+const app=readFileSync(new URL('../src/client/App.tsx',import.meta.url),'utf8');
 
 describe('protected direct checkout UI contract',()=>{
  it('requires explicit agreement evidence and exposes both pickup-condition choices',()=>{expect(checkout).toContain('electronically consent');expect(checkout).toContain("'SEND_FORM'");expect(checkout).toContain("'DECLINE_FORM'");expect(checkout).toContain('disabled={!accepted||busy}')});
@@ -16,4 +17,5 @@ describe('protected direct checkout UI contract',()=>{
   expect(buttons.length).toBeGreaterThan(0);
   for(const [,attributes] of buttons)expect(attributes).toContain('type="button"');
  });
+ it('renders an isolated, visibly synthetic external-tester shell without owner navigation',()=>{expect(app).toContain('TEST / STAGING');expect(app).toContain('Never enter a real card number or real personal information.');expect(app).toContain("window.location.pathname==='/customer-preview'?<ExternalTesterPreview/>:<OwnerApp/>");expect(app).toContain('/api/customer-preview/bootstrap')});
 });

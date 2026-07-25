@@ -45,7 +45,9 @@ See [Local operations](docs/LOCAL_OPERATIONS.md) for reset, seed, export/import,
 
 See the [analytics metric contract](docs/ANALYTICS_METRICS.md) for exact status, revenue, utilization, comparison, Arizona-boundary, and insufficient-data definitions. See the [Rental OS roadmap](docs/ROADMAP.md), [agreement foundation](docs/AGREEMENT_INSPECTION_FOUNDATION.md), and [agreement workflow requirements](docs/AGREEMENT_WORKFLOW_REQUIREMENTS.md) for implemented and future scope.
 
-See the [Customer Booking Foundation contract](docs/CUSTOMER_BOOKING_FOUNDATION.md) for availability, qualification, pricing, expiration, idempotency, privacy, and future conversion rules. The `/customer-preview` route remains behind the same owner-only Cloudflare Access boundary and uses synthetic data only.
+See the [Customer Booking Foundation contract](docs/CUSTOMER_BOOKING_FOUNDATION.md) for availability, qualification, pricing, expiration, idempotency, privacy, and future conversion rules. The `/customer-preview` route remains behind Cloudflare Access and uses synthetic data only. Individually allowlisted external testers may access only that preview, its required private assets, and `/api/customer-preview/*`; owner routes remain separately enforced.
+
+External-review materials: [tester brief](docs/EXTERNAL_TESTER_BRIEF.md), [usability script](docs/EXTERNAL_TEST_SCRIPT.md), [Access runbook](docs/EXTERNAL_TESTER_ACCESS_RUNBOOK.md), [feedback issue template](docs/EXTERNAL_TEST_FEEDBACK_ISSUE_TEMPLATE.md), and [independent AI audit brief](docs/INDEPENDENT_AI_AUDIT_BRIEF.md).
 
 See the [Customer Communication Style Guide](docs/CUSTOMER_COMMUNICATION_STYLE_GUIDE.md) for the two approved deterministic message types, authoritative-data requirements, suppression rules, presentation standards, and staging-only delivery boundary.
 

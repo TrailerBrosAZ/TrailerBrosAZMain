@@ -9,7 +9,7 @@ import { createOpaqueToken, hashSecureToken, SECURE_LINK_CREATE_LIMIT_PER_HOUR, 
 import { DELIVERY_QUOTE_LIMIT_PER_HOUR, customerDeliveryQuote, routingUnavailable, type DeliveryQuoteResult } from '../shared/delivery.js';
 import { cancellationOutcome, canTransition, externalSources, operationalStatus, reservationStatuses, validateBookingWindow, type ReservationStatus } from '../shared/domain.js';
 import { cancellationRefund, depositRefund, paymentBreakdown } from '../shared/payments.js';
-import { AuthorizationError, authorizeOwner, type AuthEnvironment, type OwnerIdentity, type TokenVerifier } from './auth.js';
+import { AuthorizationError, authorizeIdentity, authorizeOwner, type AuthEnvironment, type OwnerIdentity, type TokenVerifier } from './auth.js';
 import type { DatabasePort, SqlStatement, SqlValue } from './db/port.js';
 import type { DeliveryRouter } from './delivery.js';
 import { createMockPaymentProvider, type PaymentProvider, type StripeWebhookVerifier } from './paymentProvider.js';
@@ -101,10 +101,17 @@ async function health(db:DatabasePort,environment:string,now:Date){
 }
 
 export async function handleApiRequest(request: Request, environment: ApiEnvironment, dependencies: ApiDependencies = {}): Promise<Response> {
+  const url=new URL(request.url);
+  const testerApi=url.pathname.startsWith('/api/customer-preview/');
   let identity: OwnerIdentity;
-  try { identity=await authorizeOwner(request,environment,dependencies.verifier); } catch(error){if(error instanceof AuthorizationError)return json({error:error.message},error.status);throw error;}
-  const db=environment.DB;const url=new URL(request.url);const method=request.method.toUpperCase();const now=dependencies.now?.()||new Date();const paymentProvider=dependencies.paymentProvider||createMockPaymentProvider();
   try {
+    const authorized=testerApi?await authorizeIdentity(request,environment,dependencies.verifier):await authorizeOwner(request,environment,dependencies.verifier);
+    if(authorized.role==='external-tester'&&!testerApi)return json({error:'Owner authorization is required.'},403);
+    identity=authorized as OwnerIdentity;
+  } catch(error){if(error instanceof AuthorizationError)return json({error:error.message},error.status);throw error;}
+  const db=environment.DB;const method=request.method.toUpperCase();const now=dependencies.now?.()||new Date();const paymentProvider=dependencies.paymentProvider||createMockPaymentProvider();
+  try {
+    if(method==='GET'&&url.pathname==='/api/customer-preview/bootstrap')return json({trailers:await db.all('SELECT id,name,published_payload_lbs FROM trailers WHERE active=1 ORDER BY name'),environment:'TEST / STAGING',syntheticOnly:true,role:identity.role});
     if(method==='GET'&&url.pathname==='/api/health'){try{return json(await health(db,environment.ENVIRONMENT,now))}catch{return json({status:'unavailable',checkedAt:now.toISOString(),environment:environment.ENVIRONMENT},503)}}
     if(url.pathname==='/api/readiness/attorney-approval'){
       const latest=await db.first<AttorneyApprovalRecord>('SELECT * FROM attorney_approval_records ORDER BY id DESC LIMIT 1');
