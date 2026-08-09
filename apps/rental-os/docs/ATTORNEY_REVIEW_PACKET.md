@@ -13,7 +13,7 @@ Status: **Attorney review required. Not legal advice and not a representation of
 - Rental price: $60 per complete 24-hour rental day. Additional time is $10 per hour, capped at $60 for a partial day. Dolly is $10 per rental day. Tie-down straps are included.
 - Security deposit: $100 refundable deposit requirement. Release occurs only after owner inspection; a damage-related retain decision requires the completed return inspection, amount, reason, and damage notes.
 - Tax display: no separate Arizona tax line in the current quote.
-- Delivery, one-way driving distance: 0–10 miles $20; over 10–20 miles $40; over 20–35 miles $60; over 35 miles unavailable online. Delivery requires owner approval and does not guarantee availability.
+- Delivery, one-way driving distance: $2.50 per one-way road mile, with the server-calculated road distance rounded up to the next whole mile. Delivery requires owner approval and does not guarantee availability; routing failure requires owner review without an invented fee.
 - Cancellation: at least 48 hours before pickup records a full-refund outcome. Within 48 hours or no-show records a $100 retained outcome and refund of the applicable rental-related amount. Early return has no automatic prorated refund.
 - Payments: Stripe is the intended direct-payment processor. Current protected staging uses synthetic records and Stripe test mode only; it does not authorize live collection.
 
@@ -35,7 +35,7 @@ Status: **Attorney review required. Not legal advice and not a representation of
 
 ## Version, hash, timestamp, and audit model
 
-The agreement source version is `public-rental-agreement-2026-07+inspection-choice-v1`. The application computes a canonical SHA-256 source hash, stores template version/hash with every agreement snapshot, stores acknowledgment and signature timestamps, and renders a deterministic document with its own content hash and renderer version. Signed agreement records and attorney approval records are protected against update and deletion by database triggers. Audit events identify the aggregate, action, actor, timestamp, and minimized structured facts. Raw secure-link tokens, payment card data, OAuth secrets, and hosted photo content are not agreement evidence.
+The protected-staging agreement source version is `TB-RA-2026-08-v1`, classified `OWNER_DRAFT_ATTORNEY_REVIEW_PENDING`. It does not replace the operative public agreement. The application computes a canonical SHA-256 source hash, stores template version/hash with every agreement snapshot, stores acknowledgment and signature timestamps, and renders a deterministic PDF with its own content hash and renderer version. Signed agreement records and attorney approval records are protected against update and deletion by database triggers. Audit events identify the aggregate, action, actor, timestamp, and minimized structured facts. Raw secure-link tokens, payment card data, OAuth secrets, and hosted photo content are not agreement evidence.
 
 ## Questions requiring Arizona counsel
 

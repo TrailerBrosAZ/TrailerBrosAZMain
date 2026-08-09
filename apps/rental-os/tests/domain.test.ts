@@ -23,8 +23,8 @@ describe('reservation lifecycle', () => {
 describe('cancellation outcomes', () => {
   const pickupAt=new Date('2027-01-10T15:00:00Z');
   it('records a full rental refund at the exact 48-hour boundary',()=>expect(cancellationOutcome({pickupAt,decidedAt:new Date('2027-01-08T15:00:00Z'),rentalChargeCents:18000})).toMatchObject({rentalRefundCents:18000,retainedCents:0}));
-  it('records the rental refund separately from the $100 late outcome',()=>expect(cancellationOutcome({pickupAt,decidedAt:new Date('2027-01-08T15:00:01Z'),rentalChargeCents:18000})).toMatchObject({rentalRefundCents:18000,retainedCents:10000}));
-  it('records the $100 no-show outcome without an inspection',()=>expect(cancellationOutcome({pickupAt,decidedAt:pickupAt,rentalChargeCents:6000,noShow:true})).toMatchObject({rentalRefundCents:6000,retainedCents:10000}));
+  it('retains the lesser of $100 or base rent for a late cancellation',()=>expect(cancellationOutcome({pickupAt,decidedAt:new Date('2027-01-08T15:00:01Z'),rentalChargeCents:18000})).toMatchObject({rentalRefundCents:8000,retainedCents:10000}));
+  it('caps a no-show charge at the scheduled base rent',()=>expect(cancellationOutcome({pickupAt,decidedAt:pickupAt,rentalChargeCents:6000,noShow:true})).toMatchObject({rentalRefundCents:0,retainedCents:6000}));
 });
 
 describe('qualification and operating window',()=>{

@@ -34,7 +34,11 @@ export const worker = {
       const testerAsset=url.pathname==='/customer-preview'||url.pathname.startsWith('/assets/')||url.pathname==='/tb-logo-circle.png'||url.pathname==='/favicon.svg';
       if(identity.role==='external-tester'&&!testerAsset)return new Response('Owner authorization required.',{status:403,headers:{'cache-control':'no-store'}});
     } catch (error) { const status = error instanceof AuthorizationError ? error.status : 401; return new Response('Authorization required.', { status, headers: { 'cache-control': 'no-store' } }); }
-    const response = await env.ASSETS.fetch(request); const headers = new Headers(response.headers);
+    const assetRequest =
+      url.pathname === "/customer-preview"
+        ? new Request(new URL("/index.html", url), request)
+        : request;
+    const response = await env.ASSETS.fetch(assetRequest); const headers = new Headers(response.headers);
     headers.set('cache-control', 'private, no-store'); headers.set('x-content-type-options', 'nosniff'); headers.set('referrer-policy', 'no-referrer');
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   },

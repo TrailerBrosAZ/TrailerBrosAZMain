@@ -1,54 +1,1174 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { handleApiRequest } from '../src/server/api.js';
-import { createLocalDatabasePort, migrate, openDatabase } from '../src/server/db/database.js';
-import type Database from 'better-sqlite3';
-import { toArizonaInput } from '../src/shared/arizonaTime.js';
-import { deliveryQuoteFromMeters, METERS_PER_MILE, routingUnavailable } from '../src/shared/delivery.js';
-let raw: Database.Database; const env=()=>({ENVIRONMENT:'development' as const,AUTH_MODE:'mock' as const,ALLOWED_OWNER_EMAIL:'owner@example.test',DB:createLocalDatabasePort(raw)});
-const request=(path:string,init:RequestInit={})=>handleApiRequest(new Request(`http://local${path}`,{...init,headers:{'content-type':'application/json','x-dev-owner-email':'owner@example.test',...init.headers}}),env(),{now:()=>new Date('2027-01-01T12:00:00Z')});
-const deliveryRequest=(path:string,init:RequestInit,distanceMiles:number|null)=>handleApiRequest(new Request(`http://local${path}`,{...init,headers:{'content-type':'application/json','x-dev-owner-email':'owner@example.test',...init.headers}}),env(),{now:()=>new Date('2027-01-01T12:00:00Z'),deliveryRouter:{quote:async(_address,now)=>distanceMiles===null?routingUnavailable(now.toISOString()):deliveryQuoteFromMeters(distanceMiles*METERS_PER_MILE,now.toISOString())}});
-beforeEach(()=>{raw?.close();raw=openDatabase(':memory:');migrate(raw);raw.prepare("INSERT INTO trailers(name,unit_code,published_payload_lbs) VALUES ('Trailer','T1',5200)").run();});
-describe('portable API',()=>{
- const intentPayload=(overrides:Record<string,unknown>={})=>({idempotencyKey:'intent-test-0001',trailerId:1,legalName:'Synthetic Customer',email:'customer@example.test',phone:'480-555-0199',age25Confirmed:true,namedRenterOnlyTowing:true,towVehicleDetails:'2025 Ford F-150, factory tow package',hitchBallAcknowledged:true,brakeControllerAcknowledged:true,insuranceAcknowledged:true,intendedUse:'Synthetic landscaping material trip',tripType:'IN_STATE',fulfillmentType:'PICKUP',pickupAt:'2027-10-10T08:00',returnAt:'2027-10-11T10:00',dollyRequested:true,...overrides});
- it('returns authenticated, non-sensitive health diagnostics only when the schema is ready',async()=>{const response=await request('/api/health');expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('no-store');expect(await response.json()).toEqual({status:'ok',checkedAt:'2027-01-01T12:00:00.000Z',environment:'development',database:{readable:true,schemaReady:true,requiredTableCount:28,scheduleTriggerCount:4}});});
- it('allows an exact tester only the synthetic customer-preview API boundary',async()=>{const testerEnvironment={...env(),ALLOWED_TESTER_EMAILS:'tester@example.test'};const call=(path:string)=>handleApiRequest(new Request(`http://local${path}`,{headers:{'x-dev-owner-email':'tester@example.test'}}),testerEnvironment,{now:()=>new Date('2027-01-01T12:00:00Z')});const bootstrap=await call('/api/customer-preview/bootstrap');expect(bootstrap.status).toBe(200);expect(await bootstrap.json()).toMatchObject({environment:'TEST / STAGING',syntheticOnly:true,role:'external-tester',trailers:[{name:'Trailer',published_payload_lbs:5200}]});expect((await call('/api/dashboard')).status).toBe(403);expect((await call('/api/health')).status).toBe(403);});
- it('keeps Gmail fail-closed and reports only safe configuration status',async()=>{const response=await request('/api/integrations/gmail/status');expect(response.status).toBe(200);const result=await response.json() as Record<string,unknown>;expect(result).toMatchObject({status:'CONFIGURATION_MISSING',configured:false,authorized:false,sendAvailable:false,testMode:true,stagingOnly:true,provider:'GMAIL_API',scope:'gmail.send'});expect(Object.keys(result)).not.toContain('token')});
- it('serves owner-only deterministic analytics and excludes synthetic records by default',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('REAL',1,1,'DIRECT','CONFIRMED','2027-07-01T15:00:00.000Z','2027-07-01T19:00:00.000Z',10000,0),('SYNTH',1,1,'DIRECT','CONFIRMED','2027-07-02T15:00:00.000Z','2027-07-02T19:00:00.000Z',90000,1)");const excluded=await (await request('/api/analytics?startDate=2027-07-01&endDate=2027-07-31')).json() as {current:{reservationRequests:number;activeCompletedRentals:number;bookedRevenueCents:number};includeSynthetic:boolean};expect(excluded).toMatchObject({current:{reservationRequests:1,activeCompletedRentals:1,bookedRevenueCents:10000},includeSynthetic:false});const included=await (await request('/api/analytics?startDate=2027-07-01&endDate=2027-07-31&includeSynthetic=true')).json() as {current:{reservationRequests:number;activeCompletedRentals:number;bookedRevenueCents:number};includeSynthetic:boolean};expect(included).toMatchObject({current:{reservationRequests:2,activeCompletedRentals:2,bookedRevenueCents:100000},includeSynthetic:true});});
- it('persists and audits explicit synthetic classification on staging QA records',async()=>{const response=await request('/api/reservations/external',{method:'POST',body:JSON.stringify({trailerId:1,customerName:'Synthetic QA',source:'OTHER',pickupAt:'2027-10-01T08:00',returnAt:'2027-10-01T10:00',rentalChargeCents:10000,isSynthetic:true})});expect(response.status).toBe(201);expect(raw.prepare('SELECT is_synthetic FROM reservations').get()).toEqual({is_synthetic:1});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE action='EXTERNAL_BOOKING_CREATED'").get() as {payload_json:string};expect(JSON.parse(audit.payload_json)).toMatchObject({isSynthetic:true});});
- it('persists and audits synthetic classification for staging QA blackouts',async()=>{const response=await request('/api/availability-blocks',{method:'POST',body:JSON.stringify({trailerId:1,startAt:'2027-10-02T08:00',endAt:'2027-10-02T10:00',reason:'Synthetic QA hold',isSynthetic:true})});expect(response.status).toBe(201);expect(raw.prepare('SELECT is_synthetic FROM availability_blocks').get()).toEqual({is_synthetic:1});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE action='BLACKOUT_CREATED'").get() as {payload_json:string};expect(JSON.parse(audit.payload_json)).toMatchObject({isSynthetic:true});});
- it('checks authoritative availability without treating intents as schedule blocks',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('ACTIVE',1,1,'DIRECT','CONFIRMED','2027-10-01T15:00:00.000Z','2027-10-01T17:00:00.000Z',6000); INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-02T15:00:00.000Z','2027-10-02T17:00:00.000Z','Hold')");expect(await (await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-01T08:00&returnAt=2027-10-01T10:00')).json()).toMatchObject({available:false});expect(await (await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-02T08:00&returnAt=2027-10-02T10:00')).json()).toMatchObject({available:false});expect(await (await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-03T08:00&returnAt=2027-10-03T10:00')).json()).toMatchObject({available:true,quote:{rentalChargeCents:2000}});});
- it('exposes a privacy-safe Rental OS calendar without reservation details',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('Private','Customer'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('PRIVATE-CODE',1,1,'EXTERNAL','CONFIRMED','2027-10-08T15:00:00.000Z','2027-10-09T17:00:00.000Z',6000); INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-12T15:00:00.000Z','2027-10-12T17:00:00.000Z','Private owner reason')");const response=await request('/api/customer-preview/calendar?trailerId=1&month=2027-10');expect(response.status).toBe(200);const text=await response.text();expect(JSON.parse(text)).toMatchObject({month:'2027-10',authoritativeSource:'RENTAL_OS',unavailableDays:['2027-10-08','2027-10-09','2027-10-12']});expect(text).not.toMatch(/Private|PRIVATE-CODE|reason|customer/i)});
- it('submits a non-blocking synthetic intent with a minimized audit event and quote snapshot',async()=>{
-  const response=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload())});
-  const result=await response.clone().json();expect(result).toMatchObject({intent:expect.anything()});
-  const stored=raw.prepare('SELECT status,is_synthetic,rental_charge_cents,dolly_charge_cents,security_deposit_cents,tax_cents,delivery_charge_cents,expires_at FROM booking_intents').get();expect(stored).toEqual({status:'SUBMITTED',is_synthetic:1,rental_charge_cents:8000,dolly_charge_cents:2000,security_deposit_cents:10000,tax_cents:0,delivery_charge_cents:null,expires_at:'2027-01-01T12:30:00.000Z'});expect(raw.prepare('SELECT count(*) total FROM reservations').get()).toEqual({total:0});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE aggregate_type='BOOKING_INTENT'").get() as {payload_json:string};const payload=JSON.parse(audit.payload_json);expect(payload).toMatchObject({synthetic:true,paymentAction:'NOT_EXECUTED',agreementAction:'NOT_EXECUTED',communicationAction:'NOT_EXECUTED'});expect(audit.payload_json).not.toContain('Synthetic Customer');
- });
- it('returns the same intent for duplicate idempotent submission',async()=>{const first=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload())});const duplicate=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({email:'changed@example.test'}))});expect(first.status).toBe(201);expect(duplicate.status).toBe(200);expect(await duplicate.json()).toMatchObject({idempotent:true,intent:{id:1,status:'SUBMITTED'}});expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:1});expect(raw.prepare("SELECT count(*) total FROM audit_events WHERE aggregate_type='BOOKING_INTENT'").get()).toEqual({total:1});});
- it('rejects qualification failures and international use',async()=>{for(const overrides of [{age25Confirmed:false},{namedRenterOnlyTowing:false},{hitchBallAcknowledged:false},{brakeControllerAcknowledged:false},{insuranceAcknowledged:false},{tripType:'INTERNATIONAL'}]){const response=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({...overrides,idempotencyKey:`reject-${Object.keys(overrides)[0]}`}))});expect(response.status).toBe(400)}expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:0});});
- it('records interstate and delivery exceptions in REVIEW_REQUIRED for 24 hours',async()=>{const response=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({tripType:'INTERSTATE',interstateDetails:'Las Vegas, Nevada',fulfillmentType:'DELIVERY',deliveryAddress:'Synthetic address, Phoenix AZ'}))});expect(response.status).toBe(201);const row=raw.prepare('SELECT status,expires_at,interstate_approval_required,delivery_approval_required,delivery_charge_cents,exceptions_json FROM booking_intents').get() as Record<string,unknown>;expect(row).toMatchObject({status:'REVIEW_REQUIRED',expires_at:'2027-01-02T12:00:00.000Z',interstate_approval_required:1,delivery_approval_required:1,delivery_charge_cents:null});expect(JSON.parse(String(row.exceptions_json))).toEqual(['INTERSTATE_OWNER_APPROVAL_REQUIRED','DELIVERY_OWNER_APPROVAL_REQUIRED','DELIVERY_ROUTING_REVIEW_REQUIRED']);});
- it('returns a customer-safe delivery quote without origin, route, or exact distance',async()=>{const response=await deliveryRequest('/api/customer-preview/delivery-quote',{method:'POST',body:JSON.stringify({deliveryAddress:'Synthetic destination address'})},20);expect(response.status).toBe(200);const text=await response.text();expect(JSON.parse(text)).toEqual({deliveryQuote:{status:'AVAILABLE',available:true,zone:'ZONE_2',feeCents:4000,quotedAt:'2027-01-01T12:00:00.000Z'}});expect(text).not.toMatch(/distance|origin|route/i);});
- it('recalculates and persists an owner-visible delivery snapshot while keeping the customer response minimized',async()=>{const response=await deliveryRequest('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({fulfillmentType:'DELIVERY',deliveryAddress:'Synthetic destination address'}))},10.5);expect(response.status).toBe(201);expect(await response.json()).toMatchObject({intent:{status:'REVIEW_REQUIRED',deliveryQuote:{status:'AVAILABLE',zone:'ZONE_2',feeCents:4000}}});expect(raw.prepare('SELECT status,delivery_quote_status,delivery_distance_meters,delivery_zone,delivery_charge_cents,estimated_total_cents,is_synthetic FROM booking_intents').get()).toMatchObject({status:'REVIEW_REQUIRED',delivery_quote_status:'AVAILABLE',delivery_zone:'ZONE_2',delivery_charge_cents:4000,estimated_total_cents:24000,is_synthetic:1});});
- it('rejects online delivery over 35 miles and falls back to owner review when routing fails',async()=>{const payload=intentPayload({fulfillmentType:'DELIVERY',deliveryAddress:'Synthetic destination address'});const outside=await deliveryRequest('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(payload)},35.01);expect(outside.status).toBe(400);expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:0});const fallback=await deliveryRequest('/api/customer-preview/intents',{method:'POST',body:JSON.stringify({...payload,idempotencyKey:'routing-fallback'})},null);expect(fallback.status).toBe(201);expect(raw.prepare('SELECT status,delivery_quote_status,delivery_charge_cents FROM booking_intents').get()).toEqual({status:'REVIEW_REQUIRED',delivery_quote_status:'ROUTING_UNAVAILABLE',delivery_charge_cents:null});});
- it('accepts 15-minute intent times and rejects arbitrary minutes and Arizona hours',async()=>{expect((await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({pickupAt:'2027-10-10T08:15',returnAt:'2027-10-11T10:15'}))})).status).toBe(201);raw.exec('DELETE FROM audit_events; DELETE FROM booking_intents');for(const pickupAt of ['2027-10-10T05:45','2027-10-10T08:22','2027-01-10T22:15']){const response=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({idempotencyKey:`time-${pickupAt}`,pickupAt}))});expect(response.status).toBe(400);expect((await response.json() as {error:string}).error).toMatch(/15-minute|Arizona time/)}});
- it('returns the authoritative quote used by the live customer estimate',async()=>{const response=await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:15&returnAt=2027-10-11T09:45&dollyRequested=true');expect(response.status).toBe(200);expect(await response.json()).toMatchObject({available:true,quote:{fullDays:1,extraHours:2,rentalDays:2,rentalChargeCents:8000,dollyChargeCents:2000,securityDepositCents:10000,estimatedDueBeforeDeliveryCents:20000,deliveryChargeCents:null}});});
- it('returns safe useful errors for invalid ranges and keeps internal failures generic',async()=>{const range=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({returnAt:'2027-10-10T07:00'}))});expect(range.status).toBe(400);expect(await range.json()).toEqual({error:'Return must be after pickup.'});raw.exec("CREATE TRIGGER fail_intent BEFORE INSERT ON booking_intents BEGIN SELECT RAISE(ABORT,'internal database detail'); END;");const internal=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({idempotencyKey:'internal-failure'}))});expect(internal.status).toBe(500);expect(await internal.json()).toEqual({error:'The request could not be completed.'});});
- it('rechecks availability atomically when the schedule changes after a successful preview',async()=>{expect(await (await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:00&returnAt=2027-10-11T10:00')).json()).toMatchObject({available:true});raw.exec("INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-10T15:00:00.000Z','2027-10-10T17:00:00.000Z','Concurrent owner hold')");const response=await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload())});expect(response.status).toBe(409);expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:0});expect(raw.prepare("SELECT count(*) total FROM audit_events WHERE aggregate_type='BOOKING_INTENT'").get()).toEqual({total:0});});
- it('derives standard expiration while retaining the intent and audit detail',async()=>{expect((await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload())})).status).toBe(201);const later=(path:string)=>handleApiRequest(new Request(`http://local${path}`,{headers:{'x-dev-owner-email':'owner@example.test'}}),env(),{now:()=>new Date('2027-01-01T12:31:00Z')});const list=await (await later('/api/booking-intents')).json() as Record<string,unknown>[];expect(list[0]).toMatchObject({status:'SUBMITTED',operational_status:'EXPIRED',legal_name:'Synthetic Customer',is_synthetic:1});const detail=await (await later('/api/booking-intents/1')).json() as {audit_events:unknown[]};expect(detail.audit_events).toHaveLength(1);expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:1});});
- it('keeps review-required intents active for 24 hours, then derives expiration without deleting them',async()=>{expect((await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({tripType:'INTERSTATE',interstateDetails:'Nevada'}))})).status).toBe(201);const at=(instant:string)=>handleApiRequest(new Request('http://local/api/booking-intents',{headers:{'x-dev-owner-email':'owner@example.test'}}),env(),{now:()=>new Date(instant)});expect((await (await at('2027-01-02T11:59:59Z')).json() as Record<string,unknown>[])[0]).toMatchObject({status:'REVIEW_REQUIRED',operational_status:'REVIEW_REQUIRED'});expect((await (await at('2027-01-02T12:00:00Z')).json() as Record<string,unknown>[])[0]).toMatchObject({status:'REVIEW_REQUIRED',operational_status:'EXPIRED'});expect(raw.prepare('SELECT count(*) total FROM booking_intents').get()).toEqual({total:1});});
- it('does not let owner-review intents block a later reservation or guarantee continued availability',async()=>{expect((await request('/api/customer-preview/intents',{method:'POST',body:JSON.stringify(intentPayload({tripType:'INTERSTATE',interstateDetails:'Nevada'}))})).status).toBe(201);raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('Later','Booking'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('LATER',1,1,'DIRECT','CONFIRMED','2027-10-10T15:00:00.000Z','2027-10-11T17:00:00.000Z',8000)");expect(await (await request('/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:00&returnAt=2027-10-11T10:00')).json()).toMatchObject({available:false});expect(raw.prepare('SELECT status FROM booking_intents').get()).toEqual({status:'REVIEW_REQUIRED'});});
- it.each([
-  ['winter','2027-01-15T08:30','2027-01-15T10:30','2027-01-15T15:30:00.000Z'],
-  ['summer','2027-07-15T08:30','2027-07-15T10:30','2027-07-15T15:30:00.000Z'],
- ])('round-trips Arizona %s reservation wall time through API and persistence',async(_season,pickupAt,returnAt,storedPickup)=>{const response=await request('/api/reservations/external',{method:'POST',body:JSON.stringify({trailerId:1,customerName:`Arizona ${_season}`,source:'OTHER',pickupAt,returnAt,rentalChargeCents:10000})});expect(response.status).toBe(201);expect(raw.prepare('SELECT pickup_at FROM reservations').get()).toEqual({pickup_at:storedPickup});const dashboard=await (await request('/api/dashboard')).json() as {reservations:{pickup_at:string}[]};expect(toArizonaInput(dashboard.reservations[0].pickup_at)).toBe(pickupAt);});
- it('preserves Arizona wall time through blackout creation and its audit payload',async()=>{const response=await request('/api/availability-blocks',{method:'POST',body:JSON.stringify({trailerId:1,startAt:'2027-08-20T06:30',endAt:'2027-08-20T09:00',reason:'Arizona time test'})});expect(response.status).toBe(201);expect(raw.prepare('SELECT start_at,end_at FROM availability_blocks').get()).toEqual({start_at:'2027-08-20T13:30:00.000Z',end_at:'2027-08-20T16:00:00.000Z'});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE action='BLACKOUT_CREATED'").get() as {payload_json:string};expect(JSON.parse(audit.payload_json)).toMatchObject({startAt:'2027-08-20T13:30:00.000Z',endAt:'2027-08-20T16:00:00.000Z'});});
- it('revalidates and preserves Arizona wall time when rescheduling',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('AZ-EDIT',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00.000Z','2027-09-01T15:00:00.000Z',10000)");const response=await request('/api/reservations/1',{method:'PATCH',body:JSON.stringify({version:1,pickupAt:'2027-09-02T08:30',returnAt:'2027-09-02T11:00',rentalChargeCents:10000,dollyDays:0,reason:'Arizona time regression'})});expect(response.status).toBe(200);expect(raw.prepare('SELECT pickup_at,return_at FROM reservations WHERE id=1').get()).toEqual({pickup_at:'2027-09-02T15:30:00.000Z',return_at:'2027-09-02T18:00:00.000Z'});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE action='RESERVATION_EDITED'").get() as {payload_json:string};expect(JSON.parse(audit.payload_json).after).toMatchObject({pickup_at:'2027-09-02T15:30:00.000Z',return_at:'2027-09-02T18:00:00.000Z'});});
- it('creates external bookings and rejects overlap at the data layer',async()=>{const payload={trailerId:1,customerName:'Test Owner',source:'OTHER',pickupAt:'2027-04-01T13:00:00Z',returnAt:'2027-04-02T13:00:00Z',rentalChargeCents:10000};expect((await request('/api/reservations/external',{method:'POST',body:JSON.stringify(payload)})).status).toBe(201);expect((await request('/api/reservations/external',{method:'POST',body:JSON.stringify({...payload,customerName:'Overlap Owner'})})).status).toBe(409);expect((raw.prepare('SELECT actor FROM audit_events').get() as {actor:string}).actor).toBe('owner@example.test');});
- it('rejects hosted inspection references',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('X',1,1,'DIRECT','CONFIRMED','2027-05-01T13:00:00Z','2027-05-02T13:00:00Z',10000)");const response=await request('/api/reservations/1/inspections/pickup',{method:'POST',body:JSON.stringify({conditionNotes:'Good condition',photoReferences:['https://hosted.example/photo.jpg']})});expect(response.status).toBe(400);expect(await response.json()).toMatchObject({error:expect.stringContaining('not accepted')});});
- it.each(['https://hosted.example/photo.jpg','file:///photo.jpg','C:\\photos\\damage.jpg','/var/photos/damage.jpg','../damage.jpg'])('rejects hosted URL or filesystem-shaped photo metadata: %s',async(reference)=>{raw.exec("INSERT OR IGNORE INTO customers(id,first_name,last_name) VALUES (1,'A','B'); INSERT OR IGNORE INTO reservations(id,confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES (1,'X',1,1,'DIRECT','CONFIRMED','2027-05-01T13:00:00Z','2027-05-02T13:00:00Z',10000)");const response=await request('/api/reservations/1/inspections/pickup',{method:'POST',body:JSON.stringify({conditionNotes:'Good condition',photoReferences:[reference]})});expect(response.status).toBe(400);expect(raw.prepare('SELECT count(*) total FROM inspection_photos').get()).toEqual({total:0});});
- it('rolls back a reschedule if its audit event fails',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('EDIT',1,1,'DIRECT','CONFIRMED','2027-06-01T13:00:00Z','2027-06-02T13:00:00Z',10000); CREATE TRIGGER fail_edit_audit BEFORE INSERT ON audit_events WHEN NEW.action='RESERVATION_EDITED' BEGIN SELECT RAISE(ABORT,'forced audit failure'); END;");const response=await request('/api/reservations/1',{method:'PATCH',body:JSON.stringify({version:1,pickupAt:'2027-06-03T13:00:00Z',returnAt:'2027-06-04T13:00:00Z',rentalChargeCents:10000,dollyDays:0,reason:'test rollback'})});expect(response.status).toBe(500);expect(await response.json()).toEqual({error:'The request could not be completed.'});expect(raw.prepare('SELECT pickup_at,version FROM reservations WHERE id=1').get()).toEqual({pickup_at:'2027-06-01T13:00:00Z',version:1});});
- it('rolls back cancellation outcome and status if audit creation fails',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('CANCEL',1,1,'DIRECT','CONFIRMED','2027-07-01T13:00:00Z','2027-07-02T13:00:00Z',10000); CREATE TRIGGER fail_cancel_audit BEFORE INSERT ON audit_events WHEN NEW.action='CANCELLATION_OUTCOME_RECORDED' BEGIN SELECT RAISE(ABORT,'forced audit failure'); END;");const response=await request('/api/reservations/1/outcome',{method:'POST',body:JSON.stringify({type:'CANCELLATION',notes:'Owner cancellation'})});expect(response.status).toBe(500);expect(raw.prepare('SELECT status FROM reservations WHERE id=1').get()).toEqual({status:'CONFIRMED'});expect(raw.prepare('SELECT count(*) total FROM cancellation_outcomes').get()).toEqual({total:0});});
- it('creates and signs an immutable synthetic agreement with explicit consent evidence',async()=>{raw.exec("INSERT INTO customers(first_name,last_name,email) VALUES ('Synthetic','Renter','renter@example.test'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('AGREE',1,1,'DIRECT','CONFIRMED','2027-08-01T13:00:00Z','2027-08-02T13:00:00Z',10000,1)");const opened=await request('/api/reservations/1/agreements',{method:'POST',body:'{}'});expect(opened.status).toBe(201);const agreement=await opened.json() as {id:number;template_hash:string};expect(agreement.template_hash).toMatch(/^[0-9a-f]{64}$/);const implicit=await request(`/api/agreements/${agreement.id}/sign`,{method:'POST',body:JSON.stringify({printedName:'Synthetic Renter',electronicRecordsConsent:true,termsAcknowledged:true,driverInsuranceAcknowledged:true,inspectionOpportunityAcknowledged:true})});expect(implicit.status).toBe(400);const signed=await request(`/api/agreements/${agreement.id}/sign`,{method:'POST',body:JSON.stringify({printedName:'Synthetic Renter',electronicRecordsConsent:true,termsAcknowledged:true,driverInsuranceAcknowledged:true,inspectionOpportunityAcknowledged:true,pickupInspectionChoice:'SEND_FORM'})});expect(signed.status).toBe(201);expect(raw.prepare('SELECT status,is_synthetic,signed_at,template_hash,pickup_inspection_choice FROM agreement_instances').get()).toMatchObject({status:'SIGNED',is_synthetic:1,signed_at:'2027-01-01T12:00:00.000Z',template_hash:agreement.template_hash,pickup_inspection_choice:'SEND_FORM'});expect(raw.prepare('SELECT status FROM pickup_condition_choices').get()).toEqual({status:'PENDING'});expect(()=>raw.prepare("UPDATE agreement_instances SET printed_name='Changed' WHERE id=1").run()).toThrow(/SIGNED_AGREEMENT_IMMUTABLE/);expect(()=>raw.prepare('DELETE FROM agreement_instances WHERE id=1').run()).toThrow(/SIGNED_AGREEMENT_IMMUTABLE/);expect(raw.prepare("SELECT count(*) total FROM audit_events WHERE action IN ('AGREEMENT_OPENED','PICKUP_INSPECTION_CHOICE_RECORDED','AGREEMENT_SIGNED')").get()).toEqual({total:3});});
- it('requires explicit pickup-condition completion or decline and preserves neutral decline evidence',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Renter'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('COND',1,1,'DIRECT','CONFIRMED','2027-08-01T13:00:00Z','2027-08-02T13:00:00Z',10000,1)");const silent=await request('/api/reservations/1/pickup-condition/decline',{method:'POST',body:JSON.stringify({affirmativeDecline:false})});expect(silent.status).toBe(400);const declined=await request('/api/reservations/1/pickup-condition/decline',{method:'POST',body:JSON.stringify({affirmativeDecline:true,acknowledgment:'I affirmatively decline the offered pre-pickup condition inspection.'})});expect(declined.status).toBe(201);expect(raw.prepare('SELECT status,customer_acknowledged_at,decline_acknowledgment,is_synthetic FROM pickup_condition_choices').get()).toMatchObject({status:'DECLINED',customer_acknowledged_at:null,is_synthetic:1});const audit=raw.prepare("SELECT payload_json FROM audit_events WHERE action='PICKUP_CONDITION_DECLINED'").get() as {payload_json:string};expect(JSON.parse(audit.payload_json)).toMatchObject({affirmativeAction:true,automaticDefectAcceptance:false,automaticDepositForfeiture:false});});
- it('creates a one-time hashed secure link, rejects replay, and never stores its raw token',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Link'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('LINK',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00Z','2027-09-02T13:00:00Z',10000,1)");const created=await request('/api/reservations/1/secure-links',{method:'POST',body:JSON.stringify({purpose:'AGREEMENT_SIGNING',expiresInMinutes:60})});expect(created.status).toBe(201);const result=await created.json() as {token:string;link:{id:number;status:string}};expect(result.token).toHaveLength(43);const stored=raw.prepare('SELECT token_hash,token_fingerprint,purpose,use_count FROM secure_links').get() as Record<string,unknown>;expect(stored.token_hash).toMatch(/^[0-9a-f]{64}$/);expect(JSON.stringify(stored)).not.toContain(result.token);const used=await request('/api/customer-preview/secure-links/use',{method:'POST',body:JSON.stringify({token:result.token})});expect(used.status).toBe(200);expect(await used.json()).toMatchObject({status:'USED',workflowAction:'NOT_EXECUTED'});expect((await request('/api/customer-preview/secure-links/use',{method:'POST',body:JSON.stringify({token:result.token})})).status).toBe(409);expect(raw.prepare("SELECT count(*) total FROM audit_events WHERE action IN ('SECURE_LINK_CREATED','SECURE_LINK_USED')").get()).toEqual({total:2});expect(raw.prepare('SELECT use_count FROM secure_links').get()).toEqual({use_count:1});});
- it('revokes and regenerates secure links without exposing prior raw tokens',async()=>{raw.exec("INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Link'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('LINK',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00Z','2027-09-02T13:00:00Z',10000,1)");const first=await (await request('/api/reservations/1/secure-links',{method:'POST',body:JSON.stringify({purpose:'PICKUP_INSPECTION'})})).json() as {token:string;link:{id:number}};expect((await request(`/api/secure-links/${first.link.id}`,{method:'DELETE',body:JSON.stringify({confirm:true,reason:'Synthetic owner revocation'})})).status).toBe(200);expect((await request('/api/customer-preview/secure-links/use',{method:'POST',body:JSON.stringify({token:first.token})})).status).toBe(409);const regenerated=await request(`/api/secure-links/${first.link.id}/regenerate`,{method:'POST',body:JSON.stringify({expiresInMinutes:30})});expect(regenerated.status).toBe(201);const second=await regenerated.json() as {token:string};expect(second.token).not.toBe(first.token);expect(raw.prepare('SELECT count(*) total FROM secure_links').get()).toEqual({total:2});expect(raw.prepare('SELECT count(*) total FROM secure_links WHERE revoked_at IS NOT NULL').get()).toEqual({total:1});});
+import { beforeEach, describe, expect, it } from "vitest";
+import { handleApiRequest } from "../src/server/api.js";
+import {
+  createLocalDatabasePort,
+  migrate,
+  openDatabase,
+} from "../src/server/db/database.js";
+import type Database from "better-sqlite3";
+import { toArizonaInput } from "../src/shared/arizonaTime.js";
+import {
+  deliveryQuoteFromMeters,
+  METERS_PER_MILE,
+  routingUnavailable,
+} from "../src/shared/delivery.js";
+let raw: Database.Database;
+const env = () => ({
+  ENVIRONMENT: "development" as const,
+  AUTH_MODE: "mock" as const,
+  ALLOWED_OWNER_EMAIL: "owner@example.test",
+  DB: createLocalDatabasePort(raw),
+});
+const request = (path: string, init: RequestInit = {}) =>
+  handleApiRequest(
+    new Request(`http://local${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        "x-dev-owner-email": "owner@example.test",
+        ...init.headers,
+      },
+    }),
+    env(),
+    { now: () => new Date("2027-01-01T12:00:00Z") },
+  );
+const deliveryRequest = (
+  path: string,
+  init: RequestInit,
+  distanceMiles: number | null,
+) =>
+  handleApiRequest(
+    new Request(`http://local${path}`, {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        "x-dev-owner-email": "owner@example.test",
+        ...init.headers,
+      },
+    }),
+    env(),
+    {
+      now: () => new Date("2027-01-01T12:00:00Z"),
+      deliveryRouter: {
+        quote: async (_address, now) =>
+          distanceMiles === null
+            ? routingUnavailable(now.toISOString())
+            : deliveryQuoteFromMeters(
+                distanceMiles * METERS_PER_MILE,
+                now.toISOString(),
+              ),
+      },
+    },
+  );
+beforeEach(() => {
+  raw?.close();
+  raw = openDatabase(":memory:");
+  migrate(raw);
+  raw
+    .prepare(
+      "INSERT INTO trailers(name,unit_code,published_payload_lbs) VALUES ('Trailer','T1',5200)",
+    )
+    .run();
+});
+describe("portable API", () => {
+  const intentPayload = (overrides: Record<string, unknown> = {}) => ({
+    idempotencyKey: "intent-test-0001",
+    trailerId: 1,
+    legalName: "Synthetic Customer",
+    email: "customer@example.test",
+    phone: "480-555-0199",
+    age25Confirmed: true,
+    namedRenterOnlyTowing: true,
+    towVehicleDetails: "2025 Ford F-150, factory tow package",
+    hitchBallAcknowledged: true,
+    brakeControllerAcknowledged: true,
+    insuranceAcknowledged: true,
+    intendedUse: "Synthetic landscaping material trip",
+    tripType: "IN_STATE",
+    fulfillmentType: "PICKUP",
+    pickupAt: "2027-10-10T08:00",
+    returnAt: "2027-10-11T10:00",
+    dollyRequested: true,
+    ...overrides,
+  });
+  it("returns authenticated, non-sensitive health diagnostics only when the schema is ready", async () => {
+    const response = await request("/api/health");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(await response.json()).toEqual({
+      status: "ok",
+      checkedAt: "2027-01-01T12:00:00.000Z",
+      environment: "development",
+      database: {
+        readable: true,
+        schemaReady: true,
+        requiredTableCount: 28,
+        scheduleTriggerCount: 4,
+      },
+    });
+  });
+  it("allows an exact tester only the synthetic customer-preview API boundary", async () => {
+    const testerEnvironment = {
+      ...env(),
+      ALLOWED_TESTER_EMAILS: "tester@example.test",
+    };
+    const call = (path: string) =>
+      handleApiRequest(
+        new Request(`http://local${path}`, {
+          headers: { "x-dev-owner-email": "tester@example.test" },
+        }),
+        testerEnvironment,
+        { now: () => new Date("2027-01-01T12:00:00Z") },
+      );
+    const bootstrap = await call("/api/customer-preview/bootstrap");
+    expect(bootstrap.status).toBe(200);
+    expect(await bootstrap.json()).toMatchObject({
+      environment: "TEST / STAGING",
+      syntheticOnly: true,
+      role: "external-tester",
+      trailers: [{ name: "Trailer", published_payload_lbs: 5200 }],
+    });
+    expect((await call("/api/dashboard")).status).toBe(403);
+    expect((await call("/api/health")).status).toBe(403);
+  });
+  it("keeps Gmail fail-closed and reports only safe configuration status", async () => {
+    const response = await request("/api/integrations/gmail/status");
+    expect(response.status).toBe(200);
+    const result = (await response.json()) as Record<string, unknown>;
+    expect(result).toMatchObject({
+      status: "CONFIGURATION_MISSING",
+      configured: false,
+      authorized: false,
+      sendAvailable: false,
+      testMode: true,
+      stagingOnly: true,
+      provider: "GMAIL_API",
+      scope: "gmail.send",
+    });
+    expect(Object.keys(result)).not.toContain("token");
+  });
+  it("serves owner-only deterministic analytics and excludes synthetic records by default", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('REAL',1,1,'DIRECT','CONFIRMED','2027-07-01T15:00:00.000Z','2027-07-01T19:00:00.000Z',10000,0),('SYNTH',1,1,'DIRECT','CONFIRMED','2027-07-02T15:00:00.000Z','2027-07-02T19:00:00.000Z',90000,1)",
+    );
+    const excluded = (await (
+      await request("/api/analytics?startDate=2027-07-01&endDate=2027-07-31")
+    ).json()) as {
+      current: {
+        reservationRequests: number;
+        activeCompletedRentals: number;
+        bookedRevenueCents: number;
+      };
+      includeSynthetic: boolean;
+    };
+    expect(excluded).toMatchObject({
+      current: {
+        reservationRequests: 1,
+        activeCompletedRentals: 1,
+        bookedRevenueCents: 10000,
+      },
+      includeSynthetic: false,
+    });
+    const included = (await (
+      await request(
+        "/api/analytics?startDate=2027-07-01&endDate=2027-07-31&includeSynthetic=true",
+      )
+    ).json()) as {
+      current: {
+        reservationRequests: number;
+        activeCompletedRentals: number;
+        bookedRevenueCents: number;
+      };
+      includeSynthetic: boolean;
+    };
+    expect(included).toMatchObject({
+      current: {
+        reservationRequests: 2,
+        activeCompletedRentals: 2,
+        bookedRevenueCents: 100000,
+      },
+      includeSynthetic: true,
+    });
+  });
+  it("persists and audits explicit synthetic classification on staging QA records", async () => {
+    const response = await request("/api/reservations/external", {
+      method: "POST",
+      body: JSON.stringify({
+        trailerId: 1,
+        customerName: "Synthetic QA",
+        source: "OTHER",
+        pickupAt: "2027-10-01T08:00",
+        returnAt: "2027-10-01T10:00",
+        rentalChargeCents: 10000,
+        isSynthetic: true,
+      }),
+    });
+    expect(response.status).toBe(201);
+    expect(raw.prepare("SELECT is_synthetic FROM reservations").get()).toEqual({
+      is_synthetic: 1,
+    });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE action='EXTERNAL_BOOKING_CREATED'",
+      )
+      .get() as { payload_json: string };
+    expect(JSON.parse(audit.payload_json)).toMatchObject({ isSynthetic: true });
+  });
+  it("persists and audits synthetic classification for staging QA blackouts", async () => {
+    const response = await request("/api/availability-blocks", {
+      method: "POST",
+      body: JSON.stringify({
+        trailerId: 1,
+        startAt: "2027-10-02T08:00",
+        endAt: "2027-10-02T10:00",
+        reason: "Synthetic QA hold",
+        isSynthetic: true,
+      }),
+    });
+    expect(response.status).toBe(201);
+    expect(
+      raw.prepare("SELECT is_synthetic FROM availability_blocks").get(),
+    ).toEqual({ is_synthetic: 1 });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE action='BLACKOUT_CREATED'",
+      )
+      .get() as { payload_json: string };
+    expect(JSON.parse(audit.payload_json)).toMatchObject({ isSynthetic: true });
+  });
+  it("checks authoritative availability without treating intents as schedule blocks", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('ACTIVE',1,1,'DIRECT','CONFIRMED','2027-10-01T15:00:00.000Z','2027-10-01T17:00:00.000Z',6000); INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-02T15:00:00.000Z','2027-10-02T17:00:00.000Z','Hold')",
+    );
+    expect(
+      await (
+        await request(
+          "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-01T08:00&returnAt=2027-10-01T10:00",
+        )
+      ).json(),
+    ).toMatchObject({ available: false });
+    expect(
+      await (
+        await request(
+          "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-02T08:00&returnAt=2027-10-02T10:00",
+        )
+      ).json(),
+    ).toMatchObject({ available: false });
+    expect(
+      await (
+        await request(
+          "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-03T08:00&returnAt=2027-10-03T10:00",
+        )
+      ).json(),
+    ).toMatchObject({ available: true, quote: { rentalChargeCents: 2000 } });
+  });
+  it("exposes a privacy-safe Rental OS calendar without reservation details", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('Private','Customer'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('PRIVATE-CODE',1,1,'EXTERNAL','CONFIRMED','2027-10-08T15:00:00.000Z','2027-10-09T17:00:00.000Z',6000); INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-12T15:00:00.000Z','2027-10-12T17:00:00.000Z','Private owner reason')",
+    );
+    const response = await request(
+      "/api/customer-preview/calendar?trailerId=1&month=2027-10",
+    );
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toMatchObject({
+      month: "2027-10",
+      authoritativeSource: "RENTAL_OS",
+      unavailableDays: ["2027-10-08", "2027-10-09", "2027-10-12"],
+    });
+    expect(text).not.toMatch(/Private|PRIVATE-CODE|reason|customer/i);
+  });
+  it("submits a non-blocking synthetic intent with a minimized audit event and quote snapshot", async () => {
+    const response = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload()),
+    });
+    const result = await response.clone().json();
+    expect(result).toMatchObject({ intent: expect.anything() });
+    const stored = raw
+      .prepare(
+        "SELECT status,is_synthetic,rental_charge_cents,dolly_charge_cents,security_deposit_cents,tax_cents,delivery_charge_cents,expires_at FROM booking_intents",
+      )
+      .get();
+    expect(stored).toEqual({
+      status: "SUBMITTED",
+      is_synthetic: 1,
+      rental_charge_cents: 8000,
+      dolly_charge_cents: 2000,
+      security_deposit_cents: 10000,
+      tax_cents: 0,
+      delivery_charge_cents: null,
+      expires_at: "2027-01-01T12:15:00.000Z",
+    });
+    expect(
+      raw.prepare("SELECT count(*) total FROM reservations").get(),
+    ).toEqual({ total: 0 });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE aggregate_type='BOOKING_INTENT'",
+      )
+      .get() as { payload_json: string };
+    const payload = JSON.parse(audit.payload_json);
+    expect(payload).toMatchObject({
+      synthetic: true,
+      paymentAction: "NOT_EXECUTED",
+      agreementAction: "NOT_EXECUTED",
+      communicationAction: "NOT_EXECUTED",
+    });
+    expect(audit.payload_json).not.toContain("Synthetic Customer");
+  });
+  it("accepts an intent backed by its own active checkout hold", async () => {
+    const holdResponse = await request("/api/customer-preview/holds", {
+      method: "POST",
+      body: JSON.stringify({
+        trailerId: 1,
+        pickupAt: "2027-10-10T08:00",
+        returnAt: "2027-10-11T10:00",
+      }),
+    });
+    expect(holdResponse.status).toBe(201);
+    const hold = (await holdResponse.json()) as {
+      holdToken: string;
+      expiresAt: string;
+    };
+
+    const response = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload({ holdToken: hold.holdToken })),
+    });
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      idempotent: false,
+      intent: { status: "SUBMITTED" },
+    });
+    expect(
+      raw
+        .prepare(
+          "SELECT status,booking_intent_id FROM checkout_holds WHERE token_hash<>''",
+        )
+        .get(),
+    ).toEqual({ status: "ACTIVE", booking_intent_id: 1 });
+  });
+  it("returns the same intent for duplicate idempotent submission", async () => {
+    const first = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload()),
+    });
+    const duplicate = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload({ email: "changed@example.test" })),
+    });
+    expect(first.status).toBe(201);
+    expect(duplicate.status).toBe(200);
+    expect(await duplicate.json()).toMatchObject({
+      idempotent: true,
+      intent: { id: 1, status: "SUBMITTED" },
+    });
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 1 });
+    expect(
+      raw
+        .prepare(
+          "SELECT count(*) total FROM audit_events WHERE aggregate_type='BOOKING_INTENT'",
+        )
+        .get(),
+    ).toEqual({ total: 1 });
+  });
+  it("rejects qualification failures and international use", async () => {
+    for (const overrides of [
+      { age25Confirmed: false },
+      { namedRenterOnlyTowing: false },
+      { hitchBallAcknowledged: false },
+      { brakeControllerAcknowledged: false },
+      { insuranceAcknowledged: false },
+      { tripType: "INTERNATIONAL" },
+    ]) {
+      const response = await request("/api/customer-preview/intents", {
+        method: "POST",
+        body: JSON.stringify(
+          intentPayload({
+            ...overrides,
+            idempotencyKey: `reject-${Object.keys(overrides)[0]}`,
+          }),
+        ),
+      });
+      expect(response.status).toBe(400);
+    }
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 0 });
+  });
+  it("records interstate and delivery exceptions in REVIEW_REQUIRED for 24 hours", async () => {
+    const response = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(
+        intentPayload({
+          tripType: "INTERSTATE",
+          interstateDetails: "Las Vegas, Nevada",
+          fulfillmentType: "DELIVERY",
+          deliveryAddress: "Synthetic address, Phoenix AZ",
+        }),
+      ),
+    });
+    expect(response.status).toBe(201);
+    const row = raw
+      .prepare(
+        "SELECT status,expires_at,interstate_approval_required,delivery_approval_required,delivery_charge_cents,exceptions_json FROM booking_intents",
+      )
+      .get() as Record<string, unknown>;
+    expect(row).toMatchObject({
+      status: "REVIEW_REQUIRED",
+      expires_at: "2027-01-02T12:00:00.000Z",
+      interstate_approval_required: 1,
+      delivery_approval_required: 1,
+      delivery_charge_cents: null,
+    });
+    expect(JSON.parse(String(row.exceptions_json))).toEqual([
+      "INTERSTATE_OWNER_APPROVAL_REQUIRED",
+      "DELIVERY_OWNER_APPROVAL_REQUIRED",
+      "DELIVERY_ROUTING_REVIEW_REQUIRED",
+    ]);
+  });
+  it("returns a customer-safe delivery quote without origin, route, or exact distance", async () => {
+    const response = await deliveryRequest(
+      "/api/customer-preview/delivery-quote",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          deliveryAddress: "Synthetic destination address",
+        }),
+      },
+      20,
+    );
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    expect(JSON.parse(text)).toEqual({
+      deliveryQuote: {
+        status: "AVAILABLE",
+        available: true,
+        pricingMethod: "ONE_WAY_ROAD_MILES_ROUNDED_UP",
+        billableMiles: 20,
+        rateCentsPerMile: 250,
+        feeCents: 5000,
+        quotedAt: "2027-01-01T12:00:00.000Z",
+      },
+    });
+    expect(text).not.toMatch(/distance|origin|route/i);
+  });
+  it("recalculates and persists an owner-visible delivery snapshot while keeping the customer response minimized", async () => {
+    const response = await deliveryRequest(
+      "/api/customer-preview/intents",
+      {
+        method: "POST",
+        body: JSON.stringify(
+          intentPayload({
+            fulfillmentType: "DELIVERY",
+            deliveryAddress: "Synthetic destination address",
+          }),
+        ),
+      },
+      10.5,
+    );
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      intent: {
+        status: "REVIEW_REQUIRED",
+        deliveryQuote: { status: "AVAILABLE", zone: "PER_MILE", feeCents: 2750 },
+      },
+    });
+    expect(
+      raw
+        .prepare(
+          "SELECT status,delivery_quote_status,delivery_distance_meters,delivery_zone,delivery_charge_cents,estimated_total_cents,is_synthetic FROM booking_intents",
+        )
+        .get(),
+    ).toMatchObject({
+      status: "REVIEW_REQUIRED",
+      delivery_quote_status: "AVAILABLE",
+      delivery_zone: "PER_MILE",
+      delivery_charge_cents: 2750,
+      estimated_total_cents: 22750,
+      is_synthetic: 1,
+    });
+  });
+  it("prices delivery beyond the former zone boundary and falls back to owner review when routing fails", async () => {
+    const payload = intentPayload({
+      fulfillmentType: "DELIVERY",
+      deliveryAddress: "Synthetic destination address",
+    });
+    const outside = await deliveryRequest(
+      "/api/customer-preview/intents",
+      { method: "POST", body: JSON.stringify(payload) },
+      35.01,
+    );
+    expect(outside.status).toBe(201);
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 1 });
+    const fallback = await deliveryRequest(
+      "/api/customer-preview/intents",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          idempotencyKey: "routing-fallback-0001",
+        }),
+      },
+      null,
+    );
+    expect(fallback.status).toBe(201);
+    expect(
+      raw
+        .prepare(
+          "SELECT status,delivery_quote_status,delivery_charge_cents FROM booking_intents",
+        )
+        .all(),
+    ).toContainEqual({
+      status: "REVIEW_REQUIRED",
+      delivery_quote_status: "ROUTING_UNAVAILABLE",
+      delivery_charge_cents: null,
+    });
+  });
+  it("accepts 15-minute intent times and rejects arbitrary minutes and Arizona hours", async () => {
+    expect(
+      (
+        await request("/api/customer-preview/intents", {
+          method: "POST",
+          body: JSON.stringify(
+            intentPayload({
+              pickupAt: "2027-10-10T08:15",
+              returnAt: "2027-10-11T10:15",
+            }),
+          ),
+        })
+      ).status,
+    ).toBe(201);
+    raw.exec("DELETE FROM audit_events; DELETE FROM booking_intents");
+    for (const pickupAt of [
+      "2027-10-10T05:45",
+      "2027-10-10T08:22",
+      "2027-01-10T22:15",
+    ]) {
+      const response = await request("/api/customer-preview/intents", {
+        method: "POST",
+        body: JSON.stringify(
+          intentPayload({ idempotencyKey: `time-${pickupAt}`, pickupAt }),
+        ),
+      });
+      expect(response.status).toBe(400);
+      expect(((await response.json()) as { error: string }).error).toMatch(
+        /15-minute|Arizona time/,
+      );
+    }
+  });
+  it("returns the authoritative quote used by the live customer estimate", async () => {
+    const response = await request(
+      "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:15&returnAt=2027-10-11T09:45&dollyRequested=true",
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      available: true,
+      quote: {
+        fullDays: 1,
+        extraHours: 2,
+        rentalDays: 2,
+        rentalChargeCents: 8000,
+        dollyChargeCents: 2000,
+        securityDepositCents: 10000,
+        estimatedDueBeforeDeliveryCents: 20000,
+        deliveryChargeCents: null,
+      },
+    });
+  });
+  it("returns safe useful errors for invalid ranges and keeps internal failures generic", async () => {
+    const range = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload({ returnAt: "2027-10-10T07:00" })),
+    });
+    expect(range.status).toBe(400);
+    expect(await range.json()).toEqual({
+      error: "Return must be after pickup.",
+    });
+    raw.exec(
+      "CREATE TRIGGER fail_intent BEFORE INSERT ON booking_intents BEGIN SELECT RAISE(ABORT,'internal database detail'); END;",
+    );
+    const internal = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(
+        intentPayload({ idempotencyKey: "internal-failure" }),
+      ),
+    });
+    expect(internal.status).toBe(500);
+    expect(await internal.json()).toEqual({
+      error: "The request could not be completed.",
+    });
+  });
+  it("rechecks availability atomically when the schedule changes after a successful preview", async () => {
+    expect(
+      await (
+        await request(
+          "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:00&returnAt=2027-10-11T10:00",
+        )
+      ).json(),
+    ).toMatchObject({ available: true });
+    raw.exec(
+      "INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason) VALUES (1,'2027-10-10T15:00:00.000Z','2027-10-10T17:00:00.000Z','Concurrent owner hold')",
+    );
+    const response = await request("/api/customer-preview/intents", {
+      method: "POST",
+      body: JSON.stringify(intentPayload()),
+    });
+    expect(response.status).toBe(409);
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 0 });
+    expect(
+      raw
+        .prepare(
+          "SELECT count(*) total FROM audit_events WHERE aggregate_type='BOOKING_INTENT'",
+        )
+        .get(),
+    ).toEqual({ total: 0 });
+  });
+  it("derives standard expiration while retaining the intent and audit detail", async () => {
+    expect(
+      (
+        await request("/api/customer-preview/intents", {
+          method: "POST",
+          body: JSON.stringify(intentPayload()),
+        })
+      ).status,
+    ).toBe(201);
+    const later = (path: string) =>
+      handleApiRequest(
+        new Request(`http://local${path}`, {
+          headers: { "x-dev-owner-email": "owner@example.test" },
+        }),
+        env(),
+        { now: () => new Date("2027-01-01T12:31:00Z") },
+      );
+    const list = (await (await later("/api/booking-intents")).json()) as Record<
+      string,
+      unknown
+    >[];
+    expect(list[0]).toMatchObject({
+      status: "SUBMITTED",
+      operational_status: "EXPIRED",
+      legal_name: "Synthetic Customer",
+      is_synthetic: 1,
+    });
+    const detail = (await (await later("/api/booking-intents/1")).json()) as {
+      audit_events: unknown[];
+    };
+    expect(detail.audit_events).toHaveLength(1);
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 1 });
+  });
+  it("keeps review-required intents active for 24 hours, then derives expiration without deleting them", async () => {
+    expect(
+      (
+        await request("/api/customer-preview/intents", {
+          method: "POST",
+          body: JSON.stringify(
+            intentPayload({
+              tripType: "INTERSTATE",
+              interstateDetails: "Nevada",
+            }),
+          ),
+        })
+      ).status,
+    ).toBe(201);
+    const at = (instant: string) =>
+      handleApiRequest(
+        new Request("http://local/api/booking-intents", {
+          headers: { "x-dev-owner-email": "owner@example.test" },
+        }),
+        env(),
+        { now: () => new Date(instant) },
+      );
+    expect(
+      (
+        (await (await at("2027-01-02T11:59:59Z")).json()) as Record<
+          string,
+          unknown
+        >[]
+      )[0],
+    ).toMatchObject({
+      status: "REVIEW_REQUIRED",
+      operational_status: "REVIEW_REQUIRED",
+    });
+    expect(
+      (
+        (await (await at("2027-01-02T12:00:00Z")).json()) as Record<
+          string,
+          unknown
+        >[]
+      )[0],
+    ).toMatchObject({
+      status: "REVIEW_REQUIRED",
+      operational_status: "EXPIRED",
+    });
+    expect(
+      raw.prepare("SELECT count(*) total FROM booking_intents").get(),
+    ).toEqual({ total: 1 });
+  });
+  it("does not let owner-review intents block a later reservation or guarantee continued availability", async () => {
+    expect(
+      (
+        await request("/api/customer-preview/intents", {
+          method: "POST",
+          body: JSON.stringify(
+            intentPayload({
+              tripType: "INTERSTATE",
+              interstateDetails: "Nevada",
+            }),
+          ),
+        })
+      ).status,
+    ).toBe(201);
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('Later','Booking'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('LATER',1,1,'DIRECT','CONFIRMED','2027-10-10T15:00:00.000Z','2027-10-11T17:00:00.000Z',8000)",
+    );
+    expect(
+      await (
+        await request(
+          "/api/customer-preview/availability?trailerId=1&pickupAt=2027-10-10T08:00&returnAt=2027-10-11T10:00",
+        )
+      ).json(),
+    ).toMatchObject({ available: false });
+    expect(raw.prepare("SELECT status FROM booking_intents").get()).toEqual({
+      status: "REVIEW_REQUIRED",
+    });
+  });
+  it.each([
+    [
+      "winter",
+      "2027-01-15T08:30",
+      "2027-01-15T10:30",
+      "2027-01-15T15:30:00.000Z",
+    ],
+    [
+      "summer",
+      "2027-07-15T08:30",
+      "2027-07-15T10:30",
+      "2027-07-15T15:30:00.000Z",
+    ],
+  ])(
+    "round-trips Arizona %s reservation wall time through API and persistence",
+    async (_season, pickupAt, returnAt, storedPickup) => {
+      const response = await request("/api/reservations/external", {
+        method: "POST",
+        body: JSON.stringify({
+          trailerId: 1,
+          customerName: `Arizona ${_season}`,
+          source: "OTHER",
+          pickupAt,
+          returnAt,
+          rentalChargeCents: 10000,
+        }),
+      });
+      expect(response.status).toBe(201);
+      expect(raw.prepare("SELECT pickup_at FROM reservations").get()).toEqual({
+        pickup_at: storedPickup,
+      });
+      const dashboard = (await (await request("/api/dashboard")).json()) as {
+        reservations: { pickup_at: string }[];
+      };
+      expect(toArizonaInput(dashboard.reservations[0].pickup_at)).toBe(
+        pickupAt,
+      );
+    },
+  );
+  it("preserves Arizona wall time through blackout creation and its audit payload", async () => {
+    const response = await request("/api/availability-blocks", {
+      method: "POST",
+      body: JSON.stringify({
+        trailerId: 1,
+        startAt: "2027-08-20T06:30",
+        endAt: "2027-08-20T09:00",
+        reason: "Arizona time test",
+      }),
+    });
+    expect(response.status).toBe(201);
+    expect(
+      raw.prepare("SELECT start_at,end_at FROM availability_blocks").get(),
+    ).toEqual({
+      start_at: "2027-08-20T13:30:00.000Z",
+      end_at: "2027-08-20T16:00:00.000Z",
+    });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE action='BLACKOUT_CREATED'",
+      )
+      .get() as { payload_json: string };
+    expect(JSON.parse(audit.payload_json)).toMatchObject({
+      startAt: "2027-08-20T13:30:00.000Z",
+      endAt: "2027-08-20T16:00:00.000Z",
+    });
+  });
+  it("revalidates and preserves Arizona wall time when rescheduling", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('AZ-EDIT',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00.000Z','2027-09-01T15:00:00.000Z',10000)",
+    );
+    const response = await request("/api/reservations/1", {
+      method: "PATCH",
+      body: JSON.stringify({
+        version: 1,
+        pickupAt: "2027-09-02T08:30",
+        returnAt: "2027-09-02T11:00",
+        rentalChargeCents: 10000,
+        dollyDays: 0,
+        reason: "Arizona time regression",
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(
+      raw
+        .prepare("SELECT pickup_at,return_at FROM reservations WHERE id=1")
+        .get(),
+    ).toEqual({
+      pickup_at: "2027-09-02T15:30:00.000Z",
+      return_at: "2027-09-02T18:00:00.000Z",
+    });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE action='RESERVATION_EDITED'",
+      )
+      .get() as { payload_json: string };
+    expect(JSON.parse(audit.payload_json).after).toMatchObject({
+      pickup_at: "2027-09-02T15:30:00.000Z",
+      return_at: "2027-09-02T18:00:00.000Z",
+    });
+  });
+  it("creates external bookings and rejects overlap at the data layer", async () => {
+    const payload = {
+      trailerId: 1,
+      customerName: "Test Owner",
+      source: "OTHER",
+      pickupAt: "2027-04-01T13:00:00Z",
+      returnAt: "2027-04-02T13:00:00Z",
+      rentalChargeCents: 10000,
+    };
+    expect(
+      (
+        await request("/api/reservations/external", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        })
+      ).status,
+    ).toBe(201);
+    expect(
+      (
+        await request("/api/reservations/external", {
+          method: "POST",
+          body: JSON.stringify({ ...payload, customerName: "Overlap Owner" }),
+        })
+      ).status,
+    ).toBe(409);
+    expect(
+      (raw.prepare("SELECT actor FROM audit_events").get() as { actor: string })
+        .actor,
+    ).toBe("owner@example.test");
+  });
+  it("rejects hosted inspection references", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('X',1,1,'DIRECT','CONFIRMED','2027-05-01T13:00:00Z','2027-05-02T13:00:00Z',10000)",
+    );
+    const response = await request("/api/reservations/1/inspections/pickup", {
+      method: "POST",
+      body: JSON.stringify({
+        conditionNotes: "Good condition",
+        photoReferences: ["https://hosted.example/photo.jpg"],
+      }),
+    });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      error: expect.stringContaining("not accepted"),
+    });
+  });
+  it.each([
+    "https://hosted.example/photo.jpg",
+    "file:///photo.jpg",
+    "C:\\photos\\damage.jpg",
+    "/var/photos/damage.jpg",
+    "../damage.jpg",
+  ])(
+    "rejects hosted URL or filesystem-shaped photo metadata: %s",
+    async (reference) => {
+      raw.exec(
+        "INSERT OR IGNORE INTO customers(id,first_name,last_name) VALUES (1,'A','B'); INSERT OR IGNORE INTO reservations(id,confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES (1,'X',1,1,'DIRECT','CONFIRMED','2027-05-01T13:00:00Z','2027-05-02T13:00:00Z',10000)",
+      );
+      const response = await request("/api/reservations/1/inspections/pickup", {
+        method: "POST",
+        body: JSON.stringify({
+          conditionNotes: "Good condition",
+          photoReferences: [reference],
+        }),
+      });
+      expect(response.status).toBe(400);
+      expect(
+        raw.prepare("SELECT count(*) total FROM inspection_photos").get(),
+      ).toEqual({ total: 0 });
+    },
+  );
+  it("rolls back a reschedule if its audit event fails", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('EDIT',1,1,'DIRECT','CONFIRMED','2027-06-01T13:00:00Z','2027-06-02T13:00:00Z',10000); CREATE TRIGGER fail_edit_audit BEFORE INSERT ON audit_events WHEN NEW.action='RESERVATION_EDITED' BEGIN SELECT RAISE(ABORT,'forced audit failure'); END;",
+    );
+    const response = await request("/api/reservations/1", {
+      method: "PATCH",
+      body: JSON.stringify({
+        version: 1,
+        pickupAt: "2027-06-03T13:00:00Z",
+        returnAt: "2027-06-04T13:00:00Z",
+        rentalChargeCents: 10000,
+        dollyDays: 0,
+        reason: "test rollback",
+      }),
+    });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "The request could not be completed.",
+    });
+    expect(
+      raw
+        .prepare("SELECT pickup_at,version FROM reservations WHERE id=1")
+        .get(),
+    ).toEqual({ pickup_at: "2027-06-01T13:00:00Z", version: 1 });
+  });
+  it("rolls back cancellation outcome and status if audit creation fails", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('A','B'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents) VALUES ('CANCEL',1,1,'DIRECT','CONFIRMED','2027-07-01T13:00:00Z','2027-07-02T13:00:00Z',10000); CREATE TRIGGER fail_cancel_audit BEFORE INSERT ON audit_events WHEN NEW.action='CANCELLATION_OUTCOME_RECORDED' BEGIN SELECT RAISE(ABORT,'forced audit failure'); END;",
+    );
+    const response = await request("/api/reservations/1/outcome", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "CANCELLATION",
+        notes: "Owner cancellation",
+      }),
+    });
+    expect(response.status).toBe(500);
+    expect(
+      raw.prepare("SELECT status FROM reservations WHERE id=1").get(),
+    ).toEqual({ status: "CONFIRMED" });
+    expect(
+      raw.prepare("SELECT count(*) total FROM cancellation_outcomes").get(),
+    ).toEqual({ total: 0 });
+  });
+  it("creates and signs an immutable synthetic agreement with explicit consent evidence", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name,email) VALUES ('Synthetic','Renter','renter@example.test'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('AGREE',1,1,'DIRECT','CONFIRMED','2027-08-01T13:00:00Z','2027-08-02T13:00:00Z',10000,1)",
+    );
+    const opened = await request("/api/reservations/1/agreements", {
+      method: "POST",
+      body: "{}",
+    });
+    expect(opened.status).toBe(201);
+    const agreement = (await opened.json()) as {
+      id: number;
+      template_hash: string;
+    };
+    expect(agreement.template_hash).toMatch(/^[0-9a-f]{64}$/);
+    const implicit = await request(`/api/agreements/${agreement.id}/sign`, {
+      method: "POST",
+      body: JSON.stringify({
+        printedName: "Synthetic Renter",
+        electronicRecordsConsent: true,
+        termsAcknowledged: true,
+        driverInsuranceAcknowledged: true,
+        inspectionOpportunityAcknowledged: true,
+      }),
+    });
+    expect(implicit.status).toBe(400);
+    const signed = await request(`/api/agreements/${agreement.id}/sign`, {
+      method: "POST",
+      body: JSON.stringify({
+        printedName: "Synthetic Renter",
+        electronicRecordsConsent: true,
+        termsAcknowledged: true,
+        driverInsuranceAcknowledged: true,
+        inspectionOpportunityAcknowledged: true,
+        pickupInspectionChoice: "SEND_FORM",
+      }),
+    });
+    expect(signed.status).toBe(201);
+    expect(
+      raw
+        .prepare(
+          "SELECT status,is_synthetic,signed_at,template_hash,pickup_inspection_choice FROM agreement_instances",
+        )
+        .get(),
+    ).toMatchObject({
+      status: "SIGNED",
+      is_synthetic: 1,
+      signed_at: "2027-01-01T12:00:00.000Z",
+      template_hash: agreement.template_hash,
+      pickup_inspection_choice: "SEND_FORM",
+    });
+    expect(
+      raw.prepare("SELECT status FROM pickup_condition_choices").get(),
+    ).toEqual({ status: "PENDING" });
+    expect(() =>
+      raw
+        .prepare(
+          "UPDATE agreement_instances SET printed_name='Changed' WHERE id=1",
+        )
+        .run(),
+    ).toThrow(/SIGNED_AGREEMENT_IMMUTABLE/);
+    expect(() =>
+      raw.prepare("DELETE FROM agreement_instances WHERE id=1").run(),
+    ).toThrow(/SIGNED_AGREEMENT_IMMUTABLE/);
+    expect(
+      raw
+        .prepare(
+          "SELECT count(*) total FROM audit_events WHERE action IN ('AGREEMENT_OPENED','PICKUP_INSPECTION_CHOICE_RECORDED','AGREEMENT_SIGNED')",
+        )
+        .get(),
+    ).toEqual({ total: 3 });
+  });
+  it("requires explicit pickup-condition completion or decline and preserves neutral decline evidence", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Renter'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('COND',1,1,'DIRECT','CONFIRMED','2027-08-01T13:00:00Z','2027-08-02T13:00:00Z',10000,1)",
+    );
+    const silent = await request(
+      "/api/reservations/1/pickup-condition/decline",
+      { method: "POST", body: JSON.stringify({ affirmativeDecline: false }) },
+    );
+    expect(silent.status).toBe(400);
+    const declined = await request(
+      "/api/reservations/1/pickup-condition/decline",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          affirmativeDecline: true,
+          acknowledgment:
+            "I affirmatively decline the offered pre-pickup condition inspection.",
+        }),
+      },
+    );
+    expect(declined.status).toBe(201);
+    expect(
+      raw
+        .prepare(
+          "SELECT status,customer_acknowledged_at,decline_acknowledgment,is_synthetic FROM pickup_condition_choices",
+        )
+        .get(),
+    ).toMatchObject({
+      status: "DECLINED",
+      customer_acknowledged_at: null,
+      is_synthetic: 1,
+    });
+    const audit = raw
+      .prepare(
+        "SELECT payload_json FROM audit_events WHERE action='PICKUP_CONDITION_DECLINED'",
+      )
+      .get() as { payload_json: string };
+    expect(JSON.parse(audit.payload_json)).toMatchObject({
+      affirmativeAction: true,
+      automaticDefectAcceptance: false,
+      automaticDepositForfeiture: false,
+    });
+  });
+  it("creates a one-time hashed secure link, rejects replay, and never stores its raw token", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Link'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('LINK',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00Z','2027-09-02T13:00:00Z',10000,1)",
+    );
+    const created = await request("/api/reservations/1/secure-links", {
+      method: "POST",
+      body: JSON.stringify({
+        purpose: "AGREEMENT_SIGNING",
+        expiresInMinutes: 60,
+      }),
+    });
+    expect(created.status).toBe(201);
+    const result = (await created.json()) as {
+      token: string;
+      link: { id: number; status: string };
+    };
+    expect(result.token).toHaveLength(43);
+    const stored = raw
+      .prepare(
+        "SELECT token_hash,token_fingerprint,purpose,use_count FROM secure_links",
+      )
+      .get() as Record<string, unknown>;
+    expect(stored.token_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(stored)).not.toContain(result.token);
+    const used = await request("/api/customer-preview/secure-links/use", {
+      method: "POST",
+      body: JSON.stringify({ token: result.token }),
+    });
+    expect(used.status).toBe(200);
+    expect(await used.json()).toMatchObject({
+      status: "USED",
+      workflowAction: "NOT_EXECUTED",
+    });
+    expect(
+      (
+        await request("/api/customer-preview/secure-links/use", {
+          method: "POST",
+          body: JSON.stringify({ token: result.token }),
+        })
+      ).status,
+    ).toBe(409);
+    expect(
+      raw
+        .prepare(
+          "SELECT count(*) total FROM audit_events WHERE action IN ('SECURE_LINK_CREATED','SECURE_LINK_USED')",
+        )
+        .get(),
+    ).toEqual({ total: 2 });
+    expect(raw.prepare("SELECT use_count FROM secure_links").get()).toEqual({
+      use_count: 1,
+    });
+  });
+  it("revokes and regenerates secure links without exposing prior raw tokens", async () => {
+    raw.exec(
+      "INSERT INTO customers(first_name,last_name) VALUES ('Synthetic','Link'); INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,is_synthetic) VALUES ('LINK',1,1,'DIRECT','CONFIRMED','2027-09-01T13:00:00Z','2027-09-02T13:00:00Z',10000,1)",
+    );
+    const first = (await (
+      await request("/api/reservations/1/secure-links", {
+        method: "POST",
+        body: JSON.stringify({ purpose: "PICKUP_INSPECTION" }),
+      })
+    ).json()) as { token: string; link: { id: number } };
+    expect(
+      (
+        await request(`/api/secure-links/${first.link.id}`, {
+          method: "DELETE",
+          body: JSON.stringify({
+            confirm: true,
+            reason: "Synthetic owner revocation",
+          }),
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await request("/api/customer-preview/secure-links/use", {
+          method: "POST",
+          body: JSON.stringify({ token: first.token }),
+        })
+      ).status,
+    ).toBe(409);
+    const regenerated = await request(
+      `/api/secure-links/${first.link.id}/regenerate`,
+      { method: "POST", body: JSON.stringify({ expiresInMinutes: 30 }) },
+    );
+    expect(regenerated.status).toBe(201);
+    const second = (await regenerated.json()) as { token: string };
+    expect(second.token).not.toBe(first.token);
+    expect(
+      raw.prepare("SELECT count(*) total FROM secure_links").get(),
+    ).toEqual({ total: 2 });
+    expect(
+      raw
+        .prepare(
+          "SELECT count(*) total FROM secure_links WHERE revoked_at IS NOT NULL",
+        )
+        .get(),
+    ).toEqual({ total: 1 });
+  });
 });

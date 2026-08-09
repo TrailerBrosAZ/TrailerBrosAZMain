@@ -1,51 +1,17 @@
 # Agreement source and change log
 
-## Provenance
+## TB-RA-2026-08-v1
 
-The foundation was derived from the existing repository public source `rental-agreement.html`; that production file and its Google Apps Script/PDF workflow remain untouched. The internal source identifier is `public-rental-agreement-2026-07+inspection-choice-v1`. The canonical source object and pickup-condition choice wording live in `src/shared/agreement.ts`. Agreement instances store the template version/hash and immutable renter, reservation/intent, and quote snapshots. Deterministic rendered output separately records renderer version, generated timestamp, and content hash.
+Introduced the owner-draft 2026-08 agreement as the single protected-staging agreement source. The full supplied drafting/research file is preserved under `docs/legal-drafts/`; only its `CUSTOMER-FACING AGREEMENT` section is in `src/legal/TB-RA-2026-08-v1.md` and runtime output.
 
-This manifest does not assert that the source is attorney-approved.
+Implemented changes:
 
-## Retained from the existing source
+- Replaced the former `public-rental-agreement-2026-07+controlled-preview-v2` runtime clauses for new acceptances only.
+- Preserved immutable historical templates, agreement instances, signed evidence, and documents.
+- Added complete canonical terms to the review screen and deterministic PDF, with version/hash provenance and drawn-signature evidence.
+- Changed delivery to $2.50 per one-way road mile, rounding road distance up before multiplication. Routing failure remains owner review; overrides require an existing reason/audit trail.
+- Changed late cancellation/no-show calculation to the lesser of $100 or scheduled base rent; deposit and unearned add-ons/delivery are refundable when possession never transfers.
+- Kept condition records and photos separate from the executed agreement; no driver-license image is embedded.
+- Kept legal status fail-closed as `OWNER_DRAFT_ATTORNEY_REVIEW_PENDING` and public launch not ready.
 
-- Renter and contact details; trailer and rental-period details.
-- Charges, $100 deposit, towing and insurance responsibilities, use restrictions, condition/damage concepts, indemnity/liability, default/remedies, Arizona law/venue, and electronic signature concepts.
-- Printed name, signature evidence, signature date/timestamp, and customer acknowledgments.
-- Public Apps Script workflow remains preserved but disconnected from Rental OS staging.
-
-## Moved into structured evidence
-
-- Electronic consent, terms acknowledgment, towing/insurance acknowledgment, and inspection opportunity each have distinct timestamps.
-- Renter, reservation/intent, and quote facts are immutable JSON snapshots rather than inferred later from mutable records.
-- Pickup-condition choice is an explicit enumerated value with a timestamp.
-- Signed rendering provenance is a version/hash/timestamp/audit chain.
-- Payment and deposit claims depend on authoritative ledger/inspection records rather than agreement text alone.
-
-## Added by the foundation
-
-- Explicit `SEND_FORM` and `DECLINE_FORM` pickup-condition choices, both flagged for Arizona attorney review.
-- Opaque, hashed, expiring, revocable secure-link records for future agreement/inspection access; raw tokens are not retained.
-- Deterministic print-ready rendering and document hash.
-- Fail-closed attorney-approval release record tied to exact agreement source version and hash.
-- Separate protected synthetic direct-checkout agreement evidence; it does not create public signing authority.
-
-## Missing or deferred
-
-- Final attorney-approved legal text and documented counsel disposition.
-- Approved public customer authentication/access and e-sign acceptance design.
-- Immutable PDF generation/owner and customer copies, secure primary storage, and Google Drive secondary archive.
-- Reviewed delivery of agreement links and copies; bounce/failure handling and customer support process.
-- Live Stripe terms and operational acceptance; production privacy, retention, backup, monitoring, and incident controls.
-- Secure hosted inspection-photo storage and final raw driver-license workflow.
-
-## Placeholders and non-claims
-
-- Legal status remains `ATTORNEY_REVIEW_REQUIRED` until the exact source passes the release gate.
-- Secure links remain synthetic and Access-protected; placeholders in communication previews are not customer delivery.
-- Insurance acknowledgment is owner/customer-recorded evidence, not verification.
-- Stripe test records are not live payment or customer funds.
-- Local photo references are metadata labels only; no image upload or archive is implied.
-
-## Change-control rule
-
-Any material agreement wording or source-object change requires a new version, new canonical hash, updated manifest/changelog, regression tests, and renewed attorney approval. An earlier approval record must not release a changed version. Signed agreement instances and approval records are never overwritten; corrections create new versioned records and audit history.
+Any substantive wording change requires a new version/hash and renewed acceptance. Draft/incomplete evidence from an older version cannot proceed to payment or confirmation. No signed record is updated in place.

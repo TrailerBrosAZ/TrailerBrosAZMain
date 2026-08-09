@@ -13,24 +13,22 @@ describe('cross-surface rule contracts', () => {
     expect(customerVisibleRules.payload.publishedPayloadLbs).toBe(5200);
   });
 
-  it('keeps authoritative delivery boundary prices aligned', () => {
-    expect(deliveryZoneForMiles(10)).toEqual({ zone: 'ZONE_1', feeCents: 2000 });
-    expect(deliveryZoneForMiles(10.001)).toEqual({ zone: 'ZONE_2', feeCents: 4000 });
-    expect(deliveryZoneForMiles(20.001)).toEqual({ zone: 'ZONE_3', feeCents: 6000 });
-    expect(deliveryZoneForMiles(35.001)).toBeNull();
+  it('keeps authoritative one-way per-mile delivery prices aligned', () => {
+    expect(deliveryZoneForMiles(3.56)).toEqual({ zone: 'PER_MILE', billableMiles:4,feeCents:1000 });
+    expect(deliveryZoneForMiles(35.001)).toEqual({zone:'PER_MILE',billableMiles:36,feeCents:9000});
   });
 
   it('keeps cancellation calculations aligned without asserting counsel-approved wording', () => {
-    expect(customerVisibleRules.cancellation.legalWordingStatus).toBe('COUNSEL_WORDING_REQUIRED');
+    expect(customerVisibleRules.cancellation.legalWordingStatus).toBe('OWNER_DRAFT_ATTORNEY_REVIEW_PENDING');
     const pickupAt = new Date('2027-01-03T12:00:00Z');
     expect(cancellationOutcome({ pickupAt, decidedAt: new Date('2027-01-01T12:00:00Z'), rentalChargeCents: 12000 })).toMatchObject({ rentalRefundCents: 12000, retainedCents: 0 });
-    expect(cancellationOutcome({ pickupAt, decidedAt: new Date('2027-01-01T12:00:01Z'), rentalChargeCents: 12000 })).toMatchObject({ rentalRefundCents: 12000, retainedCents: 10000 });
+    expect(cancellationOutcome({ pickupAt, decidedAt: new Date('2027-01-01T12:00:01Z'), rentalChargeCents: 12000 })).toMatchObject({ rentalRefundCents: 2000, retainedCents: 10000 });
   });
 
   it('keeps international and agreement replacement rules fail-closed', () => {
     expect(customerVisibleRules.travel.international).toBe('PROHIBITED');
     expect(customerVisibleRules.agreement.futureTermsSupersedeCurrent).toBe(false);
-    expect(internalAgreementSource.legalStatus).toBe('ATTORNEY_REVIEW_REQUIRED');
+    expect(internalAgreementSource.legalStatus).toBe('OWNER_DRAFT_ATTORNEY_REVIEW_PENDING');
   });
 
   it('detects known public-source drift without changing the public files', () => {

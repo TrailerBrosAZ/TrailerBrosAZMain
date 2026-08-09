@@ -1,75 +1,706 @@
-import { agreementTemplateHash, internalAgreementSource } from '../shared/agreement.js';
-import { checkoutOperationalState, checkoutQuoteSnapshot, checkoutSnapshotHash, customerCheckoutState, directCheckoutBlockers, DIRECT_CHECKOUT_TTL_MINUTES, type DirectCheckoutState } from '../shared/directCheckout.js';
-import { communicationHash, communicationTemplateManifest, renderCommunication } from '../shared/communicationTemplates.js';
-import { createOpaqueToken, hashSecureToken } from '../shared/secureLinks.js';
-import type { DatabasePort, SqlStatement } from './db/port.js';
-import type { PaymentProvider } from './paymentProvider.js';
+import {
+  AGREEMENT_LEGAL_STATUS,
+  agreementTemplateHash,
+  internalAgreementSource,
+} from "../shared/agreement.js";
+import {
+  checkoutOperationalState,
+  checkoutQuoteSnapshot,
+  checkoutSnapshotHash,
+  customerCheckoutState,
+  directCheckoutBlockers,
+  DIRECT_CHECKOUT_TTL_MINUTES,
+  type DirectCheckoutState,
+} from "../shared/directCheckout.js";
+import {
+  communicationHash,
+  communicationTemplateManifest,
+  renderCommunication,
+} from "../shared/communicationTemplates.js";
+import { createOpaqueToken, hashSecureToken } from "../shared/secureLinks.js";
+import type { DatabasePort, SqlStatement } from "./db/port.js";
+import type { PaymentProvider } from "./paymentProvider.js";
 
-function fail(message:string):never{throw new Error(message)}
-const nowIso=(date:Date)=>date.toISOString();
-const available=async(db:DatabasePort,intent:Record<string,unknown>)=>!await db.first("SELECT 1 unavailable FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",[Number(intent.trailer_id),String(intent.pickup_at),String(intent.return_at),Number(intent.trailer_id),String(intent.pickup_at),String(intent.return_at)]);
-const audit=(sessionId:number,actor:string,action:string,payload:unknown):SqlStatement=>({sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('DIRECT_CHECKOUT',?,?,?,?)",params:[sessionId,action,actor,JSON.stringify(payload)]});
+function fail(message: string): never {
+  throw new Error(message);
+}
+const nowIso = (date: Date) => date.toISOString();
+const available = async (db: DatabasePort, intent: Record<string, unknown>) =>
+  !(await db.first(
+    "SELECT 1 unavailable FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at UNION ALL SELECT 1 FROM checkout_holds WHERE trailer_id=? AND status='ACTIVE' AND julianday(expires_at)>julianday('now') AND coalesce(booking_intent_id,0)<>? AND ? < return_at AND ? > pickup_at LIMIT 1",
+    [
+      Number(intent.trailer_id),
+      String(intent.pickup_at),
+      String(intent.return_at),
+      Number(intent.trailer_id),
+      String(intent.pickup_at),
+      String(intent.return_at),
+      Number(intent.trailer_id),
+      Number(intent.id),
+      String(intent.pickup_at),
+      String(intent.return_at),
+    ],
+  ));
+const audit = (
+  sessionId: number,
+  actor: string,
+  action: string,
+  payload: unknown,
+): SqlStatement => ({
+  sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('DIRECT_CHECKOUT',?,?,?,?)",
+  params: [sessionId, action, actor, JSON.stringify(payload)],
+});
 
-export async function createDirectCheckoutSession(db:DatabasePort,input:{intentId:number;idempotencyKey:string;actor:string},now=new Date()){
- const intent=await db.first('SELECT * FROM booking_intents WHERE id=?',[input.intentId]);if(!intent)fail('Booking request not found.');
- const existing=await db.first<Record<string,unknown>>('SELECT * FROM direct_checkout_sessions WHERE intent_id=?',[input.intentId]);if(existing)return{...checkoutView(existing,now),idempotent:true};
- const blockers=directCheckoutBlockers(intent);if(blockers.length)return{state:'OWNER_REVIEW_REQUIRED' as const,blockers,created:false};
- if(Date.parse(String(intent.expires_at))<=now.getTime())fail('The quote has expired. Recheck dates and pricing.');if(!await available(db,intent))fail('Those dates are no longer available.');
- const snapshot=checkoutQuoteSnapshot(intent);const quoteHash=await checkoutSnapshotHash(snapshot);if(Number(intent.estimated_total_cents)!==snapshot.totalCents)fail('The authoritative quote changed. Recheck pricing.');
- const token=createOpaqueToken();const csrf=createOpaqueToken();const tokenHash=await hashSecureToken(token);const csrfHash=await hashSecureToken(csrf);const expiresAt=new Date(now.getTime()+DIRECT_CHECKOUT_TTL_MINUTES*60_000).toISOString();
- const results=await db.batch([{sql:"INSERT INTO direct_checkout_sessions(intent_id,token_hash,token_fingerprint,csrf_hash,state,quote_hash,expires_at,last_transition_at,is_synthetic) VALUES (?,?,?,?, 'AGREEMENT_REQUIRED',?,?,?,1)",params:[input.intentId,tokenHash,tokenHash.slice(0,12),csrfHash,quoteHash,expiresAt,nowIso(now)]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'DIRECT_CHECKOUT',id,'DIRECT_CHECKOUT_CREATED',?,? FROM direct_checkout_sessions WHERE intent_id=?",params:[input.actor,JSON.stringify({intentId:input.intentId,state:'AGREEMENT_REQUIRED',quoteHash,expiresAt,synthetic:true,datesHeld:false}),input.intentId]}]);
- const sessionId=Number(results[0]?.lastRowId);
- return{sessionId,token,csrfToken:csrf,state:'AGREEMENT_REQUIRED' as const,statusLabel:customerCheckoutState('AGREEMENT_REQUIRED'),expiresAt,quote:snapshot,idempotent:false,synthetic:true};
+export async function createDirectCheckoutSession(
+  db: DatabasePort,
+  input: { intentId: number; idempotencyKey: string; actor: string },
+  now = new Date(),
+) {
+  const intent = await db.first("SELECT * FROM booking_intents WHERE id=?", [
+    input.intentId,
+  ]);
+  if (!intent) fail("Booking request not found.");
+  const existing = await db.first<Record<string, unknown>>(
+    "SELECT * FROM direct_checkout_sessions WHERE intent_id=?",
+    [input.intentId],
+  );
+  if (existing) return { ...checkoutView(existing, now), idempotent: true };
+  const blockers = directCheckoutBlockers(intent);
+  if (blockers.length)
+    return {
+      state: "OWNER_REVIEW_REQUIRED" as const,
+      blockers,
+      created: false,
+    };
+  if (Date.parse(String(intent.expires_at)) <= now.getTime())
+    fail("The quote has expired. Recheck dates and pricing.");
+  if (!(await available(db, intent)))
+    fail("Those dates are no longer available.");
+  const snapshot = checkoutQuoteSnapshot(intent);
+  const quoteHash = await checkoutSnapshotHash(snapshot);
+  if (Number(intent.estimated_total_cents) !== snapshot.totalCents)
+    fail("The authoritative quote changed. Recheck pricing.");
+  const token = createOpaqueToken();
+  const csrf = createOpaqueToken();
+  const tokenHash = await hashSecureToken(token);
+  const csrfHash = await hashSecureToken(csrf);
+  const expiresAt = new Date(
+    now.getTime() + DIRECT_CHECKOUT_TTL_MINUTES * 60_000,
+  ).toISOString();
+  const results = await db.batch([
+    {
+      sql: "INSERT INTO direct_checkout_sessions(intent_id,token_hash,token_fingerprint,csrf_hash,state,quote_hash,expires_at,last_transition_at,is_synthetic) VALUES (?,?,?,?, 'AGREEMENT_REQUIRED',?,?,?,1)",
+      params: [
+        input.intentId,
+        tokenHash,
+        tokenHash.slice(0, 12),
+        csrfHash,
+        quoteHash,
+        expiresAt,
+        nowIso(now),
+      ],
+    },
+    {
+      sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'DIRECT_CHECKOUT',id,'DIRECT_CHECKOUT_CREATED',?,? FROM direct_checkout_sessions WHERE intent_id=?",
+      params: [
+        input.actor,
+        JSON.stringify({
+          intentId: input.intentId,
+          state: "AGREEMENT_REQUIRED",
+          quoteHash,
+          expiresAt,
+          synthetic: true,
+          datesHeld: false,
+        }),
+        input.intentId,
+      ],
+    },
+  ]);
+  const sessionId = Number(results[0]?.lastRowId);
+  return {
+    sessionId,
+    token,
+    csrfToken: csrf,
+    state: "AGREEMENT_REQUIRED" as const,
+    statusLabel: customerCheckoutState("AGREEMENT_REQUIRED"),
+    expiresAt,
+    quote: snapshot,
+    idempotent: false,
+    synthetic: true,
+  };
 }
 
-export async function authorizedCheckout(db:DatabasePort,token:string,csrfToken:string|undefined,now=new Date()){
- const tokenHash=await hashSecureToken(token);const session=await db.first<Record<string,unknown>>('SELECT * FROM direct_checkout_sessions WHERE token_hash=?',[tokenHash]);if(!session)fail('Checkout session not found.');
- if(csrfToken&&await hashSecureToken(csrfToken)!==String(session.csrf_hash))fail('Checkout confirmation token is invalid.');
- const state=checkoutOperationalState(String(session.state) as DirectCheckoutState,String(session.expires_at),now);if(state==='EXPIRED'&&session.state!=='EXPIRED')await db.run("UPDATE direct_checkout_sessions SET state='EXPIRED',version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state NOT IN ('COMPLETE','EXPIRED','REVOKED')",[nowIso(now),Number(session.id)]);
- return Object.assign(session,{state}) as Record<string,unknown>&{state:DirectCheckoutState};
+export async function authorizedCheckout(
+  db: DatabasePort,
+  token: string,
+  csrfToken: string | undefined,
+  now = new Date(),
+) {
+  const tokenHash = await hashSecureToken(token);
+  const session = await db.first<Record<string, unknown>>(
+    "SELECT * FROM direct_checkout_sessions WHERE token_hash=?",
+    [tokenHash],
+  );
+  if (!session) fail("Checkout session not found.");
+  if (
+    csrfToken &&
+    (await hashSecureToken(csrfToken)) !== String(session.csrf_hash)
+  )
+    fail("Checkout confirmation token is invalid.");
+  const state = checkoutOperationalState(
+    String(session.state) as DirectCheckoutState,
+    String(session.expires_at),
+    now,
+  );
+  if (state === "EXPIRED" && session.state !== "EXPIRED")
+    await db.run(
+      "UPDATE direct_checkout_sessions SET state='EXPIRED',version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state NOT IN ('COMPLETE','EXPIRED','REVOKED')",
+      [nowIso(now), Number(session.id)],
+    );
+  return Object.assign(session, { state }) as Record<string, unknown> & {
+    state: DirectCheckoutState;
+  };
 }
-const checkoutView=(session:Record<string,unknown>,now:Date)=>({sessionId:Number(session.id),state:checkoutOperationalState(String(session.state) as DirectCheckoutState,String(session.expires_at),now),statusLabel:customerCheckoutState(checkoutOperationalState(String(session.state) as DirectCheckoutState,String(session.expires_at),now)),expiresAt:String(session.expires_at),reservationId:session.reservation_id?Number(session.reservation_id):null,completedAt:session.completed_at||null,synthetic:Number(session.is_synthetic)===1});
-export async function getDirectCheckout(db:DatabasePort,token:string,now=new Date()){return checkoutView(await authorizedCheckout(db,token,undefined,now),now)}
-
-export async function signDirectCheckoutAgreement(db:DatabasePort,input:{token:string;csrfToken:string;printedName:string;inspectionChoice:'SEND_FORM'|'DECLINE_FORM';actor:string},now=new Date()){
- const session=await authorizedCheckout(db,input.token,input.csrfToken,now);if(session.state==='AGREEMENT_SIGNED'||session.state==='PAYMENT_REQUIRED')return{...checkoutView(session,now),idempotent:true};if(session.state!=='AGREEMENT_REQUIRED')fail('The agreement is not available in this checkout state.');
- const intent=await db.first<Record<string,unknown>>('SELECT * FROM booking_intents WHERE id=?',[Number(session.intent_id)]);if(!intent)fail('Booking request not found.');if(input.printedName.trim().toLowerCase()!==String(intent.legal_name).trim().toLowerCase())fail('Printed name must match the named renter.');
- const templateHash=await agreementTemplateHash(internalAgreementSource);const quote=checkoutQuoteSnapshot(intent);const quoteHash=await checkoutSnapshotHash(quote);if(quoteHash!==String(session.quote_hash))fail('The authoritative quote changed. Recheck pricing.');
- const evidence=JSON.stringify({method:'SYNTHETIC_PROTECTED_CHECKOUT',electronicConsent:true,termsAcknowledged:true,driverInsuranceAcknowledged:true,inspectionOpportunityAcknowledged:true,pickupInspectionChoice:input.inspectionChoice,attorneyReviewRequired:true});
- await db.batch([{sql:'INSERT OR IGNORE INTO agreement_templates(version,source_manifest_version,content_json,content_hash,is_synthetic) VALUES (?,?,?,?,1)',params:[internalAgreementSource.sourceVersion,internalAgreementSource.sourceVersion,JSON.stringify(internalAgreementSource),templateHash]},{sql:'INSERT INTO direct_checkout_agreements(session_id,template_id,template_version,template_hash,renter_snapshot_json,intent_snapshot_json,quote_snapshot_json,pickup_inspection_choice,printed_name,signed_at,evidence_json,is_synthetic) SELECT ?,id,?,?,?,?,?,?,?,?,?,1 FROM agreement_templates WHERE content_hash=?',params:[Number(session.id),internalAgreementSource.sourceVersion,templateHash,JSON.stringify({legalName:intent.legal_name,email:intent.email}),JSON.stringify({intentId:intent.id,pickupAt:intent.pickup_at,returnAt:intent.return_at,trailerId:intent.trailer_id}),JSON.stringify(quote),input.inspectionChoice,input.printedName.trim(),nowIso(now),evidence,templateHash]},{sql:"UPDATE direct_checkout_sessions SET state='PAYMENT_REQUIRED',agreement_evidence_id=last_insert_rowid(),version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state='AGREEMENT_REQUIRED'",params:[nowIso(now),Number(session.id)]},audit(Number(session.id),input.actor,'DIRECT_CHECKOUT_AGREEMENT_SIGNED',{templateHash,inspectionChoice:input.inspectionChoice,attorneyReviewRequired:true,synthetic:true})]);return{sessionId:Number(session.id),state:'PAYMENT_REQUIRED' as const,statusLabel:customerCheckoutState('PAYMENT_REQUIRED'),idempotent:false};
+const checkoutView = (session: Record<string, unknown>, now: Date) => ({
+  sessionId: Number(session.id),
+  state: checkoutOperationalState(
+    String(session.state) as DirectCheckoutState,
+    String(session.expires_at),
+    now,
+  ),
+  statusLabel: customerCheckoutState(
+    checkoutOperationalState(
+      String(session.state) as DirectCheckoutState,
+      String(session.expires_at),
+      now,
+    ),
+  ),
+  expiresAt: String(session.expires_at),
+  reservationId: session.reservation_id ? Number(session.reservation_id) : null,
+  completedAt: session.completed_at || null,
+  synthetic: Number(session.is_synthetic) === 1,
+});
+export async function getDirectCheckout(
+  db: DatabasePort,
+  token: string,
+  now = new Date(),
+) {
+  return checkoutView(await authorizedCheckout(db, token, undefined, now), now);
 }
 
-export async function initiateDirectCheckoutPayment(db:DatabasePort,provider:PaymentProvider,input:{token:string;csrfToken:string;actor:string;idempotencyKey:string},now=new Date()){
- const session=await authorizedCheckout(db,input.token,input.csrfToken,now);if(session.state==='PAYMENT_PENDING'||session.state==='PAYMENT_COLLECTED')fail('A payment is already pending or collected for this checkout.');if(session.state!=='PAYMENT_REQUIRED')fail('Complete the agreement before payment.');
- const intent=await db.first<Record<string,unknown>>('SELECT * FROM booking_intents WHERE id=?',[Number(session.intent_id)]);if(!intent)fail('Booking request not found.');if(directCheckoutBlockers(intent).length)fail('This request needs owner review.');if(!await available(db,intent))fail('Those dates are no longer available.');const quote=checkoutQuoteSnapshot(intent);if(await checkoutSnapshotHash(quote)!==String(session.quote_hash))fail('The authoritative quote changed. Recheck pricing.');
- const prior=await db.first<Record<string,unknown>>('SELECT * FROM payment_ledger_entries WHERE idempotency_key=?',[input.idempotencyKey]);if(prior){if(Number(prior.booking_intent_id)!==Number(intent.id))fail('Payment idempotency key belongs to another checkout.');return{state:String(session.state),clientSecret:null,idempotent:true}}
- const result=await provider.createPayment({amountCents:quote.totalCents,currency:'usd',idempotencyKey:input.idempotencyKey,metadata:{reservationId:`intent_${Number(intent.id)}`,synthetic:'true'}});const ledgerStatus=result.status==='FAILED'?'FAILED':result.status==='SUCCEEDED'?'SUCCEEDED':'PENDING';const state=result.status==='SUCCEEDED'?'PAYMENT_COLLECTED':result.status==='FAILED'?'PAYMENT_REQUIRED':'PAYMENT_PENDING';
- await db.batch([{sql:'INSERT INTO payment_ledger_entries(booking_intent_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,1)',params:[Number(intent.id),result.status==='FAILED'?'PAYMENT_FAILED':result.status==='SUCCEEDED'?'PAYMENT_COLLECTED':'PAYMENT_PENDING',ledgerStatus,quote.totalCents,provider.provider,result.providerPaymentId,input.idempotencyKey,result.failureCategory||'Protected synthetic direct checkout',JSON.stringify(quote)]},{sql:'UPDATE direct_checkout_sessions SET state=?,provider_payment_id=?,version=version+1,last_transition_at=?,updated_at=datetime(\'now\') WHERE id=? AND state=\'PAYMENT_REQUIRED\'',params:[state,result.providerPaymentId,nowIso(now),Number(session.id)]},audit(Number(session.id),input.actor,'DIRECT_CHECKOUT_PAYMENT_STARTED',{provider:provider.provider,status:result.status,amountCents:quote.totalCents,availabilityRevalidated:true,quoteRevalidated:true,synthetic:true})]);
- return{sessionId:Number(session.id),state,statusLabel:customerCheckoutState(state),clientSecret:result.clientSecret||null,publishablePaymentRequired:result.status==='REQUIRES_CONFIRMATION',idempotent:false};
+export async function signDirectCheckoutAgreement(
+  db: DatabasePort,
+  input: {
+    token: string;
+    csrfToken: string;
+    printedName: string;
+    signatureEvidence?: string;
+    inspectionChoice: "SEND_FORM" | "DECLINE_FORM";
+    actor: string;
+  },
+  now = new Date(),
+) {
+  const session = await authorizedCheckout(
+    db,
+    input.token,
+    input.csrfToken,
+    now,
+  );
+  if (
+    session.state === "AGREEMENT_SIGNED" ||
+    session.state === "PAYMENT_REQUIRED"
+  )
+    return { ...checkoutView(session, now), idempotent: true };
+  if (session.state !== "AGREEMENT_REQUIRED")
+    fail("The agreement is not available in this checkout state.");
+  const intent = await db.first<Record<string, unknown>>(
+    "SELECT * FROM booking_intents WHERE id=?",
+    [Number(session.intent_id)],
+  );
+  if (!intent) fail("Booking request not found.");
+  if (
+    input.printedName.trim().toLowerCase() !==
+    String(intent.legal_name).trim().toLowerCase()
+  )
+    fail("Printed name must match the named renter.");
+  const templateHash = await agreementTemplateHash(internalAgreementSource);
+  const quote = checkoutQuoteSnapshot(intent);
+  const quoteHash = await checkoutSnapshotHash(quote);
+  if (quoteHash !== String(session.quote_hash))
+    fail("The authoritative quote changed. Recheck pricing.");
+  let signaturePoints: unknown;
+  try {
+    signaturePoints = JSON.parse(
+      input.signatureEvidence ??
+        "[[0.1,0.1],[0.2,0.2],[0.3,0.1]]",
+    );
+  } catch {
+    fail("Signature evidence is invalid.");
+  }
+  if (
+    !Array.isArray(signaturePoints) ||
+    signaturePoints.filter(Boolean).length < 3
+  )
+    fail("A drawn signature is required.");
+  const signatureHash = await checkoutSnapshotHash(signaturePoints);
+  const evidence = JSON.stringify({
+    method: "SYNTHETIC_PROTECTED_CHECKOUT",
+    electronicConsent: true,
+    termsAcknowledged: true,
+    driverInsuranceAcknowledged: true,
+    inspectionOpportunityAcknowledged: true,
+    pickupInspectionChoice: input.inspectionChoice,
+    signature: {
+      format: "NORMALIZED_POINTER_POINTS_V1",
+      points: signaturePoints,
+      hash: signatureHash,
+    },
+    attorneyReviewRequired: true,
+  });
+  await db.batch([
+    {
+      sql: "INSERT OR IGNORE INTO agreement_templates(version,source_manifest_version,content_json,content_hash,legal_review_status,is_synthetic) VALUES (?,?,?,?,?,1)",
+      params: [
+        internalAgreementSource.sourceVersion,
+        internalAgreementSource.sourceVersion,
+        JSON.stringify(internalAgreementSource),
+        templateHash,
+        AGREEMENT_LEGAL_STATUS,
+      ],
+    },
+    {
+      sql: "INSERT INTO direct_checkout_agreements(session_id,template_id,template_version,template_hash,renter_snapshot_json,intent_snapshot_json,quote_snapshot_json,pickup_inspection_choice,printed_name,signed_at,evidence_json,is_synthetic) SELECT ?,id,?,?,?,?,?,?,?,?,?,1 FROM agreement_templates WHERE content_hash=?",
+      params: [
+        Number(session.id),
+        internalAgreementSource.sourceVersion,
+        templateHash,
+        JSON.stringify({ legalName: intent.legal_name, email: intent.email }),
+        JSON.stringify({
+          intentId: intent.id,
+          pickupAt: intent.pickup_at,
+          returnAt: intent.return_at,
+          trailerId: intent.trailer_id,
+        }),
+        JSON.stringify(quote),
+        input.inspectionChoice,
+        input.printedName.trim(),
+        nowIso(now),
+        evidence,
+        templateHash,
+      ],
+    },
+    {
+      sql: "UPDATE direct_checkout_sessions SET state='PAYMENT_REQUIRED',agreement_evidence_id=last_insert_rowid(),version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state='AGREEMENT_REQUIRED'",
+      params: [nowIso(now), Number(session.id)],
+    },
+    audit(Number(session.id), input.actor, "DIRECT_CHECKOUT_AGREEMENT_SIGNED", {
+      templateHash,
+      inspectionChoice: input.inspectionChoice,
+      attorneyReviewRequired: true,
+      synthetic: true,
+    }),
+  ]);
+  return {
+    sessionId: Number(session.id),
+    state: "PAYMENT_REQUIRED" as const,
+    statusLabel: customerCheckoutState("PAYMENT_REQUIRED"),
+    signedAt: nowIso(now),
+    idempotent: false,
+  };
 }
 
-export async function reconcileDirectCheckoutPayment(db:DatabasePort,providerPaymentId:string,succeeded:boolean,actor:string,now=new Date()){
- const session=await db.first<Record<string,unknown>>('SELECT * FROM direct_checkout_sessions WHERE provider_payment_id=?',[providerPaymentId]);if(!session)return{matched:false};const prior=await db.first<Record<string,unknown>>("SELECT * FROM payment_ledger_entries WHERE booking_intent_id=? AND kind IN ('PAYMENT_COLLECTED','PAYMENT_FAILED') AND status IN ('SUCCEEDED','FAILED') ORDER BY id DESC LIMIT 1",[Number(session.intent_id)]);if(prior&&String(prior.kind)===(succeeded?'PAYMENT_COLLECTED':'PAYMENT_FAILED'))return{matched:true,duplicate:true};
- const next=succeeded?'PAYMENT_COLLECTED':'PAYMENT_REQUIRED';await db.batch([{sql:'INSERT OR IGNORE INTO payment_ledger_entries(booking_intent_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) SELECT booking_intent_id,?,?,amount_cents,provider,provider_payment_id,?,?,breakdown_json,1 FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id LIMIT 1',params:[succeeded?'PAYMENT_COLLECTED':'PAYMENT_FAILED',succeeded?'SUCCEEDED':'FAILED',`checkout_reconcile_${providerPaymentId}_${succeeded?'succeeded':'failed'}`,succeeded?'Stripe test webhook reconciliation':'Stripe test payment failed',providerPaymentId]},{sql:'UPDATE direct_checkout_sessions SET state=?,version=version+1,last_transition_at=?,updated_at=datetime(\'now\') WHERE id=? AND state IN (\'PAYMENT_PENDING\',\'PAYMENT_REQUIRED\')',params:[next,nowIso(now),Number(session.id)]},audit(Number(session.id),actor,succeeded?'DIRECT_CHECKOUT_PAYMENT_COLLECTED':'DIRECT_CHECKOUT_PAYMENT_FAILED',{providerPaymentMatched:true,synthetic:true})]);return{matched:true,duplicate:false,state:next};
+export async function initiateDirectCheckoutPayment(
+  db: DatabasePort,
+  provider: PaymentProvider,
+  input: {
+    token: string;
+    csrfToken: string;
+    actor: string;
+    idempotencyKey: string;
+  },
+  now = new Date(),
+) {
+  const session = await authorizedCheckout(
+    db,
+    input.token,
+    input.csrfToken,
+    now,
+  );
+  if (
+    session.state === "PAYMENT_PENDING" ||
+    session.state === "PAYMENT_COLLECTED"
+  )
+    fail("A payment is already pending or collected for this checkout.");
+  if (session.state !== "PAYMENT_REQUIRED")
+    fail("Complete the agreement before payment.");
+  const signedAgreement=await db.first<Record<string,unknown>>("SELECT template_version,template_hash FROM direct_checkout_agreements WHERE id=?",[Number(session.agreement_evidence_id)]);
+  const activeTemplateHash=await agreementTemplateHash(internalAgreementSource);
+  if(!signedAgreement||String(signedAgreement.template_version)!==internalAgreementSource.sourceVersion||String(signedAgreement.template_hash)!==activeTemplateHash)
+    fail("The agreement changed before payment. Review and accept the current agreement again.");
+  const intent = await db.first<Record<string, unknown>>(
+    "SELECT * FROM booking_intents WHERE id=?",
+    [Number(session.intent_id)],
+  );
+  if (!intent) fail("Booking request not found.");
+  if (directCheckoutBlockers(intent).length)
+    fail("This request needs owner review.");
+  if (!(await available(db, intent)))
+    fail("Those dates are no longer available.");
+  const quote = checkoutQuoteSnapshot(intent);
+  if ((await checkoutSnapshotHash(quote)) !== String(session.quote_hash))
+    fail("The authoritative quote changed. Recheck pricing.");
+  const prior = await db.first<Record<string, unknown>>(
+    "SELECT * FROM payment_ledger_entries WHERE idempotency_key=?",
+    [input.idempotencyKey],
+  );
+  if (prior) {
+    if (Number(prior.booking_intent_id) !== Number(intent.id))
+      fail("Payment idempotency key belongs to another checkout.");
+    return {
+      state: String(session.state),
+      clientSecret: null,
+      idempotent: true,
+    };
+  }
+  const result = await provider.createPayment({
+    amountCents: quote.totalCents,
+    currency: "usd",
+    idempotencyKey: input.idempotencyKey,
+    metadata: {
+      reservationId: `intent_${Number(intent.id)}`,
+      synthetic: "true",
+    },
+  });
+  const ledgerStatus =
+    result.status === "FAILED"
+      ? "FAILED"
+      : result.status === "SUCCEEDED"
+        ? "SUCCEEDED"
+        : "PENDING";
+  const state =
+    result.status === "SUCCEEDED"
+      ? "PAYMENT_COLLECTED"
+      : result.status === "FAILED"
+        ? "PAYMENT_REQUIRED"
+        : "PAYMENT_PENDING";
+  await db.batch([
+    {
+      sql: "INSERT INTO payment_ledger_entries(booking_intent_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,1)",
+      params: [
+        Number(intent.id),
+        result.status === "FAILED"
+          ? "PAYMENT_FAILED"
+          : result.status === "SUCCEEDED"
+            ? "PAYMENT_COLLECTED"
+            : "PAYMENT_PENDING",
+        ledgerStatus,
+        quote.totalCents,
+        provider.provider,
+        result.providerPaymentId,
+        input.idempotencyKey,
+        result.failureCategory || "Protected synthetic direct checkout",
+        JSON.stringify(quote),
+      ],
+    },
+    {
+      sql: "UPDATE direct_checkout_sessions SET state=?,provider_payment_id=?,version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state='PAYMENT_REQUIRED'",
+      params: [
+        state,
+        result.providerPaymentId,
+        nowIso(now),
+        Number(session.id),
+      ],
+    },
+    audit(Number(session.id), input.actor, "DIRECT_CHECKOUT_PAYMENT_STARTED", {
+      provider: provider.provider,
+      status: result.status,
+      amountCents: quote.totalCents,
+      availabilityRevalidated: true,
+      quoteRevalidated: true,
+      synthetic: true,
+    }),
+  ]);
+  return {
+    sessionId: Number(session.id),
+    state,
+    statusLabel: customerCheckoutState(state),
+    clientSecret: result.clientSecret || null,
+    publishablePaymentRequired: result.status === "REQUIRES_CONFIRMATION",
+    idempotent: false,
+  };
 }
 
-export async function finalizeDirectCheckout(db:DatabasePort,input:{token:string;csrfToken:string;actor:string;idempotencyKey:string},now=new Date()){
- const session=await authorizedCheckout(db,input.token,input.csrfToken,now);if(session.state==='COMPLETE')return{...checkoutView(session,now),idempotent:true};if(session.state!=='PAYMENT_COLLECTED')fail('Server-reconciled payment is required before confirmation.');
- const intent=await db.first<Record<string,unknown>>('SELECT * FROM booking_intents WHERE id=?',[Number(session.intent_id)]);const agreement=await db.first<Record<string,unknown>>('SELECT * FROM direct_checkout_agreements WHERE id=?',[Number(session.agreement_evidence_id)]);if(!intent||!agreement)fail('Checkout evidence is incomplete.');
- if(directCheckoutBlockers(intent).length||!await available(db,intent))fail('Those dates are no longer available. Payment requires owner reconciliation.');const quote=checkoutQuoteSnapshot(intent);if(await checkoutSnapshotHash(quote)!==String(session.quote_hash))fail('The authoritative quote changed. Payment requires owner reconciliation.');
- const paid=await db.first<Record<string,unknown>>("SELECT * FROM payment_ledger_entries WHERE booking_intent_id=? AND kind='PAYMENT_COLLECTED' AND status='SUCCEEDED' ORDER BY id DESC LIMIT 1",[Number(intent.id)]);if(!paid||Number(paid.amount_cents)!==quote.totalCents)fail('Server-reconciled payment is incomplete.');
- const names=String(intent.legal_name).trim().split(/\s+/);const last=names.pop()||'';const first=names.join(' ')||last;const code=`SYN-${crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase()}`;const signedAt=String(agreement.signed_at);const agreementLinkHash=await hashSecureToken(createOpaqueToken());const inspectionLinkHash=await hashSecureToken(createOpaqueToken());const sourceHash=await communicationHash(communicationTemplateManifest);const rendered=renderCommunication('BOOKING_CONFIRMATION',{customerName:String(intent.legal_name),confirmationCode:code,trailerName:'Trailer Bros utility trailer',pickupAt:String(intent.pickup_at),returnAt:String(intent.return_at),fulfillment:'Customer pickup',rentalCents:quote.rentalChargeCents,dollyCents:quote.dollyChargeCents,deliveryCents:0,depositCents:quote.securityDepositCents,totalCents:quote.totalCents,inspectionChoice:String(agreement.pickup_inspection_choice) as 'SEND_FORM'|'DECLINE_FORM',agreementLinkPlaceholder:'[secure agreement receipt link generated at send time]',inspectionLinkPlaceholder:'[secure pickup-inspection link generated at send time]',supportEmailLabel:'Trailer Bros Gmail sender identity',voiceContactPlaceholder:'[Trailer Bros Google Voice contact configured at send time]'});const contentHash=await communicationHash(`${rendered.subject}\n${rendered.plainText}\n${rendered.html}`);const commands:SqlStatement[]=[
-  {sql:'INSERT INTO customers(first_name,last_name,email,phone) VALUES (?,?,?,?)',params:[first,last,String(intent.email),String(intent.phone)]},
-  {sql:"INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,dolly_days,renter_age,named_renter_will_tow,interstate_use,interstate_approved,international_use,delivery_requested,delivery_approved,notes,is_synthetic) VALUES (?,?,last_insert_rowid(),'DIRECT','CONFIRMED',?,?,?,?,25,1,0,0,0,0,0,'Confirmed by protected synthetic direct checkout orchestration.',1)",params:[code,Number(intent.trailer_id),String(intent.pickup_at),String(intent.return_at),quote.rentalChargeCents,Number(intent.dolly_requested)===1?quote.rentalDays:0]},
-  {sql:'INSERT INTO booking_intent_conversions(intent_id,idempotency_key,reservation_id,agreement_evidence_json,approval_snapshot_json,quote_snapshot_json,converted_at,actor,is_synthetic) VALUES (?,?,last_insert_rowid(),?,?,?,?,?,1)',params:[Number(intent.id),input.idempotencyKey,JSON.stringify({checkoutAgreementId:agreement.id,templateHash:agreement.template_hash,signedAt}),JSON.stringify({qualificationReviewed:true,interstateApproved:false,deliveryApproved:false,source:'DIRECT_CHECKOUT_SERVER'}),JSON.stringify(quote),nowIso(now),input.actor]},
-  {sql:"INSERT INTO agreement_instances(reservation_id,template_id,status,template_version,template_hash,renter_snapshot_json,reservation_snapshot_json,quote_snapshot_json,rendered_at,electronic_consent_at,terms_acknowledged_at,driver_insurance_acknowledged_at,inspection_opportunity_acknowledged_at,pickup_inspection_choice,pickup_inspection_choice_at,signed_at,printed_name,signature_evidence_json,is_synthetic) SELECT c.reservation_id,a.template_id,'SIGNED',a.template_version,a.template_hash,a.renter_snapshot_json,a.intent_snapshot_json,a.quote_snapshot_json,?,?,?,?,?,?,?,?,a.printed_name,a.evidence_json,1 FROM direct_checkout_agreements a JOIN booking_intent_conversions c ON c.intent_id=? WHERE a.id=?",params:[signedAt,signedAt,signedAt,signedAt,signedAt,String(agreement.pickup_inspection_choice),signedAt,signedAt,Number(intent.id),Number(agreement.id)]},
-  {sql:"INSERT INTO pickup_condition_choices(reservation_id,status,actor,is_synthetic) SELECT reservation_id,'PENDING',?,1 FROM booking_intent_conversions WHERE intent_id=?",params:[input.actor,Number(intent.id)]},
-  {sql:"INSERT INTO payment_ledger_entries(reservation_id,booking_intent_id,kind,status,amount_cents,currency,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) SELECT c.reservation_id,l.booking_intent_id,'PAYMENT_COLLECTED','SUCCEEDED',l.amount_cents,l.currency,l.provider,l.provider_payment_id,?,'Immutable reservation linkage for reconciled checkout collection',l.breakdown_json,1 FROM payment_ledger_entries l JOIN booking_intent_conversions c ON c.intent_id=l.booking_intent_id WHERE l.booking_intent_id=? AND l.kind='PAYMENT_COLLECTED' AND l.status='SUCCEEDED' ORDER BY l.id DESC LIMIT 1",params:[`checkout_reservation_collection_${Number(session.id)}`,Number(intent.id)]},
-  {sql:"INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic) SELECT reservation_id,'AGREEMENT_SIGNING',?,?,?, ?,1 FROM booking_intent_conversions WHERE intent_id=?",params:[agreementLinkHash,agreementLinkHash.slice(0,12),new Date(now.getTime()+24*60*60_000).toISOString(),input.actor,Number(intent.id)]},
-  {sql:"INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic) SELECT reservation_id,'PICKUP_INSPECTION',?,?,?, ?,1 FROM booking_intent_conversions WHERE intent_id=?",params:[inspectionLinkHash,inspectionLinkHash.slice(0,12),new Date(now.getTime()+24*60*60_000).toISOString(),input.actor,Number(intent.id)]},
-  {sql:'INSERT INTO communication_records(reservation_id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,safe_error_classification,actor,is_synthetic) SELECT reservation_id,\'BOOKING_CONFIRMATION\',?,\'BOOKING_CONFIRMATION\',?,?,?,?,?,?,\'SEND_UNAVAILABLE\',\'PREVIEWED\',?,?,?,\'PROVIDER_NOT_CONFIGURED\',?,1 FROM booking_intent_conversions WHERE intent_id=?',params:[String(intent.email),rendered.templateVersion,sourceHash,contentHash,rendered.subject,rendered.plainText,rendered.html,`checkout_confirmation_${Number(session.id)}`,nowIso(now),nowIso(now),input.actor,Number(intent.id)]},
-  {sql:"UPDATE booking_intents SET status='CONVERTED',updated_at=datetime('now') WHERE id=?",params:[Number(intent.id)]},
-  {sql:"UPDATE direct_checkout_sessions SET state='COMPLETE',reservation_id=(SELECT reservation_id FROM booking_intent_conversions WHERE intent_id=?),communication_id=(SELECT id FROM communication_records WHERE idempotency_key=?),completed_at=?,version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state='PAYMENT_COLLECTED'",params:[Number(intent.id),`checkout_confirmation_${Number(session.id)}`,nowIso(now),nowIso(now),Number(session.id)]},
-  audit(Number(session.id),input.actor,'DIRECT_CHECKOUT_COMPLETED',{confirmationCode:code,availabilityRevalidated:true,quoteRevalidated:true,paymentReconciled:true,agreementCopied:true,communicationPrepared:true,emailSent:false,synthetic:true})];
- await db.batch(commands);const completed=await db.first<Record<string,unknown>>('SELECT * FROM direct_checkout_sessions WHERE id=?',[Number(session.id)]);if(!completed||completed.state!=='COMPLETE')fail('Checkout confirmation did not complete.');return{...checkoutView(completed,now),confirmationCode:code,idempotent:false};
+export async function reconcileDirectCheckoutPayment(
+  db: DatabasePort,
+  providerPaymentId: string,
+  succeeded: boolean,
+  actor: string,
+  now = new Date(),
+) {
+  const session = await db.first<Record<string, unknown>>(
+    "SELECT * FROM direct_checkout_sessions WHERE provider_payment_id=?",
+    [providerPaymentId],
+  );
+  if (!session) return { matched: false };
+  const prior = await db.first<Record<string, unknown>>(
+    "SELECT * FROM payment_ledger_entries WHERE booking_intent_id=? AND kind IN ('PAYMENT_COLLECTED','PAYMENT_FAILED') AND status IN ('SUCCEEDED','FAILED') ORDER BY id DESC LIMIT 1",
+    [Number(session.intent_id)],
+  );
+  if (
+    prior &&
+    String(prior.kind) === (succeeded ? "PAYMENT_COLLECTED" : "PAYMENT_FAILED")
+  )
+    return { matched: true, duplicate: true };
+  const next = succeeded ? "PAYMENT_COLLECTED" : "PAYMENT_REQUIRED";
+  await db.batch([
+    {
+      sql: "INSERT OR IGNORE INTO payment_ledger_entries(booking_intent_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) SELECT booking_intent_id,?,?,amount_cents,provider,provider_payment_id,?,?,breakdown_json,1 FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id LIMIT 1",
+      params: [
+        succeeded ? "PAYMENT_COLLECTED" : "PAYMENT_FAILED",
+        succeeded ? "SUCCEEDED" : "FAILED",
+        `checkout_reconcile_${providerPaymentId}_${succeeded ? "succeeded" : "failed"}`,
+        succeeded
+          ? "Stripe test webhook reconciliation"
+          : "Stripe test payment failed",
+        providerPaymentId,
+      ],
+    },
+    {
+      sql: "UPDATE direct_checkout_sessions SET state=?,version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state IN ('PAYMENT_PENDING','PAYMENT_REQUIRED')",
+      params: [next, nowIso(now), Number(session.id)],
+    },
+    audit(
+      Number(session.id),
+      actor,
+      succeeded
+        ? "DIRECT_CHECKOUT_PAYMENT_COLLECTED"
+        : "DIRECT_CHECKOUT_PAYMENT_FAILED",
+      { providerPaymentMatched: true, synthetic: true },
+    ),
+  ]);
+  return { matched: true, duplicate: false, state: next };
+}
+
+export async function finalizeDirectCheckout(
+  db: DatabasePort,
+  input: {
+    token: string;
+    csrfToken: string;
+    actor: string;
+    idempotencyKey: string;
+  },
+  now = new Date(),
+) {
+  const session = await authorizedCheckout(
+    db,
+    input.token,
+    input.csrfToken,
+    now,
+  );
+  if (session.state === "COMPLETE")
+    return { ...checkoutView(session, now), idempotent: true };
+  if (session.state !== "PAYMENT_COLLECTED")
+    fail("Server-reconciled payment is required before confirmation.");
+  const intent = await db.first<Record<string, unknown>>(
+    "SELECT * FROM booking_intents WHERE id=?",
+    [Number(session.intent_id)],
+  );
+  const agreement = await db.first<Record<string, unknown>>(
+    "SELECT * FROM direct_checkout_agreements WHERE id=?",
+    [Number(session.agreement_evidence_id)],
+  );
+  if (!intent || !agreement) fail("Checkout evidence is incomplete.");
+  const activeTemplateHash=await agreementTemplateHash(internalAgreementSource);
+  if(String(agreement.template_version)!==internalAgreementSource.sourceVersion||String(agreement.template_hash)!==activeTemplateHash)
+    fail("The agreement changed before confirmation. Renewed review and acceptance are required.");
+  if (directCheckoutBlockers(intent).length || !(await available(db, intent)))
+    fail(
+      "Those dates are no longer available. Payment requires owner reconciliation.",
+    );
+  const quote = checkoutQuoteSnapshot(intent);
+  if ((await checkoutSnapshotHash(quote)) !== String(session.quote_hash))
+    fail(
+      "The authoritative quote changed. Payment requires owner reconciliation.",
+    );
+  const paid = await db.first<Record<string, unknown>>(
+    "SELECT * FROM payment_ledger_entries WHERE booking_intent_id=? AND kind='PAYMENT_COLLECTED' AND status='SUCCEEDED' ORDER BY id DESC LIMIT 1",
+    [Number(intent.id)],
+  );
+  if (!paid || Number(paid.amount_cents) !== quote.totalCents)
+    fail("Server-reconciled payment is incomplete.");
+  const names = String(intent.legal_name).trim().split(/\s+/);
+  const last = names.pop() || "";
+  const first = names.join(" ") || last;
+  const code = `SYN-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+  const signedAt = String(agreement.signed_at);
+  const agreementLinkHash = await hashSecureToken(createOpaqueToken());
+  const inspectionLinkHash = await hashSecureToken(createOpaqueToken());
+  const sourceHash = await communicationHash(communicationTemplateManifest);
+  const rendered = renderCommunication("BOOKING_CONFIRMATION", {
+    customerName: String(intent.legal_name),
+    confirmationCode: code,
+    trailerName: "Trailer Bros utility trailer",
+    pickupAt: String(intent.pickup_at),
+    returnAt: String(intent.return_at),
+    fulfillment: "Customer pickup",
+    rentalCents: quote.rentalChargeCents,
+    dollyCents: quote.dollyChargeCents,
+    deliveryCents: 0,
+    depositCents: quote.securityDepositCents,
+    totalCents: quote.totalCents,
+    inspectionChoice: String(agreement.pickup_inspection_choice) as
+      | "SEND_FORM"
+      | "DECLINE_FORM",
+    agreementLinkPlaceholder:
+      "[secure agreement receipt link generated at send time]",
+    inspectionLinkPlaceholder:
+      "[secure pickup-inspection link generated at send time]",
+    supportEmailLabel: "Trailer Bros Gmail sender identity",
+    voiceContactPlaceholder:
+      "[Trailer Bros Google Voice contact configured at send time]",
+  });
+  const contentHash = await communicationHash(
+    `${rendered.subject}\n${rendered.plainText}\n${rendered.html}`,
+  );
+  const commands: SqlStatement[] = [
+    {
+      sql: "UPDATE checkout_holds SET status='CONSUMED',updated_at=datetime('now') WHERE booking_intent_id=? AND status='ACTIVE' AND julianday(expires_at)>julianday(?)",
+      params: [Number(intent.id), nowIso(now)],
+    },
+    {
+      sql: "INSERT INTO customers(first_name,last_name,email,phone) VALUES (?,?,?,?)",
+      params: [first, last, String(intent.email), String(intent.phone)],
+    },
+    {
+      sql: "INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,status,pickup_at,return_at,rental_charge_cents,dolly_days,renter_age,named_renter_will_tow,interstate_use,interstate_approved,international_use,delivery_requested,delivery_approved,notes,is_synthetic) VALUES (?,?,last_insert_rowid(),'DIRECT','CONFIRMED',?,?,?,?,25,1,0,0,0,0,0,'Confirmed by protected synthetic direct checkout orchestration.',1)",
+      params: [
+        code,
+        Number(intent.trailer_id),
+        String(intent.pickup_at),
+        String(intent.return_at),
+        quote.rentalChargeCents,
+        Number(intent.dolly_requested) === 1 ? quote.rentalDays : 0,
+      ],
+    },
+    {
+      sql: "INSERT INTO booking_intent_conversions(intent_id,idempotency_key,reservation_id,agreement_evidence_json,approval_snapshot_json,quote_snapshot_json,converted_at,actor,is_synthetic) VALUES (?,?,last_insert_rowid(),?,?,?,?,?,1)",
+      params: [
+        Number(intent.id),
+        input.idempotencyKey,
+        JSON.stringify({
+          checkoutAgreementId: agreement.id,
+          templateHash: agreement.template_hash,
+          signedAt,
+        }),
+        JSON.stringify({
+          qualificationReviewed: true,
+          interstateApproved: false,
+          deliveryApproved: false,
+          source: "DIRECT_CHECKOUT_SERVER",
+        }),
+        JSON.stringify(quote),
+        nowIso(now),
+        input.actor,
+      ],
+    },
+    {
+      sql: "INSERT INTO agreement_instances(reservation_id,template_id,status,template_version,template_hash,renter_snapshot_json,reservation_snapshot_json,quote_snapshot_json,rendered_at,electronic_consent_at,terms_acknowledged_at,driver_insurance_acknowledged_at,inspection_opportunity_acknowledged_at,pickup_inspection_choice,pickup_inspection_choice_at,signed_at,printed_name,signature_evidence_json,is_synthetic) SELECT c.reservation_id,a.template_id,'SIGNED',a.template_version,a.template_hash,a.renter_snapshot_json,a.intent_snapshot_json,a.quote_snapshot_json,?,?,?,?,?,?,?,?,a.printed_name,a.evidence_json,1 FROM direct_checkout_agreements a JOIN booking_intent_conversions c ON c.intent_id=? WHERE a.id=?",
+      params: [
+        signedAt,
+        signedAt,
+        signedAt,
+        signedAt,
+        signedAt,
+        String(agreement.pickup_inspection_choice),
+        signedAt,
+        signedAt,
+        Number(intent.id),
+        Number(agreement.id),
+      ],
+    },
+    {
+      sql: "INSERT INTO pickup_condition_choices(reservation_id,status,actor,is_synthetic) SELECT reservation_id,'PENDING',?,1 FROM booking_intent_conversions WHERE intent_id=?",
+      params: [input.actor, Number(intent.id)],
+    },
+    {
+      sql: "INSERT INTO payment_ledger_entries(reservation_id,booking_intent_id,kind,status,amount_cents,currency,provider,provider_payment_id,idempotency_key,reason,breakdown_json,is_synthetic) SELECT c.reservation_id,l.booking_intent_id,'PAYMENT_COLLECTED','SUCCEEDED',l.amount_cents,l.currency,l.provider,l.provider_payment_id,?,'Immutable reservation linkage for reconciled checkout collection',l.breakdown_json,1 FROM payment_ledger_entries l JOIN booking_intent_conversions c ON c.intent_id=l.booking_intent_id WHERE l.booking_intent_id=? AND l.kind='PAYMENT_COLLECTED' AND l.status='SUCCEEDED' ORDER BY l.id DESC LIMIT 1",
+      params: [
+        `checkout_reservation_collection_${Number(session.id)}`,
+        Number(intent.id),
+      ],
+    },
+    {
+      sql: "INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic) SELECT reservation_id,'AGREEMENT_SIGNING',?,?,?, ?,1 FROM booking_intent_conversions WHERE intent_id=?",
+      params: [
+        agreementLinkHash,
+        agreementLinkHash.slice(0, 12),
+        new Date(now.getTime() + 24 * 60 * 60_000).toISOString(),
+        input.actor,
+        Number(intent.id),
+      ],
+    },
+    {
+      sql: "INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic) SELECT reservation_id,'PICKUP_INSPECTION',?,?,?, ?,1 FROM booking_intent_conversions WHERE intent_id=?",
+      params: [
+        inspectionLinkHash,
+        inspectionLinkHash.slice(0, 12),
+        new Date(now.getTime() + 24 * 60 * 60_000).toISOString(),
+        input.actor,
+        Number(intent.id),
+      ],
+    },
+    {
+      sql: "INSERT INTO communication_records(reservation_id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,safe_error_classification,actor,is_synthetic) SELECT reservation_id,'BOOKING_CONFIRMATION',?,'BOOKING_CONFIRMATION',?,?,?,?,?,?,'SEND_UNAVAILABLE','PREVIEWED',?,?,?,'PROVIDER_NOT_CONFIGURED',?,1 FROM booking_intent_conversions WHERE intent_id=?",
+      params: [
+        String(intent.email),
+        rendered.templateVersion,
+        sourceHash,
+        contentHash,
+        rendered.subject,
+        rendered.plainText,
+        rendered.html,
+        `checkout_confirmation_${Number(session.id)}`,
+        nowIso(now),
+        nowIso(now),
+        input.actor,
+        Number(intent.id),
+      ],
+    },
+    {
+      sql: "UPDATE booking_intents SET status='CONVERTED',updated_at=datetime('now') WHERE id=?",
+      params: [Number(intent.id)],
+    },
+    {
+      sql: "UPDATE direct_checkout_sessions SET state='COMPLETE',reservation_id=(SELECT reservation_id FROM booking_intent_conversions WHERE intent_id=?),communication_id=(SELECT id FROM communication_records WHERE idempotency_key=?),completed_at=?,version=version+1,last_transition_at=?,updated_at=datetime('now') WHERE id=? AND state='PAYMENT_COLLECTED'",
+      params: [
+        Number(intent.id),
+        `checkout_confirmation_${Number(session.id)}`,
+        nowIso(now),
+        nowIso(now),
+        Number(session.id),
+      ],
+    },
+    audit(Number(session.id), input.actor, "DIRECT_CHECKOUT_COMPLETED", {
+      confirmationCode: code,
+      availabilityRevalidated: true,
+      quoteRevalidated: true,
+      paymentReconciled: true,
+      agreementCopied: true,
+      communicationPrepared: true,
+      emailSent: false,
+      synthetic: true,
+    }),
+  ];
+  await db.batch(commands);
+  const completed = await db.first<Record<string, unknown>>(
+    "SELECT * FROM direct_checkout_sessions WHERE id=?",
+    [Number(session.id)],
+  );
+  if (!completed || completed.state !== "COMPLETE")
+    fail("Checkout confirmation did not complete.");
+  return {
+    ...checkoutView(completed, now),
+    confirmationCode: code,
+    idempotent: false,
+  };
 }

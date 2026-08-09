@@ -12,7 +12,8 @@ export function paymentBreakdown(input:{rentalChargeCents:number;dollyDays:numbe
 export function cancellationRefund(input:{paid:PaymentBreakdown;pickupAt:Date;decidedAt:Date;noShow:boolean}){
   const noticeHours=(input.pickupAt.getTime()-input.decidedAt.getTime())/3_600_000;
   const full=!input.noShow&&noticeHours>=48;
-  return {noticeHours,refundCents:full?input.paid.totalCents:input.paid.totalCents-input.paid.depositCents,retainedCents:full?0:input.paid.depositCents,policy:full?'FULL_REFUND':'RETAIN_DEPOSIT'} as const;
+  const retainedCents=full?0:Math.min(10_000,input.paid.rentalCents);
+  return {noticeHours,refundCents:input.paid.totalCents-retainedCents,retainedCents,policy:full?'FULL_REFUND':'LATE_CANCELLATION_CHARGE'} as const;
 }
 
 export function depositRefund(amountCollectedCents:number){return Math.min(SECURITY_DEPOSIT_CENTS,Math.max(0,Math.trunc(amountCollectedCents)));}

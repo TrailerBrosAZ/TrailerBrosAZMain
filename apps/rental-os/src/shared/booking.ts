@@ -1,6 +1,7 @@
 import { validateBookingWindow } from './domain.js';
 
-export const BOOKING_INTENT_TTL_MINUTES=30;
+export const BOOKING_INTENT_TTL_MINUTES=15;
+export const CHECKOUT_HOLD_TTL_MINUTES=15;
 export const REVIEW_REQUIRED_INTENT_TTL_HOURS=24;
 export const RENTAL_DAY_CENTS=6000;
 export const EXTRA_HOUR_CENTS=1000;

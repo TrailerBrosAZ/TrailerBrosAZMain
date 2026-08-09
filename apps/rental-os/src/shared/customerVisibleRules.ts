@@ -1,4 +1,4 @@
-export const CUSTOMER_RULES_VERSION = '2026-07-22';
+export const CUSTOMER_RULES_VERSION = '2026-08-agreement-v1';
 
 export const customerVisibleRules = {
   payload: {
@@ -8,19 +8,16 @@ export const customerVisibleRules = {
     plateVerificationPending: true,
   },
   delivery: {
-    zones: [
-      { minimumExclusiveMiles: null, maximumInclusiveMiles: 10, feeCents: 2000 },
-      { minimumExclusiveMiles: 10, maximumInclusiveMiles: 20, feeCents: 4000 },
-      { minimumExclusiveMiles: 20, maximumInclusiveMiles: 35, feeCents: 6000 },
-    ],
-    beyondOnlineMiles: 35,
-    beyondOnlineOutcome: 'OWNER_REVIEW_OR_UNAVAILABLE_ONLINE',
+    basis: 'ONE_WAY_ROAD_MILES',
+    rounding: 'ROUND_UP_TO_NEXT_WHOLE_MILE',
+    rateCentsPerMile: 250,
+    routingFailureOutcome: 'OWNER_REVIEW_NO_FABRICATED_FEE',
   },
   cancellation: {
     fullRefundNoticeHours: 48,
-    lateRetainedCents: 10000,
-    lateRefundBasis: 'UNEARNED_RENTAL_RATE_SUBTOTAL',
-    legalWordingStatus: 'COUNSEL_WORDING_REQUIRED',
+    lateMaximumChargeCents: 10000,
+    lateChargeBasis: 'LESSER_OF_100_OR_BASE_RENT',
+    legalWordingStatus: 'OWNER_DRAFT_ATTORNEY_REVIEW_PENDING',
   },
   travel: {
     interstate: 'PRIOR_WRITTEN_OWNER_APPROVAL_REQUIRED',
@@ -40,7 +37,7 @@ export const customerVisibleRules = {
   },
   agreement: {
     currentAgreementOperative: true,
-    replacementStatus: 'COUNSEL_APPROVED_REPLACEMENT_REQUIRED',
+    replacementStatus: 'OWNER_DRAFT_PROTECTED_STAGING_ONLY',
     futureTermsSupersedeCurrent: false,
   },
 } as const;

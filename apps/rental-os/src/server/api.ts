@@ -1,265 +1,3767 @@
-import { z } from 'zod';
-import { addArizonaDays, analyticsRange, calculateAnalytics, comparisonRange, defaultAnalyticsRange, type AnalyticsBlock, type AnalyticsReservation } from '../shared/analytics.js';
-import { arizonaDayKey } from '../shared/arizonaTime.js';
-import { parseArizonaDateTime } from '../shared/arizonaTime.js';
-import { bookingIntentPolicy, calculateBookingQuote } from '../shared/booking.js';
-import { agreementTemplateHash, internalAgreementSource } from '../shared/agreement.js';
-import { agreementDocumentHash, AGREEMENT_RENDERER_VERSION, renderAgreementDocument } from '../shared/agreementRenderer.js';
-import { communicationHash, communicationTemplateKeys, communicationTemplateManifest, renderCommunication, type CommunicationTemplateKey, type InspectionChoice } from '../shared/communicationTemplates.js';
-import { createOpaqueToken, hashSecureToken, SECURE_LINK_CREATE_LIMIT_PER_HOUR, SECURE_LINK_DEFAULT_TTL_MINUTES, SECURE_LINK_MAX_TTL_MINUTES, SECURE_LINK_PURPOSES, SECURE_LINK_USE_LIMIT_PER_HOUR, secureLinkStatus, type SecureLinkPurpose } from '../shared/secureLinks.js';
-import { DELIVERY_QUOTE_LIMIT_PER_HOUR, customerDeliveryQuote, routingUnavailable, type DeliveryQuoteResult } from '../shared/delivery.js';
-import { cancellationOutcome, canTransition, externalSources, operationalStatus, reservationStatuses, validateBookingWindow, type ReservationStatus } from '../shared/domain.js';
-import { cancellationRefund, depositRefund, paymentBreakdown } from '../shared/payments.js';
-import { AuthorizationError, authorizeIdentity, authorizeOwner, type AuthEnvironment, type OwnerIdentity, type TokenVerifier } from './auth.js';
-import type { DatabasePort, SqlStatement, SqlValue } from './db/port.js';
-import type { DeliveryRouter } from './delivery.js';
-import { createMockPaymentProvider, type PaymentProvider, type StripeWebhookVerifier } from './paymentProvider.js';
-import { createNoSendCommunicationProvider } from './communicationProvider.js';
-import { APPROVED_GMAIL_SENDER, createAuthorizationRequest, createGmailTransport, decryptToken, encryptToken, exchangeGoogleCode, gmailConfiguration, GMAIL_CALLBACK_PATH, sha256, type GmailTransport } from './gmailIntegration.js';
-import { createBookingConfirmationAcceptanceFixture } from './stagingAcceptanceFixture.js';
-import { createDirectCheckoutSession, finalizeDirectCheckout, getDirectCheckout, initiateDirectCheckoutPayment, reconcileDirectCheckoutPayment, signDirectCheckoutAgreement } from './directCheckout.js';
-import { ATTORNEY_APPROVAL_CONFIRMATION, attorneyApprovalReadiness, currentAgreementApprovalIdentity, type AttorneyApprovalRecord } from '../shared/attorneyApproval.js';
+import { z } from "zod";
+import {
+  addArizonaDays,
+  analyticsRange,
+  calculateAnalytics,
+  comparisonRange,
+  defaultAnalyticsRange,
+  type AnalyticsBlock,
+  type AnalyticsReservation,
+} from "../shared/analytics.js";
+import { arizonaDayKey } from "../shared/arizonaTime.js";
+import { parseArizonaDateTime } from "../shared/arizonaTime.js";
+import {
+  bookingIntentPolicy,
+  calculateBookingQuote,
+  CHECKOUT_HOLD_TTL_MINUTES,
+} from "../shared/booking.js";
+import {
+  AGREEMENT_LEGAL_STATUS,
+  AGREEMENT_SOURCE_VERSION,
+  agreementTemplateHash,
+  internalAgreementSource,
+} from "../shared/agreement.js";
+import {base64ToBytes,bytesToBase64,agreementPdfHash,AGREEMENT_PDF_RENDERER_VERSION,renderAgreementPdf} from "../shared/agreementPdf.js";
+import {
+  communicationHash,
+  communicationTemplateKeys,
+  communicationTemplateManifest,
+  renderCommunication,
+  type CommunicationTemplateKey,
+  type InspectionChoice,
+} from "../shared/communicationTemplates.js";
+import {
+  createOpaqueToken,
+  hashSecureToken,
+  SECURE_LINK_CREATE_LIMIT_PER_HOUR,
+  SECURE_LINK_DEFAULT_TTL_MINUTES,
+  SECURE_LINK_MAX_TTL_MINUTES,
+  SECURE_LINK_PURPOSES,
+  SECURE_LINK_USE_LIMIT_PER_HOUR,
+  secureLinkStatus,
+  type SecureLinkPurpose,
+} from "../shared/secureLinks.js";
+import {
+  DELIVERY_QUOTE_LIMIT_PER_HOUR,
+  customerDeliveryQuote,
+  routingUnavailable,
+  type DeliveryQuoteResult,
+} from "../shared/delivery.js";
+import {
+  cancellationOutcome,
+  canTransition,
+  externalSources,
+  operationalStatus,
+  reservationStatuses,
+  validateBookingWindow,
+  type ReservationStatus,
+} from "../shared/domain.js";
+import {
+  cancellationRefund,
+  depositRefund,
+  paymentBreakdown,
+} from "../shared/payments.js";
+import {
+  AuthorizationError,
+  authorizeIdentity,
+  authorizeOwner,
+  type AuthEnvironment,
+  type OwnerIdentity,
+  type TokenVerifier,
+} from "./auth.js";
+import type { DatabasePort, SqlStatement, SqlValue } from "./db/port.js";
+import type { DeliveryRouter } from "./delivery.js";
+import {
+  createMockPaymentProvider,
+  type PaymentProvider,
+  type StripeWebhookVerifier,
+} from "./paymentProvider.js";
+import { createNoSendCommunicationProvider } from "./communicationProvider.js";
+import {
+  APPROVED_GMAIL_SENDER,
+  createAuthorizationRequest,
+  createGmailTransport,
+  decryptToken,
+  encryptToken,
+  exchangeGoogleCode,
+  gmailConfiguration,
+  GMAIL_CALLBACK_PATH,
+  sha256,
+  type GmailTransport,
+} from "./gmailIntegration.js";
+import { createBookingConfirmationAcceptanceFixture } from "./stagingAcceptanceFixture.js";
+import {
+  createDirectCheckoutSession,
+  finalizeDirectCheckout,
+  getDirectCheckout,
+  initiateDirectCheckoutPayment,
+  reconcileDirectCheckoutPayment,
+  signDirectCheckoutAgreement,
+} from "./directCheckout.js";
+import {
+  ATTORNEY_APPROVAL_CONFIRMATION,
+  attorneyApprovalReadiness,
+  currentAgreementApprovalIdentity,
+  type AttorneyApprovalRecord,
+} from "../shared/attorneyApproval.js";
 
-export type ApiEnvironment = AuthEnvironment & { DB: DatabasePort; GMAIL_OAUTH_CLIENT_ID?:string;GMAIL_OAUTH_CLIENT_SECRET?:string;GMAIL_TOKEN_ENCRYPTION_KEY?:string;GMAIL_APPROVED_SENDER?:string;GMAIL_TEST_RECIPIENT?:string };
-export type ApiDependencies = { verifier?: TokenVerifier; now?: () => Date; deliveryRouter?: DeliveryRouter; paymentProvider?: PaymentProvider; stripePublishableKey?: string;gmailTransport?:GmailTransport };
-const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
-const webhookJson=(body:unknown,status=200)=>Response.json(body,{status,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'}});
-const iso = (date = new Date()) => date.toISOString();
-const conflict = (error: unknown) => error instanceof Error && error.message.includes('TRAILER_SCHEDULE_CONFLICT');
-const STRIPE_WEBHOOK_PATH='/api/payments/webhooks/stripe';
-const STRIPE_WEBHOOK_LIMIT=256*1024;
-const supportedStripeEvents=new Set(['payment_intent.succeeded','payment_intent.payment_failed','refund.created','refund.updated','refund.failed','charge.dispute.created','charge.dispute.closed']);
-async function limitedRawBody(request:Request){const declared=Number(request.headers.get('content-length')||0);if(declared>STRIPE_WEBHOOK_LIMIT)throw new Error('PAYLOAD_TOO_LARGE');if(!request.body)return'';const reader=request.body.getReader();const chunks:Uint8Array[]=[];let total=0;while(true){const result=await reader.read();if(result.done)break;total+=result.value.byteLength;if(total>STRIPE_WEBHOOK_LIMIT){await reader.cancel();throw new Error('PAYLOAD_TOO_LARGE')}chunks.push(result.value)}const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}return new TextDecoder().decode(bytes)}
-export async function handleStripeWebhookRequest(request:Request,db:DatabasePort,paymentProvider:StripeWebhookVerifier,now=new Date()):Promise<Response>{
-  if(new URL(request.url).pathname!==STRIPE_WEBHOOK_PATH)return webhookJson({error:'Not found.'},404);
-  if(request.method.toUpperCase()!=='POST')return webhookJson({error:'Method not allowed.'},405);
-  if(paymentProvider.provider!=='STRIPE_TEST')return webhookJson({error:'Webhook unavailable.'},503);
-  if(!request.headers.get('stripe-signature'))return webhookJson({error:'Invalid webhook request.'},401);
-  let raw:string;try{raw=await limitedRawBody(request)}catch(error){return webhookJson({error:error instanceof Error&&error.message==='PAYLOAD_TOO_LARGE'?'Webhook payload too large.':'Invalid webhook request.'},error instanceof Error&&error.message==='PAYLOAD_TOO_LARGE'?413:400)}
-  let event;try{event=await paymentProvider.verifyWebhook(raw,request.headers.get('stripe-signature')||'')}catch{return webhookJson({error:'Invalid webhook request.'},401)}
-  if(!supportedStripeEvents.has(event.type))return webhookJson({error:'Unsupported webhook event.'},422);
-  if(await db.first('SELECT id FROM payment_webhook_events WHERE provider_event_id=?',[event.providerEventId]))return webhookJson({error:'Duplicate webhook event.'},409);
-  const payloadHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(value=>value.toString(16).padStart(2,'0')).join('');const linked=event.providerPaymentId?await db.first<{reservation_id:number|null;booking_intent_id:number|null}>('SELECT reservation_id,booking_intent_id FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id DESC',[event.providerPaymentId]):undefined;const newer=event.providerPaymentId?await db.first<{provider_created_at:string}>('SELECT provider_created_at FROM payment_webhook_events WHERE provider_payment_id=? ORDER BY provider_created_at DESC LIMIT 1',[event.providerPaymentId]):undefined;const stale=Boolean(newer&&String(newer.provider_created_at)>event.createdAt);const existingOutcome=event.providerPaymentId?await existingPaymentOutcome(db,event.providerPaymentId):undefined;const processingStatus=!linked?'UNMATCHED':stale?'IGNORED_STALE':'PROCESSED';const commands:SqlStatement[]=[{sql:'INSERT INTO payment_webhook_events(provider_event_id,event_type,provider_payment_id,processing_status,sanitized_status,payload_hash,provider_created_at,processed_at,is_synthetic) VALUES (?,?,?,?,?,?,?,?,1)',params:[event.providerEventId,event.type,event.providerPaymentId||null,processingStatus,event.status,payloadHash,event.createdAt,iso(now)]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('PAYMENT_WEBHOOK',last_insert_rowid(),'PAYMENT_WEBHOOK_RECONCILED','stripe-test-webhook',?)",params:[JSON.stringify({providerEventId:event.providerEventId,eventType:event.type,status:event.status,processingStatus,testOnly:true,payloadStored:false})]}];if(linked?.reservation_id&&!stale&&!existingOutcome&&(event.type==='payment_intent.succeeded'||event.type==='payment_intent.payment_failed'))commands.push({sql:'INSERT OR IGNORE INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,is_synthetic) SELECT ?,?,?,amount_cents,\'STRIPE_TEST\',?,?,?,1 FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id LIMIT 1',params:[linked.reservation_id,event.type==='payment_intent.succeeded'?'PAYMENT_COLLECTED':'PAYMENT_FAILED',event.type==='payment_intent.succeeded'?'SUCCEEDED':'FAILED',event.providerPaymentId,`stripe_event_${event.providerEventId}`,'Stripe test webhook reconciliation',event.providerPaymentId]});await db.batch(commands);if(linked?.booking_intent_id&&!stale&&(event.type==='payment_intent.succeeded'||event.type==='payment_intent.payment_failed'))await reconcileDirectCheckoutPayment(db,event.providerPaymentId,event.type==='payment_intent.succeeded','stripe-test-webhook',now);return webhookJson({accepted:true},202);
-}
-const expectedMessages = ['Reservation not found.','Blackout not found.','Terminal reservations cannot be edited.','This reservation changed since it was opened. Refresh and try again.','A pickup inspection is required before check-out.','A return inspection is required first.','A deliberate deposit decision is required before completion.','Pickup inspection requires a confirmed reservation.','Return inspection requires a checked-out reservation.','Deposit decisions require Inspection Pending status.','A completed return inspection is required.','Damage retain requires amount, reason, and damage notes.','A release record must have a zero retained amount.','Secure links are limited to synthetic staging records.','Secure-link creation is temporarily limited.'];
-const failure = (error: unknown) => {
-  if (conflict(error)) return json({ error: 'That trailer is already reserved or blocked during this time.' }, 409);
-  const message = error instanceof Error ? error.message : '';
-  const safe = expectedMessages.includes(message) || /^(Transition from .+ is not permitted\.|Cancellation is not permitted from .+\.|No-show is not permitted from .+\.)$/.test(message) || message === 'Pickup and return must use 15-minute increments.' || message === 'Return must be after pickup.' || message.includes('Arizona time');
-  return json({ error: safe ? message : 'The request could not be completed.' }, safe ? 400 : 500);
+export type ApiEnvironment = AuthEnvironment & {
+  DB: DatabasePort;
+  GMAIL_OAUTH_CLIENT_ID?: string;
+  GMAIL_OAUTH_CLIENT_SECRET?: string;
+  GMAIL_TOKEN_ENCRYPTION_KEY?: string;
+  GMAIL_APPROVED_SENDER?: string;
+  GMAIL_TEST_RECIPIENT?: string;
 };
-const audit = (identity: OwnerIdentity, type: string, id: number, action: string, payload: unknown = {}): SqlStatement => ({ sql: 'INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES (?,?,?,?,?)', params: [type,id,action,identity.email,JSON.stringify(payload)] });
-const reservation = (db: DatabasePort, id: number) => db.first('SELECT * FROM reservations WHERE id=?', [id]);
-const paymentIdempotency=z.string().trim().min(12).max(120).regex(/^[A-Za-z0-9_-]+$/);
-async function reservationPayment(db:DatabasePort,id:number){const row=await db.first(`SELECT r.*,(SELECT bi.delivery_charge_cents FROM booking_intent_conversions c JOIN booking_intents bi ON bi.id=c.intent_id WHERE c.reservation_id=r.id) delivery_charge_cents FROM reservations r WHERE r.id=?`,[id]);if(!row)throw new Error('Reservation not found.');const breakdown=paymentBreakdown({rentalChargeCents:Number(row.rental_charge_cents),dollyDays:Number(row.dolly_days),deliveryChargeCents:row.delivery_charge_cents==null?0:Number(row.delivery_charge_cents)});const ledger=await db.all('SELECT * FROM payment_ledger_entries WHERE reservation_id=? ORDER BY id DESC',[id]);return{row,breakdown,ledger}}
-async function paymentReadiness(db:DatabasePort,row:Record<string,unknown>){const blockers:string[]=[];if(String(row.status)!=='CONFIRMED')blockers.push('Only a confirmed reservation may enter payment rehearsal.');if(Number(row.is_synthetic)!==1)blockers.push('Synthetic staging reservations only.');if(!await db.first("SELECT 1 present FROM agreement_instances WHERE reservation_id=? AND status='SIGNED'",[Number(row.id)]))blockers.push('Signed agreement required.');if(Number(row.renter_age||0)<25||Number(row.named_renter_will_tow)!==1||Number(row.international_use)===1)blockers.push('Qualification review is incomplete.');if(Number(row.delivery_requested)===1&&Number(row.delivery_approved)!==1)blockers.push('Delivery approval required.');if(Number(row.interstate_use)===1&&Number(row.interstate_approved)!==1)blockers.push('Interstate approval required.');if(await db.first("SELECT 1 conflict FROM reservations WHERE id<>? AND trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",[Number(row.id),Number(row.trailer_id),String(row.pickup_at),String(row.return_at),Number(row.trailer_id),String(row.pickup_at),String(row.return_at)]))blockers.push('Authoritative availability changed.');return blockers}
+export type ApiDependencies = {
+  verifier?: TokenVerifier;
+  now?: () => Date;
+  deliveryRouter?: DeliveryRouter;
+  paymentProvider?: PaymentProvider;
+  stripePublishableKey?: string;
+  gmailTransport?: GmailTransport;
+};
+const json = (body: unknown, status = 200) =>
+  Response.json(body, { status, headers: { "cache-control": "no-store" } });
+const webhookJson = (body: unknown, status = 200) =>
+  Response.json(body, {
+    status,
+    headers: {
+      "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "no-referrer",
+    },
+  });
+const iso = (date = new Date()) => date.toISOString();
+const conflict = (error: unknown) =>
+  error instanceof Error && error.message.includes("TRAILER_SCHEDULE_CONFLICT");
+const STRIPE_WEBHOOK_PATH = "/api/payments/webhooks/stripe";
+const STRIPE_WEBHOOK_LIMIT = 256 * 1024;
+const supportedStripeEvents = new Set([
+  "payment_intent.succeeded",
+  "payment_intent.payment_failed",
+  "refund.created",
+  "refund.updated",
+  "refund.failed",
+  "charge.dispute.created",
+  "charge.dispute.closed",
+]);
+async function limitedRawBody(request: Request) {
+  const declared = Number(request.headers.get("content-length") || 0);
+  if (declared > STRIPE_WEBHOOK_LIMIT) throw new Error("PAYLOAD_TOO_LARGE");
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const result = await reader.read();
+    if (result.done) break;
+    total += result.value.byteLength;
+    if (total > STRIPE_WEBHOOK_LIMIT) {
+      await reader.cancel();
+      throw new Error("PAYLOAD_TOO_LARGE");
+    }
+    chunks.push(result.value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+export async function handleStripeWebhookRequest(
+  request: Request,
+  db: DatabasePort,
+  paymentProvider: StripeWebhookVerifier,
+  now = new Date(),
+): Promise<Response> {
+  if (new URL(request.url).pathname !== STRIPE_WEBHOOK_PATH)
+    return webhookJson({ error: "Not found." }, 404);
+  if (request.method.toUpperCase() !== "POST")
+    return webhookJson({ error: "Method not allowed." }, 405);
+  if (paymentProvider.provider !== "STRIPE_TEST")
+    return webhookJson({ error: "Webhook unavailable." }, 503);
+  if (!request.headers.get("stripe-signature"))
+    return webhookJson({ error: "Invalid webhook request." }, 401);
+  let raw: string;
+  try {
+    raw = await limitedRawBody(request);
+  } catch (error) {
+    return webhookJson(
+      {
+        error:
+          error instanceof Error && error.message === "PAYLOAD_TOO_LARGE"
+            ? "Webhook payload too large."
+            : "Invalid webhook request.",
+      },
+      error instanceof Error && error.message === "PAYLOAD_TOO_LARGE"
+        ? 413
+        : 400,
+    );
+  }
+  let event;
+  try {
+    event = await paymentProvider.verifyWebhook(
+      raw,
+      request.headers.get("stripe-signature") || "",
+    );
+  } catch {
+    return webhookJson({ error: "Invalid webhook request." }, 401);
+  }
+  if (!supportedStripeEvents.has(event.type))
+    return webhookJson({ error: "Unsupported webhook event." }, 422);
+  if (
+    await db.first(
+      "SELECT id FROM payment_webhook_events WHERE provider_event_id=?",
+      [event.providerEventId],
+    )
+  )
+    return webhookJson({ error: "Duplicate webhook event." }, 409);
+  const payloadHash = Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)),
+    ),
+  )
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+  const linked = event.providerPaymentId
+    ? await db.first<{
+        reservation_id: number | null;
+        booking_intent_id: number | null;
+      }>(
+        "SELECT reservation_id,booking_intent_id FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id DESC",
+        [event.providerPaymentId],
+      )
+    : undefined;
+  const newer = event.providerPaymentId
+    ? await db.first<{ provider_created_at: string }>(
+        "SELECT provider_created_at FROM payment_webhook_events WHERE provider_payment_id=? ORDER BY provider_created_at DESC LIMIT 1",
+        [event.providerPaymentId],
+      )
+    : undefined;
+  const stale = Boolean(
+    newer && String(newer.provider_created_at) > event.createdAt,
+  );
+  const existingOutcome = event.providerPaymentId
+    ? await existingPaymentOutcome(db, event.providerPaymentId)
+    : undefined;
+  const processingStatus = !linked
+    ? "UNMATCHED"
+    : stale
+      ? "IGNORED_STALE"
+      : "PROCESSED";
+  const commands: SqlStatement[] = [
+    {
+      sql: "INSERT INTO payment_webhook_events(provider_event_id,event_type,provider_payment_id,processing_status,sanitized_status,payload_hash,provider_created_at,processed_at,is_synthetic) VALUES (?,?,?,?,?,?,?,?,1)",
+      params: [
+        event.providerEventId,
+        event.type,
+        event.providerPaymentId || null,
+        processingStatus,
+        event.status,
+        payloadHash,
+        event.createdAt,
+        iso(now),
+      ],
+    },
+    {
+      sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('PAYMENT_WEBHOOK',last_insert_rowid(),'PAYMENT_WEBHOOK_RECONCILED','stripe-test-webhook',?)",
+      params: [
+        JSON.stringify({
+          providerEventId: event.providerEventId,
+          eventType: event.type,
+          status: event.status,
+          processingStatus,
+          testOnly: true,
+          payloadStored: false,
+        }),
+      ],
+    },
+  ];
+  if (
+    linked?.reservation_id &&
+    !stale &&
+    !existingOutcome &&
+    (event.type === "payment_intent.succeeded" ||
+      event.type === "payment_intent.payment_failed")
+  )
+    commands.push({
+      sql: "INSERT OR IGNORE INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,is_synthetic) SELECT ?,?,?,amount_cents,'STRIPE_TEST',?,?,?,1 FROM payment_ledger_entries WHERE provider_payment_id=? ORDER BY id LIMIT 1",
+      params: [
+        linked.reservation_id,
+        event.type === "payment_intent.succeeded"
+          ? "PAYMENT_COLLECTED"
+          : "PAYMENT_FAILED",
+        event.type === "payment_intent.succeeded" ? "SUCCEEDED" : "FAILED",
+        event.providerPaymentId,
+        `stripe_event_${event.providerEventId}`,
+        "Stripe test webhook reconciliation",
+        event.providerPaymentId,
+      ],
+    });
+  await db.batch(commands);
+  if (
+    linked?.booking_intent_id &&
+    !stale &&
+    (event.type === "payment_intent.succeeded" ||
+      event.type === "payment_intent.payment_failed")
+  )
+    await reconcileDirectCheckoutPayment(
+      db,
+      event.providerPaymentId,
+      event.type === "payment_intent.succeeded",
+      "stripe-test-webhook",
+      now,
+    );
+  return webhookJson({ accepted: true }, 202);
+}
+const expectedMessages = [
+  "Reservation not found.",
+  "Blackout not found.",
+  "Terminal reservations cannot be edited.",
+  "This reservation changed since it was opened. Refresh and try again.",
+  "A pickup inspection is required before check-out.",
+  "A return inspection is required first.",
+  "A deliberate deposit decision is required before completion.",
+  "Pickup inspection requires a confirmed reservation.",
+  "Return inspection requires a checked-out reservation.",
+  "Deposit decisions require Inspection Pending status.",
+  "A completed return inspection is required.",
+  "Damage retain requires amount, reason, and damage notes.",
+  "A release record must have a zero retained amount.",
+  "Secure links are limited to synthetic staging records.",
+  "Secure-link creation is temporarily limited.",
+];
+const failure = (error: unknown) => {
+  if (conflict(error))
+    return json(
+      {
+        error: "That trailer is already reserved or blocked during this time.",
+      },
+      409,
+    );
+  const message = error instanceof Error ? error.message : "";
+  const safe =
+    expectedMessages.includes(message) ||
+    /^(Transition from .+ is not permitted\.|Cancellation is not permitted from .+\.|No-show is not permitted from .+\.)$/.test(
+      message,
+    ) ||
+    message === "Pickup and return must use 15-minute increments." ||
+    message === "Return must be after pickup." ||
+    message.includes("Arizona time");
+  return json(
+    { error: safe ? message : "The request could not be completed." },
+    safe ? 400 : 500,
+  );
+};
+const audit = (
+  identity: OwnerIdentity,
+  type: string,
+  id: number,
+  action: string,
+  payload: unknown = {},
+): SqlStatement => ({
+  sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES (?,?,?,?,?)",
+  params: [type, id, action, identity.email, JSON.stringify(payload)],
+});
+const reservation = (db: DatabasePort, id: number) =>
+  db.first("SELECT * FROM reservations WHERE id=?", [id]);
+const paymentIdempotency = z
+  .string()
+  .trim()
+  .min(12)
+  .max(120)
+  .regex(/^[A-Za-z0-9_-]+$/);
+async function reservationPayment(db: DatabasePort, id: number) {
+  const row = await db.first(
+    `SELECT r.*,(SELECT bi.delivery_charge_cents FROM booking_intent_conversions c JOIN booking_intents bi ON bi.id=c.intent_id WHERE c.reservation_id=r.id) delivery_charge_cents FROM reservations r WHERE r.id=?`,
+    [id],
+  );
+  if (!row) throw new Error("Reservation not found.");
+  const breakdown = paymentBreakdown({
+    rentalChargeCents: Number(row.rental_charge_cents),
+    dollyDays: Number(row.dolly_days),
+    deliveryChargeCents:
+      row.delivery_charge_cents == null ? 0 : Number(row.delivery_charge_cents),
+  });
+  const ledger = await db.all(
+    "SELECT * FROM payment_ledger_entries WHERE reservation_id=? ORDER BY id DESC",
+    [id],
+  );
+  return { row, breakdown, ledger };
+}
+async function paymentReadiness(
+  db: DatabasePort,
+  row: Record<string, unknown>,
+) {
+  const blockers: string[] = [];
+  if (String(row.status) !== "CONFIRMED")
+    blockers.push("Only a confirmed reservation may enter payment rehearsal.");
+  if (Number(row.is_synthetic) !== 1)
+    blockers.push("Synthetic staging reservations only.");
+  if (
+    !(await db.first(
+      "SELECT 1 present FROM agreement_instances WHERE reservation_id=? AND status='SIGNED'",
+      [Number(row.id)],
+    ))
+  )
+    blockers.push("Signed agreement required.");
+  if (
+    Number(row.renter_age || 0) < 25 ||
+    Number(row.named_renter_will_tow) !== 1 ||
+    Number(row.international_use) === 1
+  )
+    blockers.push("Qualification review is incomplete.");
+  if (
+    Number(row.delivery_requested) === 1 &&
+    Number(row.delivery_approved) !== 1
+  )
+    blockers.push("Delivery approval required.");
+  if (Number(row.interstate_use) === 1 && Number(row.interstate_approved) !== 1)
+    blockers.push("Interstate approval required.");
+  if (
+    await db.first(
+      "SELECT 1 conflict FROM reservations WHERE id<>? AND trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",
+      [
+        Number(row.id),
+        Number(row.trailer_id),
+        String(row.pickup_at),
+        String(row.return_at),
+        Number(row.trailer_id),
+        String(row.pickup_at),
+        String(row.return_at),
+      ],
+    )
+  )
+    blockers.push("Authoritative availability changed.");
+  return blockers;
+}
 
-async function communicationReadiness(db:DatabasePort,row:Record<string,unknown>,type:CommunicationTemplateKey){const blockers:string[]=[];const agreement=await db.first<Record<string,unknown>>("SELECT * FROM agreement_instances WHERE reservation_id=? AND status='SIGNED' ORDER BY id DESC LIMIT 1",[Number(row.id)]);const collected=await db.first<Record<string,unknown>>("SELECT * FROM payment_ledger_entries WHERE reservation_id=? AND kind='PAYMENT_COLLECTED' AND status='SUCCEEDED' ORDER BY id DESC LIMIT 1",[Number(row.id)]);const returnInspection=await db.first<Record<string,unknown>>("SELECT * FROM condition_inspections WHERE reservation_id=? AND type='RETURN' ORDER BY id DESC LIMIT 1",[Number(row.id)]);const deposit=await db.first<Record<string,unknown>>('SELECT * FROM deposit_decisions WHERE reservation_id=?',[Number(row.id)]);const refund=await db.first<Record<string,unknown>>("SELECT * FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND status='SUCCEEDED' AND json_extract(breakdown_json,'$.action')='DEPOSIT_RELEASE' ORDER BY id DESC LIMIT 1",[Number(row.id)]);if(type==='BOOKING_CONFIRMATION'){if(String(row.channel)!=='DIRECT')blockers.push('Direct booking confirmation is limited to the authoritative direct-booking path; external sources remain owner-review/manual.');if(String(row.status)!=='CONFIRMED')blockers.push('Reservation must be confirmed by the authoritative server.');if(!agreement)blockers.push('A signed agreement is required.');if(agreement&&!['SEND_FORM','DECLINE_FORM'].includes(String(agreement.pickup_inspection_choice)))blockers.push('A required pickup-condition inspection choice is missing.');if(!collected)blockers.push('Server-reconciled payment collection is required.');if(Number(row.renter_age||0)<25||Number(row.named_renter_will_tow)!==1||Number(row.international_use)===1)blockers.push('Qualification approval is incomplete.');if(Number(row.delivery_requested)===1&&Number(row.delivery_approved)!==1)blockers.push('Delivery owner approval is required.');if(Number(row.interstate_use)===1&&Number(row.interstate_approved)!==1)blockers.push('Interstate owner approval is required.');if(await db.first("SELECT 1 conflict FROM reservations WHERE id<>? AND trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",[Number(row.id),Number(row.trailer_id),String(row.pickup_at),String(row.return_at),Number(row.trailer_id),String(row.pickup_at),String(row.return_at)]))blockers.push('Final authoritative availability revalidation failed.')}else{if(!returnInspection)blockers.push('Completed return inspection is required.');if(!deposit)blockers.push('Final deposit decision is required.')}return{ready:blockers.length===0,blockers,agreement,collected,returnInspection,deposit,refund}}
+async function communicationReadiness(
+  db: DatabasePort,
+  row: Record<string, unknown>,
+  type: CommunicationTemplateKey,
+) {
+  const blockers: string[] = [];
+  const agreement = await db.first<Record<string, unknown>>(
+    "SELECT * FROM agreement_instances WHERE reservation_id=? AND status='SIGNED' ORDER BY id DESC LIMIT 1",
+    [Number(row.id)],
+  );
+  const collected = await db.first<Record<string, unknown>>(
+    "SELECT * FROM payment_ledger_entries WHERE reservation_id=? AND kind='PAYMENT_COLLECTED' AND status='SUCCEEDED' ORDER BY id DESC LIMIT 1",
+    [Number(row.id)],
+  );
+  const returnInspection = await db.first<Record<string, unknown>>(
+    "SELECT * FROM condition_inspections WHERE reservation_id=? AND type='RETURN' ORDER BY id DESC LIMIT 1",
+    [Number(row.id)],
+  );
+  const deposit = await db.first<Record<string, unknown>>(
+    "SELECT * FROM deposit_decisions WHERE reservation_id=?",
+    [Number(row.id)],
+  );
+  const refund = await db.first<Record<string, unknown>>(
+    "SELECT * FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND status='SUCCEEDED' AND json_extract(breakdown_json,'$.action')='DEPOSIT_RELEASE' ORDER BY id DESC LIMIT 1",
+    [Number(row.id)],
+  );
+  if (type === "BOOKING_CONFIRMATION") {
+    if (String(row.channel) !== "DIRECT")
+      blockers.push(
+        "Direct booking confirmation is limited to the authoritative direct-booking path; external sources remain owner-review/manual.",
+      );
+    if (String(row.status) !== "CONFIRMED")
+      blockers.push(
+        "Reservation must be confirmed by the authoritative server.",
+      );
+    if (!agreement) blockers.push("A signed agreement is required.");
+    if (
+      agreement &&
+      !["SEND_FORM", "DECLINE_FORM"].includes(
+        String(agreement.pickup_inspection_choice),
+      )
+    )
+      blockers.push(
+        "A required pickup-condition inspection choice is missing.",
+      );
+    if (!collected)
+      blockers.push("Server-reconciled payment collection is required.");
+    if (
+      Number(row.renter_age || 0) < 25 ||
+      Number(row.named_renter_will_tow) !== 1 ||
+      Number(row.international_use) === 1
+    )
+      blockers.push("Qualification approval is incomplete.");
+    if (
+      Number(row.delivery_requested) === 1 &&
+      Number(row.delivery_approved) !== 1
+    )
+      blockers.push("Delivery owner approval is required.");
+    if (
+      Number(row.interstate_use) === 1 &&
+      Number(row.interstate_approved) !== 1
+    )
+      blockers.push("Interstate owner approval is required.");
+    if (
+      await db.first(
+        "SELECT 1 conflict FROM reservations WHERE id<>? AND trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",
+        [
+          Number(row.id),
+          Number(row.trailer_id),
+          String(row.pickup_at),
+          String(row.return_at),
+          Number(row.trailer_id),
+          String(row.pickup_at),
+          String(row.return_at),
+        ],
+      )
+    )
+      blockers.push("Final authoritative availability revalidation failed.");
+  } else {
+    if (!returnInspection)
+      blockers.push("Completed return inspection is required.");
+    if (!deposit) blockers.push("Final deposit decision is required.");
+  }
+  return {
+    ready: blockers.length === 0,
+    blockers,
+    agreement,
+    collected,
+    returnInspection,
+    deposit,
+    refund,
+  };
+}
 
-async function existingPaymentOutcome(db:DatabasePort,providerPaymentId:string){return db.first<{kind:string;status:string}>('SELECT kind,status FROM payment_ledger_entries WHERE provider_payment_id=? AND kind IN (\'PAYMENT_COLLECTED\',\'PAYMENT_FAILED\') ORDER BY id DESC LIMIT 1',[providerPaymentId])}
+async function existingPaymentOutcome(
+  db: DatabasePort,
+  providerPaymentId: string,
+) {
+  return db.first<{ kind: string; status: string }>(
+    "SELECT kind,status FROM payment_ledger_entries WHERE provider_payment_id=? AND kind IN ('PAYMENT_COLLECTED','PAYMENT_FAILED') ORDER BY id DESC LIMIT 1",
+    [providerPaymentId],
+  );
+}
 
-const arizonaDateTime=z.unknown().transform((value,context)=>{try{return parseArizonaDateTime(value)}catch(error){context.addIssue({code:'custom',message:(error as Error).message});return z.NEVER}});
-const manualBooking = z.object({ trailerId:z.coerce.number().int().positive(),customerName:z.string().trim().min(2),source:z.enum(externalSources),externalReference:z.string().trim().optional(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,rentalChargeCents:z.coerce.number().int().nonnegative().default(0),notes:z.string().trim().optional(),isSynthetic:z.boolean().default(false) });
-const blackout = z.object({ trailerId:z.coerce.number().int().positive(),startAt:arizonaDateTime,endAt:arizonaDateTime,reason:z.string().trim().min(2),notes:z.string().trim().optional(),isSynthetic:z.boolean().default(false) });
-const editReservation = z.object({ version:z.coerce.number().int().positive(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,notes:z.string().trim().optional(),externalReference:z.string().trim().optional(),rentalChargeCents:z.coerce.number().int().nonnegative(),dollyDays:z.coerce.number().int().nonnegative().default(0),reason:z.string().trim().min(2) });
-const localPhotoReference = z.string().trim().min(1).max(120).refine(value=>! /^(?:[a-z][a-z0-9+.-]*:|[\\/]|\.\.?[\\/]|.*[\\/].*)/i.test(value),'URLs and filesystem paths are not accepted. Store a short metadata label only.');
-const inspection = z.object({ conditionNotes:z.string().trim().min(2),usageTripNotes:z.string().trim().optional(),damageFound:z.boolean().default(false),damageNotes:z.string().trim().optional(),photoReferences:z.array(localPhotoReference).max(12).default([]) }).superRefine((value,context)=>{if(value.damageFound&&!value.damageNotes)context.addIssue({code:'custom',message:'Damage notes are required when damage is found.'})});
-const bookingIntent=z.object({idempotencyKey:z.string().trim().min(8).max(100),trailerId:z.coerce.number().int().positive(),legalName:z.string().trim().min(3).max(120),email:z.string().trim().email().max(160),phone:z.string().trim().min(7).max(30),age25Confirmed:z.boolean(),namedRenterOnlyTowing:z.boolean(),towVehicleDetails:z.string().trim().min(3).max(300),hitchBallAcknowledged:z.boolean(),brakeControllerAcknowledged:z.boolean(),insuranceAcknowledged:z.boolean(),intendedUse:z.string().trim().min(3).max(500),tripType:z.enum(['IN_STATE','INTERSTATE','INTERNATIONAL']),interstateDetails:z.string().trim().max(500).optional(),fulfillmentType:z.enum(['PICKUP','DELIVERY']),deliveryAddress:z.string().trim().max(500).optional(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,dollyRequested:z.boolean().default(false)}).superRefine((value,context)=>{if(!value.age25Confirmed)context.addIssue({code:'custom',message:'The renter must confirm they are at least 25.'});if(!value.namedRenterOnlyTowing)context.addIssue({code:'custom',message:'Only the named renter may tow the trailer.'});if(!value.hitchBallAcknowledged)context.addIssue({code:'custom',message:'A 2-5/16-inch hitch ball is required.'});if(!value.brakeControllerAcknowledged)context.addIssue({code:'custom',message:'An electric brake controller is required.'});if(!value.insuranceAcknowledged)context.addIssue({code:'custom',message:'Insurance acknowledgment is required.'});if(value.tripType==='INTERNATIONAL')context.addIssue({code:'custom',message:'International use is prohibited.'});if(value.tripType==='INTERSTATE'&&!value.interstateDetails)context.addIssue({code:'custom',message:'Interstate destination and trip details are required.'});if(value.fulfillmentType==='DELIVERY'&&!value.deliveryAddress)context.addIssue({code:'custom',message:'A delivery address is required.'})});
-const body = async (request: Request) => { const length=Number(request.headers.get('content-length')||0);if(length>2_000_000)throw new Error('Request body is too large.');return request.json(); };
-const checkoutBody=async(request:Request)=>{const length=Number(request.headers.get('content-length')||0);if(length>64_000)throw new Error('Checkout request is too large.');const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)throw new Error('Checkout request origin is invalid.');return body(request)};
+const arizonaDateTime = z.unknown().transform((value, context) => {
+  try {
+    return parseArizonaDateTime(value);
+  } catch (error) {
+    context.addIssue({ code: "custom", message: (error as Error).message });
+    return z.NEVER;
+  }
+});
+const manualBooking = z.object({
+  trailerId: z.coerce.number().int().positive(),
+  customerName: z.string().trim().min(2),
+  source: z.enum(externalSources),
+  externalReference: z.string().trim().optional(),
+  pickupAt: arizonaDateTime,
+  returnAt: arizonaDateTime,
+  rentalChargeCents: z.coerce.number().int().nonnegative().default(0),
+  notes: z.string().trim().optional(),
+  isSynthetic: z.boolean().default(false),
+});
+const blackout = z.object({
+  trailerId: z.coerce.number().int().positive(),
+  startAt: arizonaDateTime,
+  endAt: arizonaDateTime,
+  reason: z.string().trim().min(2),
+  notes: z.string().trim().optional(),
+  isSynthetic: z.boolean().default(false),
+});
+const editReservation = z.object({
+  version: z.coerce.number().int().positive(),
+  pickupAt: arizonaDateTime,
+  returnAt: arizonaDateTime,
+  notes: z.string().trim().optional(),
+  externalReference: z.string().trim().optional(),
+  rentalChargeCents: z.coerce.number().int().nonnegative(),
+  dollyDays: z.coerce.number().int().nonnegative().default(0),
+  reason: z.string().trim().min(2),
+});
+const localPhotoReference = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .refine(
+    (value) =>
+      !/^(?:[a-z][a-z0-9+.-]*:|[\\/]|\.\.?[\\/]|.*[\\/].*)/i.test(value),
+    "URLs and filesystem paths are not accepted. Store a short metadata label only.",
+  );
+const inspection = z
+  .object({
+    conditionNotes: z.string().trim().min(2),
+    usageTripNotes: z.string().trim().optional(),
+    damageFound: z.boolean().default(false),
+    damageNotes: z.string().trim().optional(),
+    photoReferences: z.array(localPhotoReference).max(12).default([]),
+  })
+  .superRefine((value, context) => {
+    if (value.damageFound && !value.damageNotes)
+      context.addIssue({
+        code: "custom",
+        message: "Damage notes are required when damage is found.",
+      });
+  });
+const bookingIntent = z
+  .object({
+    idempotencyKey: z.string().trim().min(8).max(100),
+    holdToken: z.string().trim().min(40).max(200).optional(),
+    trailerId: z.coerce.number().int().positive(),
+    legalName: z.string().trim().min(3).max(120),
+    email: z.string().trim().email().max(160),
+    phone: z.string().trim().min(7).max(30),
+    age25Confirmed: z.boolean(),
+    namedRenterOnlyTowing: z.boolean(),
+    towVehicleDetails: z.string().trim().min(3).max(300),
+    hitchBallAcknowledged: z.boolean(),
+    brakeControllerAcknowledged: z.boolean(),
+    insuranceAcknowledged: z.boolean(),
+    intendedUse: z.string().trim().min(3).max(500),
+    tripType: z.enum(["IN_STATE", "INTERSTATE", "INTERNATIONAL"]),
+    interstateDetails: z.string().trim().max(500).optional(),
+    fulfillmentType: z.enum(["PICKUP", "DELIVERY"]),
+    deliveryAddress: z.string().trim().max(500).optional(),
+    pickupAt: arizonaDateTime,
+    returnAt: arizonaDateTime,
+    dollyRequested: z.boolean().default(false),
+  })
+  .superRefine((value, context) => {
+    if (!value.age25Confirmed)
+      context.addIssue({
+        code: "custom",
+        message: "The renter must confirm they are at least 25.",
+      });
+    if (!value.namedRenterOnlyTowing)
+      context.addIssue({
+        code: "custom",
+        message: "Only the named renter may tow the trailer.",
+      });
+    if (!value.hitchBallAcknowledged)
+      context.addIssue({
+        code: "custom",
+        message: "A 2-5/16-inch hitch ball is required.",
+      });
+    if (!value.brakeControllerAcknowledged)
+      context.addIssue({
+        code: "custom",
+        message: "An electric brake controller is required.",
+      });
+    if (!value.insuranceAcknowledged)
+      context.addIssue({
+        code: "custom",
+        message: "Insurance acknowledgment is required.",
+      });
+    if (value.tripType === "INTERNATIONAL")
+      context.addIssue({
+        code: "custom",
+        message: "International use is prohibited.",
+      });
+    if (value.tripType === "INTERSTATE" && !value.interstateDetails)
+      context.addIssue({
+        code: "custom",
+        message: "Interstate destination and trip details are required.",
+      });
+    if (value.fulfillmentType === "DELIVERY" && !value.deliveryAddress)
+      context.addIssue({
+        code: "custom",
+        message: "A delivery address is required.",
+      });
+  });
+const body = async (request: Request) => {
+  const length = Number(request.headers.get("content-length") || 0);
+  if (length > 2_000_000) throw new Error("Request body is too large.");
+  return request.json();
+};
+const checkoutBody = async (request: Request) => {
+  const length = Number(request.headers.get("content-length") || 0);
+  if (length > 64_000) throw new Error("Checkout request is too large.");
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin)
+    throw new Error("Checkout request origin is invalid.");
+  return body(request);
+};
 
-const scheduleAvailable=async(db:DatabasePort,trailerId:number,pickupAt:string,returnAt:string)=>!await db.first("SELECT 1 unavailable FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at LIMIT 1",[trailerId,pickupAt,returnAt,trailerId,pickupAt,returnAt]);
-const intentView=(row:Record<string,unknown>,now:Date)=>({...row,operational_status:['SUBMITTED','REVIEW_REQUIRED'].includes(String(row.status))&&Date.parse(String(row.expires_at))<=now.getTime()?'EXPIRED':row.status,exceptions:JSON.parse(String(row.exceptions_json||'[]'))});
-const customerIntentView=(row:Record<string,unknown>,now:Date)=>({id:row.id,status:row.status,operational_status:intentView(row,now).operational_status,expires_at:row.expires_at,deliveryQuote:{status:row.delivery_quote_status||'NOT_REQUESTED',available:row.delivery_quote_status==='AVAILABLE',zone:row.delivery_zone||null,feeCents:row.delivery_charge_cents??null,quotedAt:row.delivery_quoted_at||null}});
-const actorHash=async(email:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email.toLowerCase())))).map(value=>value.toString(16).padStart(2,'0')).join('');
-async function consumeDeliveryQuote(db:DatabasePort,email:string,now:Date){const windowStartedAt=new Date(Math.floor(now.getTime()/3_600_000)*3_600_000).toISOString();const hash=await actorHash(email);await db.run("INSERT INTO delivery_quote_usage(actor_hash,window_started_at,request_count) VALUES (?,?,1) ON CONFLICT(actor_hash,window_started_at) DO UPDATE SET request_count=request_count+1,updated_at=datetime('now')",[hash,windowStartedAt]);const row=await db.first<{request_count:number}>('SELECT request_count FROM delivery_quote_usage WHERE actor_hash=? AND window_started_at=?',[hash,windowStartedAt]);if(Number(row?.request_count)>DELIVERY_QUOTE_LIMIT_PER_HOUR)throw new Error('DELIVERY_QUOTE_RATE_LIMIT');}
+const scheduleAvailable = async (
+  db: DatabasePort,
+  trailerId: number,
+  pickupAt: string,
+  returnAt: string,
+  holdHash = "",
+) =>
+  !(await db.first(
+    "SELECT 1 unavailable FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at UNION ALL SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at UNION ALL SELECT 1 FROM checkout_holds WHERE trailer_id=? AND status='ACTIVE' AND julianday(expires_at)>julianday(?) AND token_hash<>? AND ? < return_at AND ? > pickup_at LIMIT 1",
+    [
+      trailerId,
+      pickupAt,
+      returnAt,
+      trailerId,
+      pickupAt,
+      returnAt,
+      trailerId,
+      iso(new Date()),
+      holdHash,
+      pickupAt,
+      returnAt,
+    ],
+  ));
+const intentView = (row: Record<string, unknown>, now: Date) => ({
+  ...row,
+  operational_status:
+    ["SUBMITTED", "REVIEW_REQUIRED"].includes(String(row.status)) &&
+    Date.parse(String(row.expires_at)) <= now.getTime()
+      ? "EXPIRED"
+      : row.status,
+  exceptions: JSON.parse(String(row.exceptions_json || "[]")),
+});
+const customerIntentView = (row: Record<string, unknown>, now: Date) => ({
+  id: row.id,
+  status: row.status,
+  operational_status: intentView(row, now).operational_status,
+  expires_at: row.expires_at,
+  deliveryQuote: {
+    status: row.delivery_quote_status || "NOT_REQUESTED",
+    available: row.delivery_quote_status === "AVAILABLE",
+    zone: row.delivery_zone || null,
+    feeCents: row.delivery_charge_cents ?? null,
+    quotedAt: row.delivery_quoted_at || null,
+  },
+});
+const actorHash = async (email: string) =>
+  Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(email.toLowerCase()),
+      ),
+    ),
+  )
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+async function consumeDeliveryQuote(
+  db: DatabasePort,
+  email: string,
+  now: Date,
+) {
+  const windowStartedAt = new Date(
+    Math.floor(now.getTime() / 3_600_000) * 3_600_000,
+  ).toISOString();
+  const hash = await actorHash(email);
+  await db.run(
+    "INSERT INTO delivery_quote_usage(actor_hash,window_started_at,request_count) VALUES (?,?,1) ON CONFLICT(actor_hash,window_started_at) DO UPDATE SET request_count=request_count+1,updated_at=datetime('now')",
+    [hash, windowStartedAt],
+  );
+  const row = await db.first<{ request_count: number }>(
+    "SELECT request_count FROM delivery_quote_usage WHERE actor_hash=? AND window_started_at=?",
+    [hash, windowStartedAt],
+  );
+  if (Number(row?.request_count) > DELIVERY_QUOTE_LIMIT_PER_HOUR)
+    throw new Error("DELIVERY_QUOTE_RATE_LIMIT");
+}
 
 async function dashboard(db: DatabasePort, now: Date) {
-  const rows=await db.all(`SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,(SELECT status FROM agreement_instances a WHERE a.reservation_id=r.id ORDER BY a.id DESC LIMIT 1) agreement_status,(SELECT CASE WHEN kind='PAYMENT_FAILED' THEN 'PAYMENT_FAILED' WHEN kind='REFUND_FAILED' THEN 'REFUND_PENDING' WHEN kind='RECONCILIATION_REQUIRED' THEN 'RECONCILIATION_REQUIRED' ELSE NULL END FROM payment_ledger_entries l WHERE l.reservation_id=r.id ORDER BY l.id DESC LIMIT 1) payment_issue,(SELECT status FROM pickup_condition_choices p WHERE p.reservation_id=r.id) pickup_condition_status,(SELECT CASE WHEN revoked_at IS NOT NULL THEN 'REVOKED' WHEN expires_at<=datetime('now') THEN 'EXPIRED' ELSE NULL END FROM secure_links s WHERE s.reservation_id=r.id ORDER BY s.id DESC LIMIT 1) secure_link_issue FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id ORDER BY r.pickup_at`);
-  return {reservations:rows.map(row=>({...row,operational_status:operationalStatus(row.status as ReservationStatus,new Date(row.pickup_at as string),new Date(row.return_at as string),now)})),blocks:await db.all('SELECT b.*,t.name trailer_name FROM availability_blocks b JOIN trailers t ON t.id=b.trailer_id ORDER BY start_at'),trailers:await db.all('SELECT * FROM trailers WHERE active=1 ORDER BY name')};
+  const rows = await db.all(
+    `SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,(SELECT status FROM agreement_instances a WHERE a.reservation_id=r.id ORDER BY a.id DESC LIMIT 1) agreement_status,(SELECT CASE WHEN kind='PAYMENT_FAILED' THEN 'PAYMENT_FAILED' WHEN kind='REFUND_FAILED' THEN 'REFUND_PENDING' WHEN kind='RECONCILIATION_REQUIRED' THEN 'RECONCILIATION_REQUIRED' ELSE NULL END FROM payment_ledger_entries l WHERE l.reservation_id=r.id ORDER BY l.id DESC LIMIT 1) payment_issue,(SELECT status FROM pickup_condition_choices p WHERE p.reservation_id=r.id) pickup_condition_status,(SELECT CASE WHEN revoked_at IS NOT NULL THEN 'REVOKED' WHEN expires_at<=datetime('now') THEN 'EXPIRED' ELSE NULL END FROM secure_links s WHERE s.reservation_id=r.id ORDER BY s.id DESC LIMIT 1) secure_link_issue FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id ORDER BY r.pickup_at`,
+  );
+  return {
+    reservations: rows.map((row) => ({
+      ...row,
+      operational_status: operationalStatus(
+        row.status as ReservationStatus,
+        new Date(row.pickup_at as string),
+        new Date(row.return_at as string),
+        now,
+      ),
+    })),
+    blocks: await db.all(
+      "SELECT b.*,t.name trailer_name FROM availability_blocks b JOIN trailers t ON t.id=b.trailer_id ORDER BY start_at",
+    ),
+    trailers: await db.all(
+      "SELECT * FROM trailers WHERE active=1 ORDER BY name",
+    ),
+  };
 }
 
 async function reservationDetail(db: DatabasePort, id: number, now: Date) {
-  const row=await db.first(`SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,[id]);
-  if(!row)return undefined;
-  const links=await db.all('SELECT id,reservation_id,purpose,token_fingerprint,expires_at,revoked_at,used_at,use_count,last_used_at,created_at FROM secure_links WHERE reservation_id=? ORDER BY id DESC',[id]);
-  return {...row,operational_status:operationalStatus(row.status as ReservationStatus,new Date(row.pickup_at as string),new Date(row.return_at as string),now),payment_ledger:await db.all('SELECT * FROM payment_ledger_entries WHERE reservation_id=? ORDER BY id DESC',[id]),inspections:await db.all('SELECT * FROM condition_inspections WHERE reservation_id=? ORDER BY inspected_at',[id]),photos:await db.all('SELECT p.* FROM inspection_photos p JOIN condition_inspections i ON i.id=p.inspection_id WHERE i.reservation_id=? ORDER BY p.id',[id]),agreements:await db.all('SELECT id,status,template_version,template_hash,rendered_at,pickup_inspection_choice,pickup_inspection_choice_at,signed_at,printed_name,is_synthetic,created_at FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC',[id]),agreement_documents:await db.all('SELECT d.id,d.agreement_id,d.document_hash,d.renderer_version,d.template_version,d.content_type,d.generated_at,d.is_synthetic FROM agreement_documents d JOIN agreement_instances a ON a.id=d.agreement_id WHERE a.reservation_id=? ORDER BY d.id DESC',[id]),secure_links:links.map(link=>({...link,status:secureLinkStatus(link,now)})),pickup_condition:await db.first('SELECT * FROM pickup_condition_choices WHERE reservation_id=?',[id])||null,cancellation_outcome:await db.first('SELECT * FROM cancellation_outcomes WHERE reservation_id=?',[id])||null,deposit_decision:await db.first('SELECT * FROM deposit_decisions WHERE reservation_id=?',[id])||null,audit_events:await db.all("SELECT * FROM audit_events WHERE (aggregate_type='RESERVATION' AND aggregate_id=?) OR (aggregate_type='AGREEMENT' AND aggregate_id IN (SELECT id FROM agreement_instances WHERE reservation_id=?)) ORDER BY id DESC",[id,id])};
+  const row = await db.first(
+    `SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,
+    [id],
+  );
+  if (!row) return undefined;
+  const links = await db.all(
+    "SELECT id,reservation_id,purpose,token_fingerprint,expires_at,revoked_at,used_at,use_count,last_used_at,created_at FROM secure_links WHERE reservation_id=? ORDER BY id DESC",
+    [id],
+  );
+  return {
+    ...row,
+    operational_status: operationalStatus(
+      row.status as ReservationStatus,
+      new Date(row.pickup_at as string),
+      new Date(row.return_at as string),
+      now,
+    ),
+    payment_ledger: await db.all(
+      "SELECT * FROM payment_ledger_entries WHERE reservation_id=? ORDER BY id DESC",
+      [id],
+    ),
+    inspections: await db.all(
+      "SELECT * FROM condition_inspections WHERE reservation_id=? ORDER BY inspected_at",
+      [id],
+    ),
+    photos: await db.all(
+      "SELECT p.* FROM inspection_photos p JOIN condition_inspections i ON i.id=p.inspection_id WHERE i.reservation_id=? ORDER BY p.id",
+      [id],
+    ),
+    agreements: await db.all(
+      "SELECT id,status,template_version,template_hash,rendered_at,pickup_inspection_choice,pickup_inspection_choice_at,signed_at,printed_name,is_synthetic,created_at FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC",
+      [id],
+    ),
+    agreement_documents: await db.all(
+      "SELECT d.id,d.agreement_id,d.document_hash,d.renderer_version,d.template_version,d.content_type,d.generated_at,d.is_synthetic FROM agreement_documents d JOIN agreement_instances a ON a.id=d.agreement_id WHERE a.reservation_id=? ORDER BY d.id DESC",
+      [id],
+    ),
+    secure_links: links.map((link) => ({
+      ...link,
+      status: secureLinkStatus(link, now),
+    })),
+    pickup_condition:
+      (await db.first(
+        "SELECT * FROM pickup_condition_choices WHERE reservation_id=?",
+        [id],
+      )) || null,
+    cancellation_outcome:
+      (await db.first(
+        "SELECT * FROM cancellation_outcomes WHERE reservation_id=?",
+        [id],
+      )) || null,
+    deposit_decision:
+      (await db.first(
+        "SELECT * FROM deposit_decisions WHERE reservation_id=?",
+        [id],
+      )) || null,
+    audit_events: await db.all(
+      "SELECT * FROM audit_events WHERE (aggregate_type='RESERVATION' AND aggregate_id=?) OR (aggregate_type='AGREEMENT' AND aggregate_id IN (SELECT id FROM agreement_instances WHERE reservation_id=?)) ORDER BY id DESC",
+      [id, id],
+    ),
+  };
 }
 
-const secureLinkRequest=z.object({purpose:z.enum(SECURE_LINK_PURPOSES),expiresInMinutes:z.coerce.number().int().min(5).max(SECURE_LINK_MAX_TTL_MINUTES).default(SECURE_LINK_DEFAULT_TTL_MINUTES)});
-async function issueSecureLink(db:DatabasePort,identity:OwnerIdentity,reservationId:number,purpose:SecureLinkPurpose,expiresInMinutes:number,now:Date,regeneratedFrom?:number){const reservationRow=await reservation(db,reservationId);if(!reservationRow)throw new Error('Reservation not found.');if(Number(reservationRow.is_synthetic)!==1)throw new Error('Secure links are limited to synthetic staging records.');const hourAgo=new Date(now.getTime()-3_600_000).toISOString();const recent=await db.first<{total:number}>('SELECT count(*) total FROM secure_links WHERE reservation_id=? AND purpose=? AND created_at>=?',[reservationId,purpose,hourAgo]);if(Number(recent?.total)>=SECURE_LINK_CREATE_LIMIT_PER_HOUR)throw new Error('Secure-link creation is temporarily limited.');const token=createOpaqueToken();const tokenHash=await hashSecureToken(token);const fingerprint=tokenHash.slice(0,12);const expiresAt=new Date(now.getTime()+expiresInMinutes*60_000).toISOString();const createdAt=now.toISOString();await db.batch([{sql:'UPDATE secure_links SET revoked_at=coalesce(revoked_at,?),updated_at=datetime(\'now\') WHERE reservation_id=? AND purpose=? AND revoked_at IS NULL AND used_at IS NULL',params:[createdAt,reservationId,purpose]},{sql:'INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic,created_at,updated_at) VALUES (?,?,?,?,?,?,1,?,?)',params:[reservationId,purpose,tokenHash,fingerprint,expiresAt,identity.email,createdAt,createdAt]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('RESERVATION',?,'SECURE_LINK_CREATED',?,?)",params:[reservationId,identity.email,JSON.stringify({purpose,expiresAt,fingerprint,regeneratedFrom:regeneratedFrom||null,synthetic:true,rawTokenStored:false,deliveryAction:'NOT_EXECUTED'})]}]);const created=await db.first('SELECT id,reservation_id,purpose,token_fingerprint,expires_at,created_at FROM secure_links WHERE token_hash=?',[tokenHash]);return{link:{...created,status:'ACTIVE'},token,displayOnce:true}}
-
-async function analytics(db:DatabasePort,url:URL,now:Date){const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/,'Use YYYY-MM-DD dates.');const defaults=defaultAnalyticsRange(now);const parsed=z.object({startDate:date.default(defaults.startDate),endDate:date.default(defaults.endDate),includeSynthetic:z.enum(['true','false']).default('false')}).safeParse(Object.fromEntries(url.searchParams));if(!parsed.success)throw new Error(parsed.error.issues[0]?.message||'Invalid analytics range.');const range=analyticsRange(parsed.data.startDate,parsed.data.endDate);const previous=comparisonRange(range);const horizon=analyticsRange(defaults.endDate,addArizonaDays(defaults.endDate,29));const startAt=[previous.startAt,horizon.startAt].sort()[0];const endAt=[range.endAtExclusive,horizon.endAtExclusive].sort().at(-1) as string;const reservations=await db.all<AnalyticsReservation>('SELECT id,trailer_id,status,pickup_at,return_at,rental_charge_cents,channel,external_source,delivery_requested,dolly_days,is_synthetic FROM reservations WHERE pickup_at < ? AND return_at > ? ORDER BY pickup_at',[endAt,startAt]);const blocks=await db.all<AnalyticsBlock>('SELECT id,trailer_id,start_at,end_at,is_synthetic FROM availability_blocks WHERE start_at < ? AND end_at > ? ORDER BY start_at',[endAt,startAt]);const trailers=await db.all<{id:number}>('SELECT id FROM trailers WHERE active=1 ORDER BY id');return calculateAnalytics({reservations,blocks,activeTrailerIds:trailers.map(trailer=>Number(trailer.id)),range,now,includeSynthetic:parsed.data.includeSynthetic==='true'})}
-
-async function health(db:DatabasePort,environment:string,now:Date){
-  const requiredTables=['agreement_documents','agreement_instances','agreement_templates','attorney_approval_records','audit_events','availability_blocks','booking_intent_conversions','booking_intents','cancellation_outcomes','communication_records','condition_inspections','customers','delivery_quote_usage','deposit_decisions','direct_checkout_agreements','direct_checkout_sessions','gmail_connections','gmail_delivery_attempts','gmail_oauth_states','inspection_photos','payment_ledger_entries','payment_webhook_events','payments','pickup_condition_choices','reservations','secure_link_attempts','secure_links','trailers'];
-  const rows=await db.all<{name:string;type:string}>("SELECT name,type FROM sqlite_schema WHERE (type='table' OR type='trigger') AND name NOT LIKE 'sqlite_%'");
-  const names=new Set(rows.map(row=>row.name));
-  const missing=requiredTables.filter(name=>!names.has(name));
-  const scheduleTriggers=rows.filter(row=>row.type==='trigger'&&['reservations_no_overlap_insert','reservations_no_overlap_update','blocks_no_overlap_insert','blocks_no_overlap_update'].includes(row.name)).length;
-  if(missing.length||scheduleTriggers<4)throw new Error('Database schema is unavailable.');
-  return {status:'ok',checkedAt:now.toISOString(),environment,database:{readable:true,schemaReady:true,requiredTableCount:requiredTables.length,scheduleTriggerCount:scheduleTriggers}};
+const secureLinkRequest = z.object({
+  purpose: z.enum(SECURE_LINK_PURPOSES),
+  expiresInMinutes: z.coerce
+    .number()
+    .int()
+    .min(5)
+    .max(SECURE_LINK_MAX_TTL_MINUTES)
+    .default(SECURE_LINK_DEFAULT_TTL_MINUTES),
+});
+async function issueSecureLink(
+  db: DatabasePort,
+  identity: OwnerIdentity,
+  reservationId: number,
+  purpose: SecureLinkPurpose,
+  expiresInMinutes: number,
+  now: Date,
+  regeneratedFrom?: number,
+) {
+  const reservationRow = await reservation(db, reservationId);
+  if (!reservationRow) throw new Error("Reservation not found.");
+  if (Number(reservationRow.is_synthetic) !== 1)
+    throw new Error("Secure links are limited to synthetic staging records.");
+  const hourAgo = new Date(now.getTime() - 3_600_000).toISOString();
+  const recent = await db.first<{ total: number }>(
+    "SELECT count(*) total FROM secure_links WHERE reservation_id=? AND purpose=? AND created_at>=?",
+    [reservationId, purpose, hourAgo],
+  );
+  if (Number(recent?.total) >= SECURE_LINK_CREATE_LIMIT_PER_HOUR)
+    throw new Error("Secure-link creation is temporarily limited.");
+  const token = createOpaqueToken();
+  const tokenHash = await hashSecureToken(token);
+  const fingerprint = tokenHash.slice(0, 12);
+  const expiresAt = new Date(
+    now.getTime() + expiresInMinutes * 60_000,
+  ).toISOString();
+  const createdAt = now.toISOString();
+  await db.batch([
+    {
+      sql: "UPDATE secure_links SET revoked_at=coalesce(revoked_at,?),updated_at=datetime('now') WHERE reservation_id=? AND purpose=? AND revoked_at IS NULL AND used_at IS NULL",
+      params: [createdAt, reservationId, purpose],
+    },
+    {
+      sql: "INSERT INTO secure_links(reservation_id,purpose,token_hash,token_fingerprint,expires_at,created_by,is_synthetic,created_at,updated_at) VALUES (?,?,?,?,?,?,1,?,?)",
+      params: [
+        reservationId,
+        purpose,
+        tokenHash,
+        fingerprint,
+        expiresAt,
+        identity.email,
+        createdAt,
+        createdAt,
+      ],
+    },
+    {
+      sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('RESERVATION',?,'SECURE_LINK_CREATED',?,?)",
+      params: [
+        reservationId,
+        identity.email,
+        JSON.stringify({
+          purpose,
+          expiresAt,
+          fingerprint,
+          regeneratedFrom: regeneratedFrom || null,
+          synthetic: true,
+          rawTokenStored: false,
+          deliveryAction: "NOT_EXECUTED",
+        }),
+      ],
+    },
+  ]);
+  const created = await db.first(
+    "SELECT id,reservation_id,purpose,token_fingerprint,expires_at,created_at FROM secure_links WHERE token_hash=?",
+    [tokenHash],
+  );
+  return { link: { ...created, status: "ACTIVE" }, token, displayOnce: true };
 }
 
-export async function handleApiRequest(request: Request, environment: ApiEnvironment, dependencies: ApiDependencies = {}): Promise<Response> {
-  const url=new URL(request.url);
-  const testerApi=url.pathname.startsWith('/api/customer-preview/');
+async function analytics(db: DatabasePort, url: URL, now: Date) {
+  const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD dates.");
+  const defaults = defaultAnalyticsRange(now);
+  const parsed = z
+    .object({
+      startDate: date.default(defaults.startDate),
+      endDate: date.default(defaults.endDate),
+      includeSynthetic: z.enum(["true", "false"]).default("false"),
+    })
+    .safeParse(Object.fromEntries(url.searchParams));
+  if (!parsed.success)
+    throw new Error(
+      parsed.error.issues[0]?.message || "Invalid analytics range.",
+    );
+  const range = analyticsRange(parsed.data.startDate, parsed.data.endDate);
+  const previous = comparisonRange(range);
+  const horizon = analyticsRange(
+    defaults.endDate,
+    addArizonaDays(defaults.endDate, 29),
+  );
+  const startAt = [previous.startAt, horizon.startAt].sort()[0];
+  const endAt = [range.endAtExclusive, horizon.endAtExclusive]
+    .sort()
+    .at(-1) as string;
+  const reservations = await db.all<AnalyticsReservation>(
+    "SELECT id,trailer_id,status,pickup_at,return_at,rental_charge_cents,channel,external_source,delivery_requested,dolly_days,is_synthetic FROM reservations WHERE pickup_at < ? AND return_at > ? ORDER BY pickup_at",
+    [endAt, startAt],
+  );
+  const blocks = await db.all<AnalyticsBlock>(
+    "SELECT id,trailer_id,start_at,end_at,is_synthetic FROM availability_blocks WHERE start_at < ? AND end_at > ? ORDER BY start_at",
+    [endAt, startAt],
+  );
+  const trailers = await db.all<{ id: number }>(
+    "SELECT id FROM trailers WHERE active=1 ORDER BY id",
+  );
+  return calculateAnalytics({
+    reservations,
+    blocks,
+    activeTrailerIds: trailers.map((trailer) => Number(trailer.id)),
+    range,
+    now,
+    includeSynthetic: parsed.data.includeSynthetic === "true",
+  });
+}
+
+async function health(db: DatabasePort, environment: string, now: Date) {
+  const requiredTables = [
+    "agreement_documents",
+    "agreement_instances",
+    "agreement_templates",
+    "attorney_approval_records",
+    "audit_events",
+    "availability_blocks",
+    "booking_intent_conversions",
+    "booking_intents",
+    "cancellation_outcomes",
+    "communication_records",
+    "condition_inspections",
+    "customers",
+    "delivery_quote_usage",
+    "deposit_decisions",
+    "direct_checkout_agreements",
+    "direct_checkout_sessions",
+    "gmail_connections",
+    "gmail_delivery_attempts",
+    "gmail_oauth_states",
+    "inspection_photos",
+    "payment_ledger_entries",
+    "payment_webhook_events",
+    "payments",
+    "pickup_condition_choices",
+    "reservations",
+    "secure_link_attempts",
+    "secure_links",
+    "trailers",
+  ];
+  const rows = await db.all<{ name: string; type: string }>(
+    "SELECT name,type FROM sqlite_schema WHERE (type='table' OR type='trigger') AND name NOT LIKE 'sqlite_%'",
+  );
+  const names = new Set(rows.map((row) => row.name));
+  const missing = requiredTables.filter((name) => !names.has(name));
+  const scheduleTriggers = rows.filter(
+    (row) =>
+      row.type === "trigger" &&
+      [
+        "reservations_no_overlap_insert",
+        "reservations_no_overlap_update",
+        "blocks_no_overlap_insert",
+        "blocks_no_overlap_update",
+      ].includes(row.name),
+  ).length;
+  if (missing.length || scheduleTriggers < 4)
+    throw new Error("Database schema is unavailable.");
+  return {
+    status: "ok",
+    checkedAt: now.toISOString(),
+    environment,
+    database: {
+      readable: true,
+      schemaReady: true,
+      requiredTableCount: requiredTables.length,
+      scheduleTriggerCount: scheduleTriggers,
+    },
+  };
+}
+
+export async function handleApiRequest(
+  request: Request,
+  environment: ApiEnvironment,
+  dependencies: ApiDependencies = {},
+): Promise<Response> {
+  const url = new URL(request.url);
+  const testerApi = url.pathname.startsWith("/api/customer-preview/");
   let identity: OwnerIdentity;
   try {
-    const authorized=testerApi?await authorizeIdentity(request,environment,dependencies.verifier):await authorizeOwner(request,environment,dependencies.verifier);
-    if(authorized.role==='external-tester'&&!testerApi)return json({error:'Owner authorization is required.'},403);
-    identity=authorized as OwnerIdentity;
-  } catch(error){if(error instanceof AuthorizationError)return json({error:error.message},error.status);throw error;}
-  const db=environment.DB;const method=request.method.toUpperCase();const now=dependencies.now?.()||new Date();const paymentProvider=dependencies.paymentProvider||createMockPaymentProvider();
+    const authorized = testerApi
+      ? await authorizeIdentity(request, environment, dependencies.verifier)
+      : await authorizeOwner(request, environment, dependencies.verifier);
+    if (authorized.role === "external-tester" && !testerApi)
+      return json({ error: "Owner authorization is required." }, 403);
+    identity = authorized as OwnerIdentity;
+  } catch (error) {
+    if (error instanceof AuthorizationError)
+      return json({ error: error.message }, error.status);
+    throw error;
+  }
+  const db = environment.DB;
+  const method = request.method.toUpperCase();
+  const now = dependencies.now?.() || new Date();
+  const paymentProvider =
+    dependencies.paymentProvider || createMockPaymentProvider();
   try {
-    if(method==='GET'&&url.pathname==='/api/customer-preview/bootstrap')return json({trailers:await db.all('SELECT id,name,published_payload_lbs FROM trailers WHERE active=1 ORDER BY name'),environment:'TEST / STAGING',syntheticOnly:true,role:identity.role});
-    if(method==='GET'&&url.pathname==='/api/health'){try{return json(await health(db,environment.ENVIRONMENT,now))}catch{return json({status:'unavailable',checkedAt:now.toISOString(),environment:environment.ENVIRONMENT},503)}}
-    if(url.pathname==='/api/readiness/attorney-approval'){
-      const latest=await db.first<AttorneyApprovalRecord>('SELECT * FROM attorney_approval_records ORDER BY id DESC LIMIT 1');
-      if(method==='GET')return json(await attorneyApprovalReadiness(latest));
-      if(method!=='POST')return json({error:'Method not allowed.'},405);
-      if(environment.ENVIRONMENT==='production')return json({error:'Attorney approval recording is not available in production.'},403);
-      const parsed=z.object({agreementVersion:z.string().trim().min(1).max(160),attorneyReviewDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),approvalReference:z.string().trim().min(3).max(240),confirmation:z.literal(ATTORNEY_APPROVAL_CONFIRMATION)}).safeParse(await body(request));
-      if(!parsed.success)return json({error:'Current agreement version, review date, approval reference, and exact confirmation are required.'},400);
-      const current=await currentAgreementApprovalIdentity();
-      if(parsed.data.agreementVersion!==current.agreementVersion)return json({error:'The agreement version changed. Refresh and review the current source before recording approval.'},409);
-      if(Date.parse(`${parsed.data.attorneyReviewDate}T00:00:00Z`)>now.getTime())return json({error:'Attorney review date cannot be in the future.'},400);
-      const recordedAt=iso(now);const results=await db.batch([{sql:'INSERT INTO attorney_approval_records(agreement_version,agreement_source_hash,attorney_review_date,approval_reference,recorded_at,recorded_by) VALUES (?,?,?,?,?,?)',params:[current.agreementVersion,current.agreementSourceHash,parsed.data.attorneyReviewDate,parsed.data.approvalReference,recordedAt,identity.email]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('ATTORNEY_APPROVAL',last_insert_rowid(),'ATTORNEY_APPROVAL_RECORDED',?,?)",params:[identity.email,JSON.stringify({agreementVersion:current.agreementVersion,attorneyReviewDate:parsed.data.attorneyReviewDate,approvalReference:parsed.data.approvalReference,sourceHashMatched:true})]}]);
-      const created=await db.first<AttorneyApprovalRecord>('SELECT * FROM attorney_approval_records WHERE id=?',[Number(results[0]?.lastRowId)]);return json(await attorneyApprovalReadiness(created),201);
-    }
-    if(url.pathname==='/api/staging/fixtures/booking-confirmation'){if(environment.ENVIRONMENT!=='staging')return json({error:'Not found.'},404);if(method!=='POST')return json({error:'Method not allowed.'},405);const parsed=z.object({confirm:z.literal('BOOKING_CONFIRMATION_SYNTHETIC_ACCEPTANCE')}).safeParse(await body(request));if(!parsed.success)return json({error:'Exact synthetic acceptance confirmation is required.'},400);return json(await createBookingConfirmationAcceptanceFixture(db,identity.email,now),201)}
-    if(url.pathname.startsWith('/api/customer-preview/direct-checkout')&&environment.ENVIRONMENT==='production')return json({error:'Not found.'},404);
-    if(method==='POST'&&url.pathname==='/api/customer-preview/direct-checkout/sessions'){const parsed=z.object({intentId:z.coerce.number().int().positive(),idempotencyKey:paymentIdempotency}).safeParse(await checkoutBody(request));if(!parsed.success)return json({error:'A valid synthetic booking request is required.'},400);return json(await createDirectCheckoutSession(db,{...parsed.data,actor:identity.email},now),201)}
-    if(method==='GET'&&url.pathname==='/api/customer-preview/direct-checkout/session'){const token=request.headers.get('x-checkout-token')||'';if(token.length<40)return json({error:'Checkout session not found.'},404);return json(await getDirectCheckout(db,token,now))}
-    if(method==='POST'&&url.pathname==='/api/customer-preview/direct-checkout/agreement'){const parsed=z.object({token:z.string().min(40).max(200),csrfToken:z.string().min(40).max(200),printedName:z.string().trim().min(3).max(120),inspectionChoice:z.enum(['SEND_FORM','DECLINE_FORM'])}).safeParse(await checkoutBody(request));if(!parsed.success)return json({error:'Complete the agreement and choose a pickup-condition option.'},400);return json(await signDirectCheckoutAgreement(db,{...parsed.data,actor:identity.email},now),201)}
-    if(method==='POST'&&url.pathname==='/api/customer-preview/direct-checkout/payment'){const parsed=z.object({token:z.string().min(40).max(200),csrfToken:z.string().min(40).max(200),idempotencyKey:paymentIdempotency}).safeParse(await checkoutBody(request));if(!parsed.success)return json({error:'Checkout payment request is invalid.'},400);const result=await initiateDirectCheckoutPayment(db,paymentProvider,{...parsed.data,actor:identity.email},now);return json({...result,publishableKey:result.clientSecret?dependencies.stripePublishableKey||null:null},201)}
-    if(method==='POST'&&url.pathname==='/api/customer-preview/direct-checkout/finalize'){const parsed=z.object({token:z.string().min(40).max(200),csrfToken:z.string().min(40).max(200),idempotencyKey:paymentIdempotency}).safeParse(await checkoutBody(request));if(!parsed.success)return json({error:'Checkout confirmation request is invalid.'},400);return json(await finalizeDirectCheckout(db,{...parsed.data,actor:identity.email},now),201)}
-    if(method==='GET'&&url.pathname==='/api/direct-checkouts'){const rows=await db.all("SELECT s.id,s.state,s.expires_at,s.last_transition_at,s.completed_at,s.reservation_id,s.provider_payment_id,s.is_synthetic,i.legal_name,i.pickup_at,i.return_at,i.fulfillment_type,i.trip_type,(SELECT group_concat(action,'|') FROM audit_events WHERE aggregate_type='DIRECT_CHECKOUT' AND aggregate_id=s.id) audit_actions FROM direct_checkout_sessions s JOIN booking_intents i ON i.id=s.intent_id ORDER BY s.id DESC");return json(rows)}
-    if(method==='GET'&&url.pathname==='/api/integrations/gmail/status'){const config=gmailConfiguration(environment);const connection=await db.first<Record<string,unknown>>("SELECT status,authorized_at,token_expires_at,disconnected_at,safe_error_classification FROM gmail_connections ORDER BY id DESC LIMIT 1");const expired=connection?.status==='CONNECTED'&&Date.parse(String(connection.token_expires_at))<=now.getTime();const status=!config.configured?'CONFIGURATION_MISSING':!connection?'AUTHORIZATION_REQUIRED':connection.status==='REVOKED'?'DISCONNECTED':expired?'TOKEN_EXPIRED':connection.status==='CONNECTED'?'CONNECTED_HEALTHY':'DELIVERY_UNAVAILABLE';return json({status,configured:config.configured,authorized:status==='CONNECTED_HEALTHY',sendAvailable:status==='CONNECTED_HEALTHY',testMode:true,stagingOnly:true,provider:'GMAIL_API',scope:'gmail.send',identityScopes:['openid','email'],safeErrorClassification:connection?.safe_error_classification||config.reason})}
-    if(method==='POST'&&url.pathname==='/api/integrations/gmail/oauth/start'){if(environment.ENVIRONMENT!=='staging')return json({error:'Gmail authorization is staging-only.'},403);const config=gmailConfiguration(environment);if(!config.configured||!config.configuration)return json({error:'Gmail configuration is incomplete.'},503);const redirectUri=`${url.origin}${GMAIL_CALLBACK_PATH}`;const created=await createAuthorizationRequest(config.configuration,redirectUri);const encrypted=await encryptToken(created.verifier,config.configuration.tokenEncryptionKey);await db.batch([{sql:'INSERT INTO gmail_oauth_states(state_hash,verifier_ciphertext,verifier_iv,key_version,redirect_uri,expires_at,created_by,is_synthetic) VALUES (?,?,?,?,?,?,?,1)',params:[created.stateHash,encrypted.ciphertext,encrypted.iv,encrypted.keyVersion,redirectUri,new Date(now.getTime()+10*60_000).toISOString(),identity.email]},audit(identity,'GMAIL_CONNECTION',0,'GMAIL_AUTHORIZATION_STARTED',{scope:'gmail.send',identityValidation:true,synthetic:true})]);return json({authorizationUrl:created.authorizationUrl,expiresInSeconds:600},201)}
-    if(method==='GET'&&url.pathname===GMAIL_CALLBACK_PATH){if(environment.ENVIRONMENT!=='staging')return json({error:'Gmail authorization is staging-only.'},403);const config=gmailConfiguration(environment);if(!config.configured||!config.configuration)return json({error:'Gmail configuration is incomplete.'},503);const state=url.searchParams.get('state')||'',code=url.searchParams.get('code')||'';if(!state||!code)return json({error:'Authorization response is incomplete.'},400);const stateHash=await sha256(state);const stored=await db.first<Record<string,unknown>>('SELECT * FROM gmail_oauth_states WHERE state_hash=? AND consumed_at IS NULL',[stateHash]);if(!stored||Date.parse(String(stored.expires_at))<=now.getTime()||String(stored.redirect_uri)!==`${url.origin}${GMAIL_CALLBACK_PATH}`)return json({error:'Authorization state is invalid or expired.'},400);const verifier=await decryptToken({ciphertext:String(stored.verifier_ciphertext),iv:String(stored.verifier_iv),keyVersion:String(stored.key_version)},config.configuration.tokenEncryptionKey);const exchanged=await exchangeGoogleCode({code,verifier,redirectUri:String(stored.redirect_uri),configuration:config.configuration});const encrypted=await encryptToken(JSON.stringify(exchanged.bundle),config.configuration.tokenEncryptionKey);await db.batch([{sql:'UPDATE gmail_oauth_states SET consumed_at=? WHERE id=? AND consumed_at IS NULL',params:[iso(now),Number(stored.id)]},{sql:"UPDATE gmail_connections SET status='REVOKED',disconnected_at=?,updated_at=datetime('now') WHERE status='CONNECTED'",params:[iso(now)]},{sql:'INSERT INTO gmail_connections(owner_email,sender_email,google_subject_hash,encrypted_token_bundle,token_iv,key_version,granted_scope,status,authorized_at,token_expires_at,is_synthetic) VALUES (?,?,?,?,?,?,?,\'CONNECTED\',?,?,1)',params:[APPROVED_GMAIL_SENDER,APPROVED_GMAIL_SENDER,exchanged.identity.subjectHash,encrypted.ciphertext,encrypted.iv,encrypted.keyVersion,exchanged.bundle.scope,iso(now),exchanged.bundle.expiresAt]},audit(identity,'GMAIL_CONNECTION',0,'GMAIL_AUTHORIZATION_COMPLETED',{senderBound:true,exactOwnerBound:true,scope:'gmail.send',tokensEncrypted:true,synthetic:true})]);return Response.redirect(`${url.origin}/?gmail=connected`,303)}
-    if(method==='POST'&&url.pathname==='/api/integrations/gmail/disconnect'){const parsed=z.object({confirm:z.literal(true),reason:z.string().trim().min(3).max(240)}).safeParse(await body(request));if(!parsed.success)return json({error:'Confirmation and a reason are required.'},400);const connection=await db.first<Record<string,unknown>>("SELECT id FROM gmail_connections WHERE status='CONNECTED' ORDER BY id DESC LIMIT 1");if(!connection)return json({error:'No connected Gmail authorization exists.'},409);await db.batch([{sql:"UPDATE gmail_connections SET status='REVOKED',disconnected_at=?,encrypted_token_bundle='',token_iv='',safe_error_classification='OWNER_DISCONNECTED',updated_at=datetime('now') WHERE id=?",params:[iso(now),Number(connection.id)]},audit(identity,'GMAIL_CONNECTION',Number(connection.id),'GMAIL_DISCONNECTED',{reason:parsed.data.reason,tokensRemoved:true,externalRevokeRequired:true,synthetic:true})]);return json({status:'DISCONNECTED'})}
-    if(method==='GET'&&url.pathname==='/api/dashboard')return json(await dashboard(db,now));
-    if(method==='GET'&&url.pathname==='/api/analytics')return json(await analytics(db,url,now));
-    if(url.pathname.startsWith('/api/customer-preview')&&environment.ENVIRONMENT==='production')return json({error:'Customer preview is not available.'},404);
-    if(method==='GET'&&url.pathname==='/api/customer-preview/calendar'){
-      const parsed=z.object({trailerId:z.coerce.number().int().positive(),month:z.string().regex(/^\d{4}-\d{2}$/)}).safeParse(Object.fromEntries(url.searchParams));
-      if(!parsed.success)return json({error:'Choose a valid calendar month.'},400);
-      const [year,month]=parsed.data.month.split('-').map(Number);
-      const nextMonth=month===12?`${year+1}-01`:`${year}-${String(month+1).padStart(2,'0')}`;
-      const startAt=new Date(`${parsed.data.month}-01T00:00:00-07:00`).toISOString();
-      const endAt=new Date(`${nextMonth}-01T00:00:00-07:00`).toISOString();
-      const rows=await db.all<{start_at:string;end_at:string}>(`SELECT pickup_at start_at,return_at end_at FROM reservations
-        WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND pickup_at < ? AND return_at > ?
-        UNION ALL SELECT start_at,end_at FROM availability_blocks WHERE trailer_id=? AND start_at < ? AND end_at > ?`,
-        [parsed.data.trailerId,endAt,startAt,parsed.data.trailerId,endAt,startAt]);
-      const unavailableDays=new Set<string>();
-      for(const row of rows){
-        const cursor=new Date(Math.max(Date.parse(row.start_at),Date.parse(startAt)));
-        const limit=Math.min(Date.parse(row.end_at),Date.parse(endAt));
-        while(cursor.getTime()<limit){unavailableDays.add(arizonaDayKey(cursor));cursor.setUTCDate(cursor.getUTCDate()+1)}
+    if (method === "GET" && url.pathname === "/api/customer-preview/bootstrap")
+      return json({
+        trailers: await db.all(
+          "SELECT id,name,published_payload_lbs FROM trailers WHERE active=1 ORDER BY name",
+        ),
+        environment: "TEST / STAGING",
+        syntheticOnly: true,
+        role: identity.role,
+      });
+    if (method === "GET" && url.pathname === "/api/health") {
+      try {
+        return json(await health(db, environment.ENVIRONMENT, now));
+      } catch {
+        return json(
+          {
+            status: "unavailable",
+            checkedAt: now.toISOString(),
+            environment: environment.ENVIRONMENT,
+          },
+          503,
+        );
       }
-      return json({month:parsed.data.month,unavailableDays:[...unavailableDays].sort(),authoritativeSource:'RENTAL_OS'});
     }
-    if(method==='GET'&&url.pathname==='/api/customer-preview/availability'){
-      const parsed=z.object({trailerId:z.coerce.number().int().positive(),pickupAt:arizonaDateTime,returnAt:arizonaDateTime,dollyRequested:z.enum(['true','false']).default('false')}).safeParse(Object.fromEntries(url.searchParams));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);validateBookingWindow(parsed.data.pickupAt,parsed.data.returnAt);const pickupAt=iso(parsed.data.pickupAt),returnAt=iso(parsed.data.returnAt);return json({available:await scheduleAvailable(db,parsed.data.trailerId,pickupAt,returnAt),pickupAt,returnAt,quote:calculateBookingQuote(parsed.data.pickupAt,parsed.data.returnAt,parsed.data.dollyRequested==='true')});
+    if (url.pathname === "/api/readiness/attorney-approval") {
+      const latest = await db.first<AttorneyApprovalRecord>(
+        "SELECT * FROM attorney_approval_records ORDER BY id DESC LIMIT 1",
+      );
+      if (method === "GET")
+        return json(await attorneyApprovalReadiness(latest));
+      if (method !== "POST") return json({ error: "Method not allowed." }, 405);
+      if (environment.ENVIRONMENT === "production")
+        return json(
+          {
+            error:
+              "Attorney approval recording is not available in production.",
+          },
+          403,
+        );
+      const parsed = z
+        .object({
+          agreementVersion: z.string().trim().min(1).max(160),
+          attorneyReviewDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          approvalReference: z.string().trim().min(3).max(240),
+          confirmation: z.literal(ATTORNEY_APPROVAL_CONFIRMATION),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          {
+            error:
+              "Current agreement version, review date, approval reference, and exact confirmation are required.",
+          },
+          400,
+        );
+      const current = await currentAgreementApprovalIdentity();
+      if (parsed.data.agreementVersion !== current.agreementVersion)
+        return json(
+          {
+            error:
+              "The agreement version changed. Refresh and review the current source before recording approval.",
+          },
+          409,
+        );
+      if (
+        Date.parse(`${parsed.data.attorneyReviewDate}T00:00:00Z`) >
+        now.getTime()
+      )
+        return json(
+          { error: "Attorney review date cannot be in the future." },
+          400,
+        );
+      const recordedAt = iso(now);
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO attorney_approval_records(agreement_version,agreement_source_hash,attorney_review_date,approval_reference,recorded_at,recorded_by) VALUES (?,?,?,?,?,?)",
+          params: [
+            current.agreementVersion,
+            current.agreementSourceHash,
+            parsed.data.attorneyReviewDate,
+            parsed.data.approvalReference,
+            recordedAt,
+            identity.email,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('ATTORNEY_APPROVAL',last_insert_rowid(),'ATTORNEY_APPROVAL_RECORDED',?,?)",
+          params: [
+            identity.email,
+            JSON.stringify({
+              agreementVersion: current.agreementVersion,
+              attorneyReviewDate: parsed.data.attorneyReviewDate,
+              approvalReference: parsed.data.approvalReference,
+              sourceHashMatched: true,
+            }),
+          ],
+        },
+      ]);
+      const created = await db.first<AttorneyApprovalRecord>(
+        "SELECT * FROM attorney_approval_records WHERE id=?",
+        [Number(results[0]?.lastRowId)],
+      );
+      return json(await attorneyApprovalReadiness(created), 201);
     }
-    if(method==='POST'&&url.pathname==='/api/customer-preview/delivery-quote'){
-      const parsed=z.object({deliveryAddress:z.string().trim().min(8).max(500)}).safeParse(await body(request));if(!parsed.success)return json({error:'Enter a complete delivery address.'},400);
-      try{await consumeDeliveryQuote(db,identity.email,now)}catch(error){if(error instanceof Error&&error.message==='DELIVERY_QUOTE_RATE_LIMIT')return json({error:'Delivery quoting is temporarily limited. Wait before trying again or submit for owner review.'},429);throw error}
-      const quote=await (dependencies.deliveryRouter?.quote(parsed.data.deliveryAddress,now)??Promise.resolve(routingUnavailable(now.toISOString())));return json({deliveryQuote:customerDeliveryQuote(quote)});
+    if (url.pathname === "/api/staging/fixtures/booking-confirmation") {
+      if (environment.ENVIRONMENT !== "staging")
+        return json({ error: "Not found." }, 404);
+      if (method !== "POST") return json({ error: "Method not allowed." }, 405);
+      const parsed = z
+        .object({
+          confirm: z.literal("BOOKING_CONFIRMATION_SYNTHETIC_ACCEPTANCE"),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          { error: "Exact synthetic acceptance confirmation is required." },
+          400,
+        );
+      return json(
+        await createBookingConfirmationAcceptanceFixture(
+          db,
+          identity.email,
+          now,
+        ),
+        201,
+      );
     }
-    if(method==='POST'&&url.pathname==='/api/customer-preview/intents'){
-      const parsed=bookingIntent.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const value=parsed.data;validateBookingWindow(value.pickupAt,value.returnAt);const existing=await db.first('SELECT * FROM booking_intents WHERE idempotency_key=?',[value.idempotencyKey]);if(existing)return json({intent:customerIntentView(existing,now),idempotent:true},200);
-      let deliveryQuote:DeliveryQuoteResult|null=null;if(value.fulfillmentType==='DELIVERY'){let routeAllowed=true;try{await consumeDeliveryQuote(db,identity.email,now)}catch(error){if(error instanceof Error&&error.message==='DELIVERY_QUOTE_RATE_LIMIT')routeAllowed=false;else throw error}deliveryQuote=routeAllowed?await (dependencies.deliveryRouter?.quote(value.deliveryAddress||'',now)??Promise.resolve(routingUnavailable(now.toISOString()))):routingUnavailable(now.toISOString());if(deliveryQuote.status==='OUT_OF_AREA')return json({error:'Online delivery is unavailable for that address. Customer pickup may still be requested.'},400)}
-      const pickupAt=iso(value.pickupAt),returnAt=iso(value.returnAt),quote=calculateBookingQuote(value.pickupAt,value.returnAt,value.dollyRequested);const exceptions=[...(value.tripType==='INTERSTATE'?['INTERSTATE_OWNER_APPROVAL_REQUIRED']:[]),...(value.fulfillmentType==='DELIVERY'?['DELIVERY_OWNER_APPROVAL_REQUIRED']:[]),...(deliveryQuote?.status==='ROUTING_UNAVAILABLE'?['DELIVERY_ROUTING_REVIEW_REQUIRED']:[])];const policy=bookingIntentPolicy(now,exceptions.length>0);const expiresAt=iso(policy.expiresAt);const deliveryFee=deliveryQuote?.feeCents??null;const estimatedTotal=quote.estimatedDueBeforeDeliveryCents+(deliveryFee||0);
-      const results=await db.batch([{sql:`INSERT OR IGNORE INTO booking_intents(idempotency_key,trailer_id,status,legal_name,email,phone,age_25_confirmed,named_renter_only_towing,tow_vehicle_details,hitch_ball_acknowledged,brake_controller_acknowledged,insurance_acknowledged,intended_use,trip_type,interstate_details,interstate_approval_required,fulfillment_type,delivery_address,delivery_approval_required,pickup_at,return_at,dolly_requested,rental_days,rental_charge_cents,dolly_charge_cents,security_deposit_cents,delivery_charge_cents,tax_cents,estimated_due_before_delivery_cents,exceptions_json,expires_at,is_synthetic)
+    if (
+      url.pathname.startsWith("/api/customer-preview/direct-checkout") &&
+      environment.ENVIRONMENT === "production"
+    )
+      return json({ error: "Not found." }, 404);
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/direct-checkout/sessions"
+    ) {
+      const parsed = z
+        .object({
+          intentId: z.coerce.number().int().positive(),
+          idempotencyKey: paymentIdempotency,
+        })
+        .safeParse(await checkoutBody(request));
+      if (!parsed.success)
+        return json(
+          { error: "A valid synthetic booking request is required." },
+          400,
+        );
+      return json(
+        await createDirectCheckoutSession(
+          db,
+          { ...parsed.data, actor: identity.email },
+          now,
+        ),
+        201,
+      );
+    }
+    if (
+      method === "GET" &&
+      url.pathname === "/api/customer-preview/direct-checkout/session"
+    ) {
+      const token = request.headers.get("x-checkout-token") || "";
+      if (token.length < 40)
+        return json({ error: "Checkout session not found." }, 404);
+      return json(await getDirectCheckout(db, token, now));
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/direct-checkout/agreement"
+    ) {
+      const parsed = z
+        .object({
+          token: z.string().min(40).max(200),
+          csrfToken: z.string().min(40).max(200),
+          printedName: z.string().trim().min(3).max(120),
+          signatureEvidence: z.string().min(12).max(24000),
+          inspectionChoice: z.enum(["SEND_FORM", "DECLINE_FORM"]),
+        })
+        .safeParse(await checkoutBody(request));
+      if (!parsed.success)
+        return json(
+          {
+            error:
+              "Complete the printed name, signature, consent, and pickup-condition choice.",
+          },
+          400,
+        );
+      return json(
+        await signDirectCheckoutAgreement(
+          db,
+          { ...parsed.data, actor: identity.email },
+          now,
+        ),
+        201,
+      );
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/direct-checkout/payment"
+    ) {
+      const parsed = z
+        .object({
+          token: z.string().min(40).max(200),
+          csrfToken: z.string().min(40).max(200),
+          idempotencyKey: paymentIdempotency,
+        })
+        .safeParse(await checkoutBody(request));
+      if (!parsed.success)
+        return json({ error: "Checkout payment request is invalid." }, 400);
+      const result = await initiateDirectCheckoutPayment(
+        db,
+        paymentProvider,
+        { ...parsed.data, actor: identity.email },
+        now,
+      );
+      return json(
+        {
+          ...result,
+          publishableKey: result.clientSecret
+            ? dependencies.stripePublishableKey || null
+            : null,
+        },
+        201,
+      );
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/direct-checkout/finalize"
+    ) {
+      const parsed = z
+        .object({
+          token: z.string().min(40).max(200),
+          csrfToken: z.string().min(40).max(200),
+          idempotencyKey: paymentIdempotency,
+        })
+        .safeParse(await checkoutBody(request));
+      if (!parsed.success)
+        return json(
+          { error: "Checkout confirmation request is invalid." },
+          400,
+        );
+      return json(
+        await finalizeDirectCheckout(
+          db,
+          { ...parsed.data, actor: identity.email },
+          now,
+        ),
+        201,
+      );
+    }
+    if (method === "GET" && url.pathname === "/api/direct-checkouts") {
+      const rows = await db.all(
+        "SELECT s.id,s.state,s.expires_at,s.last_transition_at,s.completed_at,s.reservation_id,s.provider_payment_id,s.is_synthetic,i.legal_name,i.pickup_at,i.return_at,i.fulfillment_type,i.trip_type,(SELECT group_concat(action,'|') FROM audit_events WHERE aggregate_type='DIRECT_CHECKOUT' AND aggregate_id=s.id) audit_actions FROM direct_checkout_sessions s JOIN booking_intents i ON i.id=s.intent_id ORDER BY s.id DESC",
+      );
+      return json(rows);
+    }
+    if (method === "GET" && url.pathname === "/api/integrations/gmail/status") {
+      const config = gmailConfiguration(environment);
+      const connection = await db.first<Record<string, unknown>>(
+        "SELECT status,authorized_at,token_expires_at,disconnected_at,safe_error_classification FROM gmail_connections ORDER BY id DESC LIMIT 1",
+      );
+      const expired =
+        connection?.status === "CONNECTED" &&
+        Date.parse(String(connection.token_expires_at)) <= now.getTime();
+      const status = !config.configured
+        ? "CONFIGURATION_MISSING"
+        : !connection
+          ? "AUTHORIZATION_REQUIRED"
+          : connection.status === "REVOKED"
+            ? "DISCONNECTED"
+            : expired
+              ? "TOKEN_EXPIRED"
+              : connection.status === "CONNECTED"
+                ? "CONNECTED_HEALTHY"
+                : "DELIVERY_UNAVAILABLE";
+      return json({
+        status,
+        configured: config.configured,
+        authorized: status === "CONNECTED_HEALTHY",
+        sendAvailable: status === "CONNECTED_HEALTHY",
+        testMode: true,
+        stagingOnly: true,
+        provider: "GMAIL_API",
+        scope: "gmail.send",
+        identityScopes: ["openid", "email"],
+        safeErrorClassification:
+          connection?.safe_error_classification || config.reason,
+      });
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/integrations/gmail/oauth/start"
+    ) {
+      if (environment.ENVIRONMENT !== "staging")
+        return json({ error: "Gmail authorization is staging-only." }, 403);
+      const config = gmailConfiguration(environment);
+      if (!config.configured || !config.configuration)
+        return json({ error: "Gmail configuration is incomplete." }, 503);
+      const redirectUri = `${url.origin}${GMAIL_CALLBACK_PATH}`;
+      const created = await createAuthorizationRequest(
+        config.configuration,
+        redirectUri,
+      );
+      const encrypted = await encryptToken(
+        created.verifier,
+        config.configuration.tokenEncryptionKey,
+      );
+      await db.batch([
+        {
+          sql: "INSERT INTO gmail_oauth_states(state_hash,verifier_ciphertext,verifier_iv,key_version,redirect_uri,expires_at,created_by,is_synthetic) VALUES (?,?,?,?,?,?,?,1)",
+          params: [
+            created.stateHash,
+            encrypted.ciphertext,
+            encrypted.iv,
+            encrypted.keyVersion,
+            redirectUri,
+            new Date(now.getTime() + 10 * 60_000).toISOString(),
+            identity.email,
+          ],
+        },
+        audit(identity, "GMAIL_CONNECTION", 0, "GMAIL_AUTHORIZATION_STARTED", {
+          scope: "gmail.send",
+          identityValidation: true,
+          synthetic: true,
+        }),
+      ]);
+      return json(
+        { authorizationUrl: created.authorizationUrl, expiresInSeconds: 600 },
+        201,
+      );
+    }
+    if (method === "GET" && url.pathname === GMAIL_CALLBACK_PATH) {
+      if (environment.ENVIRONMENT !== "staging")
+        return json({ error: "Gmail authorization is staging-only." }, 403);
+      const config = gmailConfiguration(environment);
+      if (!config.configured || !config.configuration)
+        return json({ error: "Gmail configuration is incomplete." }, 503);
+      const state = url.searchParams.get("state") || "",
+        code = url.searchParams.get("code") || "";
+      if (!state || !code)
+        return json({ error: "Authorization response is incomplete." }, 400);
+      const stateHash = await sha256(state);
+      const stored = await db.first<Record<string, unknown>>(
+        "SELECT * FROM gmail_oauth_states WHERE state_hash=? AND consumed_at IS NULL",
+        [stateHash],
+      );
+      if (
+        !stored ||
+        Date.parse(String(stored.expires_at)) <= now.getTime() ||
+        String(stored.redirect_uri) !== `${url.origin}${GMAIL_CALLBACK_PATH}`
+      )
+        return json(
+          { error: "Authorization state is invalid or expired." },
+          400,
+        );
+      const verifier = await decryptToken(
+        {
+          ciphertext: String(stored.verifier_ciphertext),
+          iv: String(stored.verifier_iv),
+          keyVersion: String(stored.key_version),
+        },
+        config.configuration.tokenEncryptionKey,
+      );
+      const exchanged = await exchangeGoogleCode({
+        code,
+        verifier,
+        redirectUri: String(stored.redirect_uri),
+        configuration: config.configuration,
+      });
+      const encrypted = await encryptToken(
+        JSON.stringify(exchanged.bundle),
+        config.configuration.tokenEncryptionKey,
+      );
+      await db.batch([
+        {
+          sql: "UPDATE gmail_oauth_states SET consumed_at=? WHERE id=? AND consumed_at IS NULL",
+          params: [iso(now), Number(stored.id)],
+        },
+        {
+          sql: "UPDATE gmail_connections SET status='REVOKED',disconnected_at=?,updated_at=datetime('now') WHERE status='CONNECTED'",
+          params: [iso(now)],
+        },
+        {
+          sql: "INSERT INTO gmail_connections(owner_email,sender_email,google_subject_hash,encrypted_token_bundle,token_iv,key_version,granted_scope,status,authorized_at,token_expires_at,is_synthetic) VALUES (?,?,?,?,?,?,?,'CONNECTED',?,?,1)",
+          params: [
+            APPROVED_GMAIL_SENDER,
+            APPROVED_GMAIL_SENDER,
+            exchanged.identity.subjectHash,
+            encrypted.ciphertext,
+            encrypted.iv,
+            encrypted.keyVersion,
+            exchanged.bundle.scope,
+            iso(now),
+            exchanged.bundle.expiresAt,
+          ],
+        },
+        audit(
+          identity,
+          "GMAIL_CONNECTION",
+          0,
+          "GMAIL_AUTHORIZATION_COMPLETED",
+          {
+            senderBound: true,
+            exactOwnerBound: true,
+            scope: "gmail.send",
+            tokensEncrypted: true,
+            synthetic: true,
+          },
+        ),
+      ]);
+      return Response.redirect(`${url.origin}/?gmail=connected`, 303);
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/integrations/gmail/disconnect"
+    ) {
+      const parsed = z
+        .object({
+          confirm: z.literal(true),
+          reason: z.string().trim().min(3).max(240),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: "Confirmation and a reason are required." }, 400);
+      const connection = await db.first<Record<string, unknown>>(
+        "SELECT id FROM gmail_connections WHERE status='CONNECTED' ORDER BY id DESC LIMIT 1",
+      );
+      if (!connection)
+        return json({ error: "No connected Gmail authorization exists." }, 409);
+      await db.batch([
+        {
+          sql: "UPDATE gmail_connections SET status='REVOKED',disconnected_at=?,encrypted_token_bundle='',token_iv='',safe_error_classification='OWNER_DISCONNECTED',updated_at=datetime('now') WHERE id=?",
+          params: [iso(now), Number(connection.id)],
+        },
+        audit(
+          identity,
+          "GMAIL_CONNECTION",
+          Number(connection.id),
+          "GMAIL_DISCONNECTED",
+          {
+            reason: parsed.data.reason,
+            tokensRemoved: true,
+            externalRevokeRequired: true,
+            synthetic: true,
+          },
+        ),
+      ]);
+      return json({ status: "DISCONNECTED" });
+    }
+    if (method === "GET" && url.pathname === "/api/dashboard")
+      return json(await dashboard(db, now));
+    if (method === "GET" && url.pathname === "/api/analytics")
+      return json(await analytics(db, url, now));
+    if (
+      url.pathname.startsWith("/api/customer-preview") &&
+      environment.ENVIRONMENT === "production"
+    )
+      return json({ error: "Customer preview is not available." }, 404);
+    if (method === "GET" && url.pathname === "/api/customer-preview/calendar") {
+      const parsed = z
+        .object({
+          trailerId: z.coerce.number().int().positive(),
+          month: z.string().regex(/^\d{4}-\d{2}$/),
+        })
+        .safeParse(Object.fromEntries(url.searchParams));
+      if (!parsed.success)
+        return json({ error: "Choose a valid calendar month." }, 400);
+      const [year, month] = parsed.data.month.split("-").map(Number);
+      const nextMonth =
+        month === 12
+          ? `${year + 1}-01`
+          : `${year}-${String(month + 1).padStart(2, "0")}`;
+      const startAt = new Date(
+        `${parsed.data.month}-01T00:00:00-07:00`,
+      ).toISOString();
+      const endAt = new Date(`${nextMonth}-01T00:00:00-07:00`).toISOString();
+      const rows = await db.all<{ start_at: string; end_at: string }>(
+        `SELECT pickup_at start_at,return_at end_at FROM reservations
+        WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND pickup_at < ? AND return_at > ?
+        UNION ALL SELECT start_at,end_at FROM availability_blocks WHERE trailer_id=? AND start_at < ? AND end_at > ?
+        UNION ALL SELECT pickup_at start_at,return_at end_at FROM checkout_holds WHERE trailer_id=? AND status='ACTIVE' AND julianday(expires_at)>julianday(?) AND pickup_at < ? AND return_at > ?`,
+        [
+          parsed.data.trailerId,endAt,startAt,
+          parsed.data.trailerId,endAt,startAt,
+          parsed.data.trailerId,now.toISOString(),endAt,startAt,
+        ],
+      );
+      const unavailableDays = new Set<string>();
+      for (const row of rows) {
+        const cursor = new Date(
+          Math.max(Date.parse(row.start_at), Date.parse(startAt)),
+        );
+        const limit = Math.min(Date.parse(row.end_at), Date.parse(endAt));
+        while (cursor.getTime() < limit) {
+          unavailableDays.add(arizonaDayKey(cursor));
+          cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+      }
+      return json({
+        month: parsed.data.month,
+        unavailableDays: [...unavailableDays].sort(),
+        authoritativeSource: "RENTAL_OS",
+      });
+    }
+    if (
+      method === "GET" &&
+      url.pathname === "/api/customer-preview/availability"
+    ) {
+      const parsed = z
+        .object({
+          trailerId: z.coerce.number().int().positive(),
+          pickupAt: arizonaDateTime,
+          returnAt: arizonaDateTime,
+          dollyRequested: z.enum(["true", "false"]).default("false"),
+        })
+        .safeParse(Object.fromEntries(url.searchParams));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      validateBookingWindow(parsed.data.pickupAt, parsed.data.returnAt);
+      const pickupAt = iso(parsed.data.pickupAt),
+        returnAt = iso(parsed.data.returnAt);
+      return json({
+        available: await scheduleAvailable(
+          db,
+          parsed.data.trailerId,
+          pickupAt,
+          returnAt,
+        ),
+        pickupAt,
+        returnAt,
+        quote: calculateBookingQuote(
+          parsed.data.pickupAt,
+          parsed.data.returnAt,
+          parsed.data.dollyRequested === "true",
+        ),
+      });
+    }
+    if (method === "POST" && url.pathname === "/api/customer-preview/holds") {
+      const parsed = z
+        .object({
+          trailerId: z.coerce.number().int().positive(),
+          pickupAt: arizonaDateTime,
+          returnAt: arizonaDateTime,
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      validateBookingWindow(parsed.data.pickupAt, parsed.data.returnAt);
+      const pickupAt = iso(parsed.data.pickupAt),
+        returnAt = iso(parsed.data.returnAt),
+        token = createOpaqueToken(),
+        tokenHash = await hashSecureToken(token),
+        expiresAt = new Date(
+          now.getTime() + CHECKOUT_HOLD_TTL_MINUTES * 60_000,
+        ).toISOString();
+      const result = await db.run(
+        `INSERT INTO checkout_holds(trailer_id,token_hash,token_fingerprint,pickup_at,return_at,expires_at,status,is_synthetic)
+        SELECT ?,?,?,?,?,?,'ACTIVE',1
+        WHERE NOT EXISTS (SELECT 1 FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at)
+        AND NOT EXISTS (SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at)
+        AND NOT EXISTS (SELECT 1 FROM checkout_holds WHERE trailer_id=? AND status='ACTIVE' AND julianday(expires_at)>julianday(?) AND ? < return_at AND ? > pickup_at)`,
+        [
+          parsed.data.trailerId,
+          tokenHash,
+          tokenHash.slice(0, 12),
+          pickupAt,
+          returnAt,
+          expiresAt,
+          parsed.data.trailerId,
+          pickupAt,
+          returnAt,
+          parsed.data.trailerId,
+          pickupAt,
+          returnAt,
+          parsed.data.trailerId,
+          now.toISOString(),
+          pickupAt,
+          returnAt,
+        ],
+      );
+      if (!result.changes)
+        return json(
+          {
+            error: "Those dates are no longer available. Choose another time.",
+          },
+          409,
+        );
+      await db.run(
+        "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('CHECKOUT_HOLD',?,'CHECKOUT_HOLD_CREATED',?,?)",
+        [
+          Number(result.lastRowId),
+          identity.email,
+          JSON.stringify({
+            trailerId: parsed.data.trailerId,
+            pickupAt,
+            returnAt,
+            expiresAt,
+            synthetic: true,
+          }),
+        ],
+      );
+      return json({ holdToken: token, expiresAt, held: true }, 201);
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/delivery-quote"
+    ) {
+      const parsed = z
+        .object({ deliveryAddress: z.string().trim().min(8).max(500) })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: "Enter a complete delivery address." }, 400);
+      try {
+        await consumeDeliveryQuote(db, identity.email, now);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === "DELIVERY_QUOTE_RATE_LIMIT"
+        )
+          return json(
+            {
+              error:
+                "Delivery quoting is temporarily limited. Wait before trying again or submit for owner review.",
+            },
+            429,
+          );
+        throw error;
+      }
+      const quote = await (dependencies.deliveryRouter?.quote(
+        parsed.data.deliveryAddress,
+        now,
+      ) ?? Promise.resolve(routingUnavailable(now.toISOString())));
+      return json({ deliveryQuote: customerDeliveryQuote(quote) });
+    }
+    if (method === "POST" && url.pathname === "/api/customer-preview/intents") {
+      const parsed = bookingIntent.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const value = parsed.data;
+      validateBookingWindow(value.pickupAt, value.returnAt);
+      const existing = await db.first(
+        "SELECT * FROM booking_intents WHERE idempotency_key=?",
+        [value.idempotencyKey],
+      );
+      if (existing)
+        return json(
+          { intent: customerIntentView(existing, now), idempotent: true },
+          200,
+        );
+      const holdHash = value.holdToken ? await hashSecureToken(value.holdToken) : "";
+      const requestedPickup = iso(value.pickupAt),
+        requestedReturn = iso(value.returnAt);
+      const hold = value.holdToken ? await db.first<Record<string, unknown>>(
+        "SELECT * FROM checkout_holds WHERE token_hash=? AND trailer_id=? AND pickup_at=? AND return_at=? AND status='ACTIVE' AND julianday(expires_at)>julianday(?)",
+        [
+          holdHash,
+          value.trailerId,
+          requestedPickup,
+          requestedReturn,
+          now.toISOString(),
+        ],
+      ) : null;
+      if (value.holdToken && !hold)
+        return json(
+          {
+            error:
+              "Your 15-minute date hold expired or no longer matches this schedule. Check availability again.",
+          },
+          409,
+        );
+      let deliveryQuote: DeliveryQuoteResult | null = null;
+      if (value.fulfillmentType === "DELIVERY") {
+        let routeAllowed = true;
+        try {
+          await consumeDeliveryQuote(db, identity.email, now);
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message === "DELIVERY_QUOTE_RATE_LIMIT"
+          )
+            routeAllowed = false;
+          else throw error;
+        }
+        deliveryQuote = routeAllowed
+          ? await (dependencies.deliveryRouter?.quote(
+              value.deliveryAddress || "",
+              now,
+            ) ?? Promise.resolve(routingUnavailable(now.toISOString())))
+          : routingUnavailable(now.toISOString());
+        if (deliveryQuote.status === "OUT_OF_AREA")
+          return json(
+            {
+              error:
+                "Online delivery is unavailable for that address. Customer pickup may still be requested.",
+            },
+            400,
+          );
+      }
+      const pickupAt = iso(value.pickupAt),
+        returnAt = iso(value.returnAt),
+        quote = calculateBookingQuote(
+          value.pickupAt,
+          value.returnAt,
+          value.dollyRequested,
+        );
+      const exceptions = [
+        ...(value.tripType === "INTERSTATE"
+          ? ["INTERSTATE_OWNER_APPROVAL_REQUIRED"]
+          : []),
+        ...(value.fulfillmentType === "DELIVERY"
+          ? ["DELIVERY_OWNER_APPROVAL_REQUIRED"]
+          : []),
+        ...(deliveryQuote?.status === "ROUTING_UNAVAILABLE"
+          ? ["DELIVERY_ROUTING_REVIEW_REQUIRED"]
+          : []),
+      ];
+      const policy = bookingIntentPolicy(now, exceptions.length > 0);
+      const expiresAt = iso(policy.expiresAt);
+      const deliveryFee = deliveryQuote?.feeCents ?? null;
+      const estimatedTotal =
+        quote.estimatedDueBeforeDeliveryCents + (deliveryFee || 0);
+      const results = await db.batch([
+        {
+          sql: `INSERT OR IGNORE INTO booking_intents(idempotency_key,trailer_id,status,legal_name,email,phone,age_25_confirmed,named_renter_only_towing,tow_vehicle_details,hitch_ball_acknowledged,brake_controller_acknowledged,insurance_acknowledged,intended_use,trip_type,interstate_details,interstate_approval_required,fulfillment_type,delivery_address,delivery_approval_required,pickup_at,return_at,dolly_requested,rental_days,rental_charge_cents,dolly_charge_cents,security_deposit_cents,delivery_charge_cents,tax_cents,estimated_due_before_delivery_cents,exceptions_json,expires_at,is_synthetic)
         SELECT ?,?,?,
         ?,?,?, ?,?,?, ?,?,?, ?,?,?,?, ?,?,?, ?,?,?, ?,?,?,?,
         NULL,0, ?,?,?,1
         WHERE NOT EXISTS (SELECT 1 FROM reservations WHERE trailer_id=? AND status IN ('PENDING_REVIEW','CONFIRMED','CHECKED_OUT','INSPECTION_PENDING') AND ? < return_at AND ? > pickup_at)
-        AND NOT EXISTS (SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at)`,params:[value.idempotencyKey,value.trailerId,policy.status,value.legalName,value.email,value.phone,1,1,value.towVehicleDetails,1,1,1,value.intendedUse,value.tripType,value.interstateDetails||null,value.tripType==='INTERSTATE'?1:0,value.fulfillmentType,value.deliveryAddress||null,value.fulfillmentType==='DELIVERY'?1:0,pickupAt,returnAt,value.dollyRequested?1:0,quote.rentalDays,quote.rentalChargeCents,quote.dollyChargeCents,quote.securityDepositCents,quote.estimatedDueBeforeDeliveryCents,JSON.stringify(exceptions),expiresAt,value.trailerId,pickupAt,returnAt,value.trailerId,pickupAt,returnAt]},{sql:'UPDATE booking_intents SET delivery_charge_cents=?,delivery_quote_status=?,delivery_distance_meters=?,delivery_zone=?,delivery_quoted_at=?,estimated_total_cents=? WHERE idempotency_key=?',params:[deliveryFee,deliveryQuote?.status||'NOT_REQUESTED',deliveryQuote?.distanceMeters??null,deliveryQuote?.zone??null,deliveryQuote?.quotedAt??null,estimatedTotal,value.idempotencyKey]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'BOOKING_INTENT',id,'BOOKING_INTENT_SUBMITTED',?,? FROM booking_intents WHERE idempotency_key=? AND changes()>0",params:[identity.email,JSON.stringify({pickupAt,returnAt,state:policy.status,expiresAt,quote:{rentalChargeCents:quote.rentalChargeCents,dollyChargeCents:quote.dollyChargeCents,securityDepositCents:quote.securityDepositCents,deliveryChargeCents:deliveryFee,taxCents:0},deliveryQuoteStatus:deliveryQuote?.status||'NOT_REQUESTED',deliveryZone:deliveryQuote?.zone||null,exceptions,synthetic:true,paymentAction:'NOT_EXECUTED',agreementAction:'NOT_EXECUTED',communicationAction:'NOT_EXECUTED'}),value.idempotencyKey]}]);
-      const created=await db.first('SELECT * FROM booking_intents WHERE idempotency_key=?',[value.idempotencyKey]);if(!created)return json({error:'Those dates are no longer available. Choose another time.'},409);if(!results[0]?.changes)return json({intent:customerIntentView(created,now),idempotent:true},200);return json({intent:customerIntentView(created,now),idempotent:false},201);
+        AND NOT EXISTS (SELECT 1 FROM availability_blocks WHERE trailer_id=? AND ? < end_at AND ? > start_at)`,
+          params: [
+            value.idempotencyKey,
+            value.trailerId,
+            policy.status,
+            value.legalName,
+            value.email,
+            value.phone,
+            1,
+            1,
+            value.towVehicleDetails,
+            1,
+            1,
+            1,
+            value.intendedUse,
+            value.tripType,
+            value.interstateDetails || null,
+            value.tripType === "INTERSTATE" ? 1 : 0,
+            value.fulfillmentType,
+            value.deliveryAddress || null,
+            value.fulfillmentType === "DELIVERY" ? 1 : 0,
+            pickupAt,
+            returnAt,
+            value.dollyRequested ? 1 : 0,
+            quote.rentalDays,
+            quote.rentalChargeCents,
+            quote.dollyChargeCents,
+            quote.securityDepositCents,
+            quote.estimatedDueBeforeDeliveryCents,
+            JSON.stringify(exceptions),
+            expiresAt,
+            value.trailerId,
+            pickupAt,
+            returnAt,
+            value.trailerId,
+            pickupAt,
+            returnAt,
+          ],
+        },
+        {
+          sql: "UPDATE booking_intents SET delivery_charge_cents=?,delivery_quote_status=?,delivery_distance_meters=?,delivery_zone=?,delivery_quoted_at=?,estimated_total_cents=? WHERE idempotency_key=?",
+          params: [
+            deliveryFee,
+            deliveryQuote?.status || "NOT_REQUESTED",
+            deliveryQuote?.distanceMeters ?? null,
+            deliveryQuote?.zone ?? null,
+            deliveryQuote?.quotedAt ?? null,
+            estimatedTotal,
+            value.idempotencyKey,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'BOOKING_INTENT',id,'BOOKING_INTENT_SUBMITTED',?,? FROM booking_intents WHERE idempotency_key=? AND changes()>0",
+          params: [
+            identity.email,
+            JSON.stringify({
+              pickupAt,
+              returnAt,
+              state: policy.status,
+              expiresAt,
+              quote: {
+                rentalChargeCents: quote.rentalChargeCents,
+                dollyChargeCents: quote.dollyChargeCents,
+                securityDepositCents: quote.securityDepositCents,
+                deliveryChargeCents: deliveryFee,
+                taxCents: 0,
+              },
+              deliveryQuoteStatus: deliveryQuote?.status || "NOT_REQUESTED",
+              deliveryZone: deliveryQuote?.zone || null,
+              exceptions,
+              synthetic: true,
+              paymentAction: "NOT_EXECUTED",
+              agreementAction: "NOT_EXECUTED",
+              communicationAction: "NOT_EXECUTED",
+            }),
+            value.idempotencyKey,
+          ],
+        },
+      ]);
+      const created = await db.first(
+        "SELECT * FROM booking_intents WHERE idempotency_key=?",
+        [value.idempotencyKey],
+      );
+      if (!created)
+        return json(
+          {
+            error: "Those dates are no longer available. Choose another time.",
+          },
+          409,
+        );
+      if (!results[0]?.changes)
+        return json(
+          { intent: customerIntentView(created, now), idempotent: true },
+          200,
+        );
+      if (hold) await db.run(
+        "UPDATE checkout_holds SET booking_intent_id=?,status=?,updated_at=datetime('now') WHERE id=? AND status='ACTIVE'",
+        [
+          Number(created.id),
+          policy.status === "REVIEW_REQUIRED" ? "RELEASED" : "ACTIVE",
+          Number(hold.id),
+        ],
+      );
+      return json(
+        { intent: customerIntentView(created, now), idempotent: false },
+        201,
+      );
     }
-    if(method==='GET'&&url.pathname==='/api/booking-intents'){const rows=await db.all('SELECT i.*,t.name trailer_name,(SELECT state FROM direct_checkout_sessions s WHERE s.intent_id=i.id) checkout_state FROM booking_intents i JOIN trailers t ON t.id=i.trailer_id ORDER BY i.created_at DESC,i.id DESC');return json(rows.map(row=>intentView(row,now)))}
-    const intentMatch=url.pathname.match(/^\/api\/booking-intents\/(\d+)$/);
-    if(method==='GET'&&intentMatch){const row=await db.first('SELECT i.*,t.name trailer_name FROM booking_intents i JOIN trailers t ON t.id=i.trailer_id WHERE i.id=?',[Number(intentMatch[1])]);if(!row)return json({error:'Booking intent not found.'},404);const checkout=await db.first<Record<string,unknown>>('SELECT id,state,expires_at,last_transition_at,completed_at,reservation_id,provider_payment_id,is_synthetic FROM direct_checkout_sessions WHERE intent_id=?',[Number(intentMatch[1])]);return json({...intentView(row,now),checkout_session:checkout?{...checkout,provider_payment_id:checkout.provider_payment_id?'Recorded (sanitized)':'Not created',audit_events:await db.all("SELECT * FROM audit_events WHERE aggregate_type='DIRECT_CHECKOUT' AND aggregate_id=? ORDER BY id DESC",[Number(checkout.id)])}:null,audit_events:await db.all("SELECT * FROM audit_events WHERE aggregate_type='BOOKING_INTENT' AND aggregate_id=? ORDER BY id DESC",[Number(intentMatch[1])])})}
-    let secureMatch=url.pathname.match(/^\/api\/reservations\/(\d+)\/secure-links$/);
-    if(method==='POST'&&secureMatch){if(environment.ENVIRONMENT==='production')return json({error:'Synthetic secure links are not available.'},404);const parsed=secureLinkRequest.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);return json(await issueSecureLink(db,identity,Number(secureMatch[1]),parsed.data.purpose,parsed.data.expiresInMinutes,now),201)}
-    secureMatch=url.pathname.match(/^\/api\/secure-links\/(\d+)$/);
-    if(method==='DELETE'&&secureMatch){const parsed=z.object({confirm:z.literal(true),reason:z.string().trim().min(2).max(300)}).safeParse(await body(request));if(!parsed.success)return json({error:'Confirmed revocation and a reason are required.'},400);const id=Number(secureMatch[1]);const link=await db.first('SELECT * FROM secure_links WHERE id=?',[id]);if(!link)return json({error:'Secure link not found.'},404);if(link.revoked_at)return json({id,status:'REVOKED',idempotent:true});const revokedAt=now.toISOString();await db.batch([{sql:'UPDATE secure_links SET revoked_at=?,updated_at=datetime(\'now\') WHERE id=? AND revoked_at IS NULL',params:[revokedAt,id]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('RESERVATION',?,'SECURE_LINK_REVOKED',?,?)",params:[Number(link.reservation_id),identity.email,JSON.stringify({linkId:id,purpose:link.purpose,reason:parsed.data.reason,revokedAt,fingerprint:link.token_fingerprint,synthetic:true})]}]);return json({id,status:'REVOKED',revokedAt})}
-    secureMatch=url.pathname.match(/^\/api\/secure-links\/(\d+)\/regenerate$/);
-    if(method==='POST'&&secureMatch){if(environment.ENVIRONMENT==='production')return json({error:'Synthetic secure links are not available.'},404);const parsed=z.object({expiresInMinutes:z.coerce.number().int().min(5).max(SECURE_LINK_MAX_TTL_MINUTES).default(SECURE_LINK_DEFAULT_TTL_MINUTES)}).safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const id=Number(secureMatch[1]);const link=await db.first('SELECT * FROM secure_links WHERE id=?',[id]);if(!link)return json({error:'Secure link not found.'},404);return json(await issueSecureLink(db,identity,Number(link.reservation_id),String(link.purpose) as SecureLinkPurpose,parsed.data.expiresInMinutes,now,id),201)}
-    if(method==='POST'&&url.pathname==='/api/customer-preview/secure-links/use'){if(environment.ENVIRONMENT==='production')return json({error:'Synthetic secure-link rehearsal is not available.'},404);const parsed=z.object({token:z.string().trim().min(40).max(100)}).safeParse(await body(request));if(!parsed.success)return json({error:'A valid secure-link token is required.'},400);const windowStartedAt=new Date(Math.floor(now.getTime()/3_600_000)*3_600_000).toISOString();const hash=await actorHash(identity.email);await db.run("INSERT INTO secure_link_attempts(actor_hash,window_started_at,attempt_count) VALUES (?,?,1) ON CONFLICT(actor_hash,window_started_at) DO UPDATE SET attempt_count=attempt_count+1,updated_at=datetime('now')",[hash,windowStartedAt]);const attempt=await db.first<{attempt_count:number}>('SELECT attempt_count FROM secure_link_attempts WHERE actor_hash=? AND window_started_at=?',[hash,windowStartedAt]);if(Number(attempt?.attempt_count)>SECURE_LINK_USE_LIMIT_PER_HOUR)return json({error:'Secure-link verification is temporarily limited.'},429);const tokenHash=await hashSecureToken(parsed.data.token);const link=await db.first('SELECT * FROM secure_links WHERE token_hash=?',[tokenHash]);if(!link)return json({error:'This secure link is invalid or unavailable.'},404);const status=secureLinkStatus(link,now);if(status!=='ACTIVE')return json({error:`This secure link is ${status.toLowerCase()}.`},409);const usedAt=now.toISOString();const results=await db.batch([{sql:'UPDATE secure_links SET used_at=?,last_used_at=?,use_count=use_count+1,updated_at=datetime(\'now\') WHERE id=? AND revoked_at IS NULL AND used_at IS NULL AND expires_at>?',params:[usedAt,usedAt,Number(link.id),usedAt]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',?,'SECURE_LINK_USED',?,? WHERE changes()>0",params:[Number(link.reservation_id),identity.email,JSON.stringify({linkId:link.id,purpose:link.purpose,usedAt,fingerprint:link.token_fingerprint,synthetic:true,replayProtected:true,workflowAction:'NOT_EXECUTED'})]}]);if(!results[0]?.changes)return json({error:'This secure link is no longer available.'},409);return json({reservationId:link.reservation_id,purpose:link.purpose,status:'USED',synthetic:true,workflowAction:'NOT_EXECUTED'})}
-    let match=url.pathname.match(/^\/api\/reservations\/(\d+)$/);
-    if(method==='GET'&&match){const result=await reservationDetail(db,Number(match[1]),now);return result?json(result):json({error:'Reservation not found.'},404);}
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/communications$/);
-    if(method==='GET'&&match){const id=Number(match[1]);const row=await db.first(`SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,c.email customer_email,(SELECT delivery_charge_cents FROM booking_intent_conversions bic JOIN booking_intents bi ON bi.id=bic.intent_id WHERE bic.reservation_id=r.id) delivery_charge_cents FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,[id]);if(!row)throw new Error('Reservation not found.');const readiness:Record<string,{ready:boolean;blockers:string[]}>={};for(const key of communicationTemplateKeys){const result=await communicationReadiness(db,row,key);readiness[key]={ready:result.ready,blockers:result.blockers}}const records=await db.all<Record<string,unknown>>('SELECT id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,copied_at,safe_error_classification,created_at FROM communication_records WHERE reservation_id=? ORDER BY id DESC',[id]);for(const record of records){record.latest_gmail_attempt=await db.first('SELECT attempt_number,state,safe_error_classification,attempted_at,completed_at FROM gmail_delivery_attempts WHERE communication_id=? ORDER BY id DESC LIMIT 1',[Number(record.id)])||null}return json({records,readiness,provider:{name:'GMAIL_TEST',sendAvailable:true},legalReviewStatus:communicationTemplateManifest.legalReviewStatus,templateManifest:communicationTemplateManifest})}
-    if(method==='POST'&&match){const id=Number(match[1]);const parsed=z.object({templateKey:z.enum(communicationTemplateKeys),idempotencyKey:z.string().trim().min(12).max(120).regex(/^[A-Za-z0-9_-]+$/)}).safeParse(await body(request));if(!parsed.success)return json({error:'Select an approved communication type and idempotency key.'},400);const prior=await db.first('SELECT * FROM communication_records WHERE idempotency_key=?',[parsed.data.idempotencyKey]);if(prior)return json({record:prior,idempotent:true});const row=await db.first(`SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,c.email customer_email,(SELECT delivery_charge_cents FROM booking_intent_conversions bic JOIN booking_intents bi ON bi.id=bic.intent_id WHERE bic.reservation_id=r.id) delivery_charge_cents FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,[id]);if(!row)throw new Error('Reservation not found.');if(Number(row.is_synthetic)!==1)return json({error:'Communication preparation is limited to synthetic staging records.'},403);const readiness=await communicationReadiness(db,row,parsed.data.templateKey);if(!readiness.ready)return json({error:'Communication prerequisites are incomplete.',blockers:readiness.blockers},409);const breakdown=paymentBreakdown({rentalChargeCents:Number(row.rental_charge_cents),dollyDays:Number(row.dolly_days),deliveryChargeCents:Number(row.delivery_charge_cents||0)});const choice=String(readiness.agreement?.pickup_inspection_choice||'DECLINE_FORM') as InspectionChoice;const deposit=readiness.deposit;const rendered=renderCommunication(parsed.data.templateKey,{customerName:String(row.customer_name||''),confirmationCode:String(row.confirmation_code),pickupAt:String(row.pickup_at),returnAt:String(row.return_at),trailerName:String(row.trailer_name),fulfillment:Number(row.delivery_requested)===1?'Approved delivery':'Customer pickup',deliverySummary:Number(row.delivery_requested)===1?'Owner-approved delivery details are stored with the reservation.':null,rentalCents:breakdown.rentalCents,dollyCents:breakdown.dollyCents,deliveryCents:breakdown.deliveryCents,depositCents:breakdown.depositCents,totalCents:breakdown.totalCents,inspectionChoice:choice,depositDecision:deposit?String(deposit.decision) as 'RELEASE_RECORDED'|'RETAIN_RECORDED':null,depositAmountCents:Number(deposit?.amount_cents||0),refundCompleted:Boolean(readiness.refund),supportEmailLabel:'Trailer Bros Gmail sender identity',voiceContactPlaceholder:'[Trailer Bros Google Voice contact configured at send time]'});const sourceTemplateHash=await communicationHash(communicationTemplateManifest);const renderedContentHash=await communicationHash(`${rendered.subject}\n${rendered.plainText}\n${rendered.html}`);const renderedAt=iso(now);const noSend=await createNoSendCommunicationProvider().prepare({recipient:String(row.customer_email||''),subject:rendered.subject,body:rendered.plainText,idempotencyKey:parsed.data.idempotencyKey});const results=await db.batch([{sql:'INSERT INTO communication_records(reservation_id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,safe_error_classification,actor,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,?,?,\'PREVIEWED\',?,?,?,?,?,1)',params:[id,rendered.templateKey,String(row.customer_email||''),rendered.templateKey,rendered.templateVersion,sourceTemplateHash,renderedContentHash,rendered.subject,rendered.plainText,rendered.html,noSend.state,parsed.data.idempotencyKey,renderedAt,renderedAt,noSend.safeErrorClassification,identity.email]},audit(identity,'RESERVATION',id,'COMMUNICATION_PREPARED',{communicationType:rendered.templateKey,templateVersion:rendered.templateVersion,sourceTemplateHash,renderedContentHash,formats:['text/plain','text/html'],inspectionChoice:choice,inspectionLinkIncluded:choice==='SEND_FORM',authoritativePrerequisites:true,provider:'NO_SEND',deliveryAction:'NOT_EXECUTED',synthetic:true})]);return json({id:results[0]?.lastRowId,...rendered,state:noSend.state,renderedAt,sourceTemplateHash,renderedContentHash,inspectionLinkIncluded:choice==='SEND_FORM',sendAvailable:false},201);}
-    match=url.pathname.match(/^\/api\/communications\/(\d+)\/gmail-test-send$/);
-    if(method==='POST'&&match){if(environment.ENVIRONMENT!=='staging')return json({error:'Gmail test delivery is staging-only.'},403);const id=Number(match[1]);const parsed=z.object({confirm:z.literal(true),idempotencyKey:z.string().trim().min(12).max(120).regex(/^[A-Za-z0-9_-]+$/),retryOverrideReason:z.string().trim().min(8).max(240).optional()}).safeParse(await body(request));if(!parsed.success)return json({error:'Explicit confirmation and a valid idempotency key are required.'},400);const config=gmailConfiguration(environment);if(!config.configured||!config.configuration)return json({error:'Gmail delivery is not configured.'},503);const record=await db.first<Record<string,unknown>>('SELECT * FROM communication_records WHERE id=?',[id]);if(!record||Number(record.is_synthetic)!==1)return json({error:'Synthetic communication preview not found.'},404);const reservationRow=await db.first<Record<string,unknown>>('SELECT * FROM reservations WHERE id=?',[Number(record.reservation_id)]);if(!reservationRow)return json({error:'Reservation not found.'},404);const readiness=await communicationReadiness(db,reservationRow,String(record.communication_type) as CommunicationTemplateKey);if(!readiness.ready)return json({error:'Communication prerequisites are incomplete.',blockers:readiness.blockers},409);const prior=await db.first<Record<string,unknown>>('SELECT * FROM gmail_delivery_attempts WHERE communication_id=? ORDER BY id DESC LIMIT 1',[id]);if(prior&&['SENDING','ACCEPTED_BY_GMAIL'].includes(String(prior.state)))return json({error:'This communication is already sending or was accepted by Gmail.'},409);if(prior&&!parsed.data.retryOverrideReason)return json({error:'A failed or unknown attempt requires an owner retry reason.'},409);const connection=await db.first<Record<string,unknown>>("SELECT * FROM gmail_connections WHERE status='CONNECTED' ORDER BY id DESC LIMIT 1");if(!connection||Date.parse(String(connection.token_expires_at))<=now.getTime())return json({error:'Gmail authorization is unavailable or expired.'},503);const bundle=JSON.parse(await decryptToken({ciphertext:String(connection.encrypted_token_bundle),iv:String(connection.token_iv),keyVersion:String(connection.key_version)},config.configuration.tokenEncryptionKey)) as {accessToken:string};const stableMessageId=`tb-${String(record.rendered_content_hash).slice(0,32)}`;const attemptNumber=Number(prior?.attempt_number||0)+1;await db.batch([{sql:"INSERT INTO gmail_delivery_attempts(communication_id,attempt_number,idempotency_key,stable_message_id,state,attempted_at,actor,is_synthetic) VALUES (?,?,?,?,'SENDING',?,?,1)",params:[id,attemptNumber,parsed.data.idempotencyKey,stableMessageId,iso(now),identity.email]},audit(identity,'RESERVATION',Number(record.reservation_id),'GMAIL_TEST_SEND_STARTED',{communicationId:id,attemptNumber,recipientRestrictedToOwner:true,synthetic:true})]);const result=await (dependencies.gmailTransport||createGmailTransport()).send({accessToken:bundle.accessToken,sender:config.configuration.approvedSender,recipient:config.configuration.testRecipient,subject:String(record.subject_text),body:String(record.body_text),htmlBody:String(record.body_html||''),stableMessageId});await db.batch([{sql:"UPDATE gmail_delivery_attempts SET state=?,provider_message_id=?,safe_error_classification=?,completed_at=? WHERE communication_id=? AND attempt_number=? AND state='SENDING'",params:[result.state,result.providerMessageId||null,result.safeErrorClassification||null,iso(now),id,attemptNumber]},audit(identity,'RESERVATION',Number(record.reservation_id),'GMAIL_TEST_SEND_RECORDED',{communicationId:id,attemptNumber,state:result.state,acceptedByProvider:result.state==='ACCEPTED_BY_GMAIL',deliveryOrReadClaim:false,recipientRestrictedToOwner:true,formats:['text/plain','text/html'],synthetic:true})]);return json({state:result.state,acceptedByGmail:result.state==='ACCEPTED_BY_GMAIL',deliveryConfirmed:false,readConfirmed:false,safeErrorClassification:result.safeErrorClassification||null},result.state==='ACCEPTED_BY_GMAIL'?202:result.state==='FAILED'?502:503)}
-    match=url.pathname.match(/^\/api\/communications\/(\d+)\/copied$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const record=await db.first('SELECT * FROM communication_records WHERE id=?',[id]);if(!record)return json({error:'Communication preview not found.'},404);const copiedAt=iso(now);await db.batch([{sql:"UPDATE communication_records SET state='COPIED',status='COPIED',copied_at=? WHERE id=?",params:[copiedAt,id]},audit(identity,'RESERVATION',Number(record.reservation_id),'COMMUNICATION_COPIED',{communicationId:id,communicationType:record.communication_type,copiedAt,deliveryAction:'NOT_EXECUTED',synthetic:true})]);return json({id,state:'COPIED',copiedAt});}
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/agreements$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const row=await db.first(`SELECT r.*,c.first_name,c.last_name,c.email,c.phone,t.name trailer_name,t.unit_code FROM reservations r LEFT JOIN customers c ON c.id=r.customer_id JOIN trailers t ON t.id=r.trailer_id WHERE r.id=?`,[id]);if(!row)throw new Error('Reservation not found.');const content=internalAgreementSource;const hash=await agreementTemplateHash(content);const renderedAt=iso(now);const renterSnapshot={name:`${row.first_name||''} ${row.last_name||''}`.trim(),email:row.email||null,phone:row.phone||null};const reservationSnapshot={reservationId:id,confirmationCode:row.confirmation_code,trailerName:row.trailer_name,unitCode:row.unit_code,pickupAt:row.pickup_at,returnAt:row.return_at,channel:row.channel,source:row.external_source||null};const quoteSnapshot={rentalChargeCents:row.rental_charge_cents,dollyDays:row.dolly_days,securityDepositCents:10000,paymentAction:'NOT_EXECUTED'};await db.batch([{sql:'INSERT OR IGNORE INTO agreement_templates(version,source_manifest_version,content_json,content_hash,is_synthetic) VALUES (?,?,?,?,1)',params:[content.sourceVersion,content.sourceVersion,JSON.stringify(content),hash]},{sql:`INSERT INTO agreement_instances(reservation_id,template_id,status,template_version,template_hash,renter_snapshot_json,reservation_snapshot_json,quote_snapshot_json,rendered_at,is_synthetic) SELECT ?,id,'OPENED',version,content_hash,?,?,?,?,1 FROM agreement_templates WHERE content_hash=?`,params:[id,JSON.stringify(renterSnapshot),JSON.stringify(reservationSnapshot),JSON.stringify(quoteSnapshot),renderedAt,hash]},{sql:"INSERT OR IGNORE INTO pickup_condition_choices(reservation_id,status,is_synthetic) VALUES (?,'PENDING',1)",params:[id]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'AGREEMENT',id,'AGREEMENT_OPENED',?,? FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC LIMIT 1",params:[identity.email,JSON.stringify({templateVersion:content.sourceVersion,templateHash:hash,renderedAt,synthetic:true,deliveryAction:'NOT_EXECUTED'}),id]}]);const created=await db.first('SELECT id,status,template_version,template_hash,rendered_at FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC',[id]);return json(created,201);}
-
-    match=url.pathname.match(/^\/api\/agreements\/(\d+)\/sign$/);
-    if(method==='POST'&&match){const agreementId=Number(match[1]);const parsed=z.object({printedName:z.string().trim().min(3).max(120),electronicRecordsConsent:z.literal(true),termsAcknowledged:z.literal(true),driverInsuranceAcknowledged:z.literal(true),inspectionOpportunityAcknowledged:z.literal(true),pickupInspectionChoice:z.enum(['SEND_FORM','DECLINE_FORM'])}).safeParse(await body(request));if(!parsed.success)return json({error:'All acknowledgments, printed name, and one explicit pickup-condition inspection choice are required.'},400);const agreement=await db.first('SELECT * FROM agreement_instances WHERE id=?',[agreementId]);if(!agreement)return json({error:'Agreement not found.'},404);if(agreement.status!=='OPENED')return json({error:'Only an opened agreement may be signed.'},400);const signedAt=iso(now);const choice=parsed.data.pickupInspectionChoice;const evidence={method:'SYNTHETIC_IN_PERSON_PREVIEW',explicitAffirmativeAction:true,externalSignatureProvider:false,pickupInspectionChoice:choice,attorneyReviewRequired:true};const pickupStatement:SqlStatement=choice==='DECLINE_FORM'?{sql:`INSERT INTO pickup_condition_choices(reservation_id,status,decline_acknowledgment,decided_at,actor,is_synthetic) VALUES (?,'DECLINED',?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='DECLINED',checklist_json='{}',general_notes=NULL,marked_damage_json='[]',customer_acknowledged_at=NULL,decline_acknowledgment=excluded.decline_acknowledgment,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,params:[Number(agreement.reservation_id),'Customer explicitly selected DECLINE_FORM in the signed agreement.',signedAt,identity.email]}:{sql:"INSERT INTO pickup_condition_choices(reservation_id,status,actor,is_synthetic) VALUES (?,'PENDING',?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='PENDING',decline_acknowledgment=NULL,decided_at=NULL,actor=excluded.actor,updated_at=datetime('now')",params:[Number(agreement.reservation_id),identity.email]};await db.batch([{sql:"UPDATE agreement_instances SET status='SIGNED',electronic_consent_at=?,terms_acknowledged_at=?,driver_insurance_acknowledged_at=?,inspection_opportunity_acknowledged_at=?,pickup_inspection_choice=?,pickup_inspection_choice_at=?,signed_at=?,printed_name=?,signature_evidence_json=?,updated_at=datetime('now') WHERE id=? AND status='OPENED'",params:[signedAt,signedAt,signedAt,signedAt,choice,signedAt,signedAt,parsed.data.printedName,JSON.stringify(evidence),agreementId]},pickupStatement,{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'PICKUP_INSPECTION_CHOICE_RECORDED',?,?)",params:[agreementId,identity.email,JSON.stringify({reservationId:agreement.reservation_id,choice,choiceAt:signedAt,templateVersion:agreement.template_version,templateHash:agreement.template_hash,deliberate:true,inferred:false,attorneyReviewRequired:true,synthetic:true})]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'AGREEMENT_SIGNED',?,?)",params:[agreementId,identity.email,JSON.stringify({signedAt,printedName:parsed.data.printedName,templateHash:agreement.template_hash,explicitConsents:true,pickupInspectionChoice:choice,synthetic:true})]}]);return json({id:agreementId,status:'SIGNED',signedAt,pickupInspectionChoice:choice},201);}
-
-    match=url.pathname.match(/^\/api\/agreements\/(\d+)\/render-document$/);
-    if(method==='POST'&&match){const agreementId=Number(match[1]);const agreement=await db.first('SELECT * FROM agreement_instances WHERE id=?',[agreementId]);if(!agreement)return json({error:'Agreement not found.'},404);if(agreement.status!=='SIGNED')return json({error:'Only a signed agreement may be rendered.'},400);const existing=await db.first('SELECT id,document_hash,renderer_version,template_version,generated_at FROM agreement_documents WHERE agreement_id=? ORDER BY id DESC LIMIT 1',[agreementId]);if(existing)return json({...existing,immutable:true,idempotent:true});const template=await db.first('SELECT * FROM agreement_templates WHERE id=?',[Number(agreement.template_id)]);if(!template)throw new Error('Agreement template not found.');const pickup=await db.first('SELECT status,checklist_json,general_notes,marked_damage_json,customer_acknowledged_at,decline_acknowledgment,decided_at FROM pickup_condition_choices WHERE reservation_id=?',[Number(agreement.reservation_id)])||null;const rendered=renderAgreementDocument({agreement,template,pickupCondition:pickup});const generatedAt=iso(now);const hash=await agreementDocumentHash(rendered.html);const results=await db.batch([{sql:'INSERT INTO agreement_documents(agreement_id,document_hash,renderer_version,template_version,content_type,content_text,generated_at,is_synthetic) VALUES (?,?,?,?,?,?,?,1)',params:[agreementId,hash,AGREEMENT_RENDERER_VERSION,String(agreement.template_version),'text/html',rendered.html,generatedAt]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'AGREEMENT_DOCUMENT_RENDERED',?,?)",params:[agreementId,identity.email,JSON.stringify({documentHash:hash,rendererVersion:AGREEMENT_RENDERER_VERSION,templateVersion:agreement.template_version,generatedAt,immutable:true,synthetic:true})]}]);return json({id:results[0]?.lastRowId,documentHash:hash,rendererVersion:AGREEMENT_RENDERER_VERSION,templateVersion:agreement.template_version,generatedAt,immutable:true},201);}
-    match=url.pathname.match(/^\/api\/agreement-documents\/(\d+)$/);
-    if(method==='GET'&&match){const document=await db.first('SELECT content_text FROM agreement_documents WHERE id=?',[Number(match[1])]);if(!document)return json({error:'Agreement document not found.'},404);return new Response(String(document.content_text),{headers:{'content-type':'text/html; charset=utf-8','content-disposition':'attachment; filename="trailer-bros-agreement.html"','cache-control':'no-store','x-content-type-options':'nosniff'}});}
-
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/pickup-condition\/(complete|decline)$/);
-    if(method==='POST'&&match){const id=Number(match[1]);if(!await reservation(db,id))throw new Error('Reservation not found.');const action=match[2];if(action==='complete'){const parsed=z.object({checklist:z.record(z.string(),z.boolean()).refine(value=>Object.keys(value).length>0),generalNotes:z.string().trim().max(1000).optional(),markedDamageAreas:z.array(z.string().trim().min(1).max(80)).max(30).default([]),customerAcknowledged:z.literal(true)}).safeParse(await body(request));if(!parsed.success)return json({error:'Checklist answers and explicit customer acknowledgment are required.'},400);const decidedAt=iso(now);await db.batch([{sql:`INSERT INTO pickup_condition_choices(reservation_id,status,checklist_json,general_notes,marked_damage_json,customer_acknowledged_at,decided_at,actor,is_synthetic) VALUES (?,'COMPLETED',?,?,?,?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='COMPLETED',checklist_json=excluded.checklist_json,general_notes=excluded.general_notes,marked_damage_json=excluded.marked_damage_json,customer_acknowledged_at=excluded.customer_acknowledged_at,decline_acknowledgment=NULL,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,params:[id,JSON.stringify(parsed.data.checklist),parsed.data.generalNotes||null,JSON.stringify(parsed.data.markedDamageAreas),decidedAt,decidedAt,identity.email]},audit(identity,'RESERVATION',id,'PICKUP_CONDITION_COMPLETED',{decidedAt,checklistKeys:Object.keys(parsed.data.checklist),markedDamageCount:parsed.data.markedDamageAreas.length,customerAcknowledged:true,hostedPhotoUpload:false,synthetic:true})]);return json({reservationId:id,status:'COMPLETED',decidedAt},201)}const parsed=z.object({affirmativeDecline:z.literal(true),acknowledgment:z.literal('I affirmatively decline the offered pre-pickup condition inspection.')}).safeParse(await body(request));if(!parsed.success)return json({error:'An affirmative inspection-decline acknowledgment is required.'},400);const decidedAt=iso(now);await db.batch([{sql:`INSERT INTO pickup_condition_choices(reservation_id,status,decline_acknowledgment,decided_at,actor,is_synthetic) VALUES (?,'DECLINED',?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='DECLINED',checklist_json='{}',general_notes=NULL,marked_damage_json='[]',customer_acknowledged_at=NULL,decline_acknowledgment=excluded.decline_acknowledgment,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,params:[id,parsed.data.acknowledgment,decidedAt,identity.email]},audit(identity,'RESERVATION',id,'PICKUP_CONDITION_DECLINED',{decidedAt,affirmativeAction:true,automaticDefectAcceptance:false,automaticDepositForfeiture:false,synthetic:true})]);return json({reservationId:id,status:'DECLINED',decidedAt},201)}
-    if(method==='POST'&&url.pathname==='/api/reservations/external'){
-      const parsed=manualBooking.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const value=parsed.data;validateBookingWindow(value.pickupAt,value.returnAt);const names=value.customerName.split(/\s+/);const last=names.pop()??'';const first=names.join(' ');const code=`EXT-${crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase()}`;
-      await db.batch([{sql:'INSERT INTO customers(first_name,last_name) VALUES (?,?)',params:[first||last,first?last:'']},{sql:"INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,external_source,external_reference,status,pickup_at,return_at,rental_charge_cents,notes,is_synthetic) VALUES (?,?,last_insert_rowid(),'EXTERNAL',?,?,'PENDING_REVIEW',?,?,?,?,?)",params:[code,value.trailerId,value.source,value.externalReference||null,iso(value.pickupAt),iso(value.returnAt),value.rentalChargeCents,value.notes||null,value.isSynthetic?1:0]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',id,'EXTERNAL_BOOKING_CREATED',?,? FROM reservations WHERE confirmation_code=?",params:[identity.email,JSON.stringify({source:value.source,isSynthetic:value.isSynthetic}),code]}]);
-      const created=await db.first('SELECT id FROM reservations WHERE confirmation_code=?',[code]);return json({id:Number(created?.id),confirmationCode:code},201);
+    if (method === "GET" && url.pathname === "/api/booking-intents") {
+      const rows = await db.all(
+        "SELECT i.*,t.name trailer_name,(SELECT state FROM direct_checkout_sessions s WHERE s.intent_id=i.id) checkout_state FROM booking_intents i JOIN trailers t ON t.id=i.trailer_id ORDER BY i.created_at DESC,i.id DESC",
+      );
+      return json(rows.map((row) => intentView(row, now)));
     }
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)$/);
-    if(method==='PATCH'&&match){const id=Number(match[1]);const parsed=editReservation.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const value=parsed.data;validateBookingWindow(value.pickupAt,value.returnAt);const before=await reservation(db,id);if(!before)throw new Error('Reservation not found.');if(['COMPLETED','CANCELLED','NO_SHOW'].includes(String(before.status)))throw new Error('Terminal reservations cannot be edited.');const after={...before,pickup_at:iso(value.pickupAt),return_at:iso(value.returnAt),notes:value.notes||null,external_reference:value.externalReference||null,rental_charge_cents:value.rentalChargeCents,dolly_days:value.dollyDays,version:value.version+1};const results=await db.batch([{sql:"UPDATE reservations SET pickup_at=?,return_at=?,notes=?,external_reference=?,rental_charge_cents=?,dolly_days=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?",params:[after.pickup_at as string,after.return_at as string,after.notes as SqlValue,after.external_reference as SqlValue,value.rentalChargeCents,value.dollyDays,id,value.version]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',?,'RESERVATION_EDITED',?,? WHERE changes()>0",params:[id,identity.email,JSON.stringify({reason:value.reason,before,after})]}]);if(!results[0]?.changes)throw new Error('This reservation changed since it was opened. Refresh and try again.');return json(await reservation(db,id));}
-
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/payment-preview$/);
-    if(method==='GET'&&match){const id=Number(match[1]);const payment=await reservationPayment(db,id);const blockers=await paymentReadiness(db,payment.row);return json({breakdown:payment.breakdown,ledger:payment.ledger,ready:blockers.length===0,blockers,testOnly:true,provider:paymentProvider.provider,stripeTestConfigured:paymentProvider.provider==='STRIPE_TEST',publishableKey:paymentProvider.provider==='STRIPE_TEST'?dependencies.stripePublishableKey:undefined,liveProcessorConnected:false,collectedRevenueAvailable:true});}
-
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/payment-actions$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const parsed=z.object({action:z.enum(['COLLECT','FULL_REFUND','POLICY_REFUND','DEPOSIT_RELEASE','DEPOSIT_RETAIN']),idempotencyKey:paymentIdempotency,reason:z.string().trim().min(3).max(300),amountCents:z.coerce.number().int().nonnegative().optional()}).safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const existing=await db.first('SELECT * FROM payment_ledger_entries WHERE idempotency_key=?',[parsed.data.idempotencyKey]);if(existing)return json({entry:existing,idempotent:true});const payment=await reservationPayment(db,id);if(Number(payment.row.is_synthetic)!==1)return json({error:'Payment rehearsal is limited to synthetic staging reservations.'},403);let kind='PAYMENT_COLLECTED',amount=payment.breakdown.totalCents,providerPaymentId:string|undefined,providerRefundId:string|undefined,clientSecret:string|undefined,status='SUCCEEDED';
-      if(parsed.data.action==='COLLECT'){const blockers=await paymentReadiness(db,payment.row);if(blockers.length)return json({error:'Payment readiness checks did not pass.',blockers},409);if(await db.first("SELECT 1 present FROM payment_ledger_entries WHERE reservation_id=? AND kind IN ('PAYMENT_PENDING','PAYMENT_COLLECTED')",[id]))return json({error:'A Stripe test payment is already pending or collected for this reservation.'},409);const result=await paymentProvider.createPayment({amountCents:amount,currency:'usd',idempotencyKey:parsed.data.idempotencyKey,metadata:{reservationId:String(id),synthetic:'true'}});providerPaymentId=result.providerPaymentId;clientSecret=result.clientSecret;status=result.status;kind=result.status==='SUCCEEDED'?'PAYMENT_COLLECTED':result.status==='FAILED'?'PAYMENT_FAILED':'PAYMENT_PENDING';}
-      else {
-        const collected=await db.first<{provider_payment_id:string;amount_cents:number}>('SELECT provider_payment_id,amount_cents FROM payment_ledger_entries WHERE reservation_id=? AND kind=\'PAYMENT_COLLECTED\' AND status=\'SUCCEEDED\' ORDER BY id DESC',[id]);if(!collected)return json({error:'No successful synthetic payment is available for this action.'},409);providerPaymentId=String(collected.provider_payment_id);
-        if(parsed.data.action==='FULL_REFUND'||parsed.data.action==='POLICY_REFUND'){
-          const outcome=await db.first<{type:string;decided_at:string}>('SELECT type,decided_at FROM cancellation_outcomes WHERE reservation_id=?',[id]);if(!outcome)return json({error:'A recorded cancellation or no-show outcome is required before refunding.'},409);const policy=cancellationRefund({paid:payment.breakdown,pickupAt:new Date(String(payment.row.pickup_at)),decidedAt:new Date(outcome.decided_at),noShow:outcome.type==='NO_SHOW'});if(parsed.data.action==='FULL_REFUND'&&policy.policy!=='FULL_REFUND')return json({error:'The recorded cancellation outcome does not permit a full refund.'},409);amount=parsed.data.action==='FULL_REFUND'?Number(collected.amount_cents):policy.refundCents;
-        }
-        if(parsed.data.action==='DEPOSIT_RELEASE'){if(!await db.first("SELECT 1 present FROM deposit_decisions WHERE reservation_id=? AND decision='RELEASE_RECORDED'",[id]))return json({error:'A recorded clean-return deposit release decision is required.'},409);if(await db.first("SELECT 1 present FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND json_extract(breakdown_json,'$.action')='DEPOSIT_RELEASE'",[id]))return json({error:'The security deposit release has already been refunded.'},409);amount=depositRefund(Number(collected.amount_cents));}
-        if(parsed.data.action==='DEPOSIT_RETAIN'){const decision=await db.first<{amount_cents:number;reason:string;damage_notes:string}>('SELECT amount_cents,reason,damage_notes FROM deposit_decisions WHERE reservation_id=? AND decision=\'RETAIN_RECORDED\'',[id]);const inspectionRow=await db.first<{id:number}>('SELECT id FROM condition_inspections WHERE reservation_id=? AND type=\'RETURN\' ORDER BY id DESC',[id]);if(!decision||!inspectionRow||!decision.damage_notes)return json({error:'A linked return inspection and documented damage-retain decision are required.'},409);amount=Math.min(10_000,Number(decision.amount_cents));kind='DEPOSIT_RETAINED';status='SUCCEEDED';}
-        else{const refunded=await db.first<{total:number}>("SELECT coalesce(sum(amount_cents),0) total FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND status='SUCCEEDED'",[id]);if(Number(refunded?.total||0)+amount>Number(collected.amount_cents))return json({error:'This refund would exceed the amount originally collected.'},409);const result=await paymentProvider.createRefund({providerPaymentId,amountCents:amount,idempotencyKey:parsed.data.idempotencyKey,reason:parsed.data.reason});providerRefundId=result.providerRefundId;status=result.status;kind=result.status==='SUCCEEDED'?'REFUND_SUCCEEDED':'REFUND_FAILED';}
+    const intentMatch = url.pathname.match(/^\/api\/booking-intents\/(\d+)$/);
+    if (method === "GET" && intentMatch) {
+      const row = await db.first(
+        "SELECT i.*,t.name trailer_name FROM booking_intents i JOIN trailers t ON t.id=i.trailer_id WHERE i.id=?",
+        [Number(intentMatch[1])],
+      );
+      if (!row) return json({ error: "Booking intent not found." }, 404);
+      const checkout = await db.first<Record<string, unknown>>(
+        "SELECT id,state,expires_at,last_transition_at,completed_at,reservation_id,provider_payment_id,is_synthetic FROM direct_checkout_sessions WHERE intent_id=?",
+        [Number(intentMatch[1])],
+      );
+      return json({
+        ...intentView(row, now),
+        checkout_session: checkout
+          ? {
+              ...checkout,
+              provider_payment_id: checkout.provider_payment_id
+                ? "Recorded (sanitized)"
+                : "Not created",
+              audit_events: await db.all(
+                "SELECT * FROM audit_events WHERE aggregate_type='DIRECT_CHECKOUT' AND aggregate_id=? ORDER BY id DESC",
+                [Number(checkout.id)],
+              ),
+            }
+          : null,
+        audit_events: await db.all(
+          "SELECT * FROM audit_events WHERE aggregate_type='BOOKING_INTENT' AND aggregate_id=? ORDER BY id DESC",
+          [Number(intentMatch[1])],
+        ),
+      });
+    }
+    let secureMatch = url.pathname.match(
+      /^\/api\/reservations\/(\d+)\/secure-links$/,
+    );
+    if (method === "POST" && secureMatch) {
+      if (environment.ENVIRONMENT === "production")
+        return json(
+          { error: "Synthetic secure links are not available." },
+          404,
+        );
+      const parsed = secureLinkRequest.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      return json(
+        await issueSecureLink(
+          db,
+          identity,
+          Number(secureMatch[1]),
+          parsed.data.purpose,
+          parsed.data.expiresInMinutes,
+          now,
+        ),
+        201,
+      );
+    }
+    secureMatch = url.pathname.match(/^\/api\/secure-links\/(\d+)$/);
+    if (method === "DELETE" && secureMatch) {
+      const parsed = z
+        .object({
+          confirm: z.literal(true),
+          reason: z.string().trim().min(2).max(300),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          { error: "Confirmed revocation and a reason are required." },
+          400,
+        );
+      const id = Number(secureMatch[1]);
+      const link = await db.first("SELECT * FROM secure_links WHERE id=?", [
+        id,
+      ]);
+      if (!link) return json({ error: "Secure link not found." }, 404);
+      if (link.revoked_at)
+        return json({ id, status: "REVOKED", idempotent: true });
+      const revokedAt = now.toISOString();
+      await db.batch([
+        {
+          sql: "UPDATE secure_links SET revoked_at=?,updated_at=datetime('now') WHERE id=? AND revoked_at IS NULL",
+          params: [revokedAt, id],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('RESERVATION',?,'SECURE_LINK_REVOKED',?,?)",
+          params: [
+            Number(link.reservation_id),
+            identity.email,
+            JSON.stringify({
+              linkId: id,
+              purpose: link.purpose,
+              reason: parsed.data.reason,
+              revokedAt,
+              fingerprint: link.token_fingerprint,
+              synthetic: true,
+            }),
+          ],
+        },
+      ]);
+      return json({ id, status: "REVOKED", revokedAt });
+    }
+    secureMatch = url.pathname.match(
+      /^\/api\/secure-links\/(\d+)\/regenerate$/,
+    );
+    if (method === "POST" && secureMatch) {
+      if (environment.ENVIRONMENT === "production")
+        return json(
+          { error: "Synthetic secure links are not available." },
+          404,
+        );
+      const parsed = z
+        .object({
+          expiresInMinutes: z.coerce
+            .number()
+            .int()
+            .min(5)
+            .max(SECURE_LINK_MAX_TTL_MINUTES)
+            .default(SECURE_LINK_DEFAULT_TTL_MINUTES),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const id = Number(secureMatch[1]);
+      const link = await db.first("SELECT * FROM secure_links WHERE id=?", [
+        id,
+      ]);
+      if (!link) return json({ error: "Secure link not found." }, 404);
+      return json(
+        await issueSecureLink(
+          db,
+          identity,
+          Number(link.reservation_id),
+          String(link.purpose) as SecureLinkPurpose,
+          parsed.data.expiresInMinutes,
+          now,
+          id,
+        ),
+        201,
+      );
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/customer-preview/secure-links/use"
+    ) {
+      if (environment.ENVIRONMENT === "production")
+        return json(
+          { error: "Synthetic secure-link rehearsal is not available." },
+          404,
+        );
+      const parsed = z
+        .object({ token: z.string().trim().min(40).max(100) })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: "A valid secure-link token is required." }, 400);
+      const windowStartedAt = new Date(
+        Math.floor(now.getTime() / 3_600_000) * 3_600_000,
+      ).toISOString();
+      const hash = await actorHash(identity.email);
+      await db.run(
+        "INSERT INTO secure_link_attempts(actor_hash,window_started_at,attempt_count) VALUES (?,?,1) ON CONFLICT(actor_hash,window_started_at) DO UPDATE SET attempt_count=attempt_count+1,updated_at=datetime('now')",
+        [hash, windowStartedAt],
+      );
+      const attempt = await db.first<{ attempt_count: number }>(
+        "SELECT attempt_count FROM secure_link_attempts WHERE actor_hash=? AND window_started_at=?",
+        [hash, windowStartedAt],
+      );
+      if (Number(attempt?.attempt_count) > SECURE_LINK_USE_LIMIT_PER_HOUR)
+        return json(
+          { error: "Secure-link verification is temporarily limited." },
+          429,
+        );
+      const tokenHash = await hashSecureToken(parsed.data.token);
+      const link = await db.first(
+        "SELECT * FROM secure_links WHERE token_hash=?",
+        [tokenHash],
+      );
+      if (!link)
+        return json(
+          { error: "This secure link is invalid or unavailable." },
+          404,
+        );
+      const status = secureLinkStatus(link, now);
+      if (status !== "ACTIVE")
+        return json(
+          { error: `This secure link is ${status.toLowerCase()}.` },
+          409,
+        );
+      const usedAt = now.toISOString();
+      const results = await db.batch([
+        {
+          sql: "UPDATE secure_links SET used_at=?,last_used_at=?,use_count=use_count+1,updated_at=datetime('now') WHERE id=? AND revoked_at IS NULL AND used_at IS NULL AND expires_at>?",
+          params: [usedAt, usedAt, Number(link.id), usedAt],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',?,'SECURE_LINK_USED',?,? WHERE changes()>0",
+          params: [
+            Number(link.reservation_id),
+            identity.email,
+            JSON.stringify({
+              linkId: link.id,
+              purpose: link.purpose,
+              usedAt,
+              fingerprint: link.token_fingerprint,
+              synthetic: true,
+              replayProtected: true,
+              workflowAction: "NOT_EXECUTED",
+            }),
+          ],
+        },
+      ]);
+      if (!results[0]?.changes)
+        return json({ error: "This secure link is no longer available." }, 409);
+      return json({
+        reservationId: link.reservation_id,
+        purpose: link.purpose,
+        status: "USED",
+        synthetic: true,
+        workflowAction: "NOT_EXECUTED",
+      });
+    }
+    let match = url.pathname.match(/^\/api\/reservations\/(\d+)$/);
+    if (method === "GET" && match) {
+      const result = await reservationDetail(db, Number(match[1]), now);
+      return result
+        ? json(result)
+        : json({ error: "Reservation not found." }, 404);
+    }
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/communications$/);
+    if (method === "GET" && match) {
+      const id = Number(match[1]);
+      const row = await db.first(
+        `SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,c.email customer_email,(SELECT delivery_charge_cents FROM booking_intent_conversions bic JOIN booking_intents bi ON bi.id=bic.intent_id WHERE bic.reservation_id=r.id) delivery_charge_cents FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,
+        [id],
+      );
+      if (!row) throw new Error("Reservation not found.");
+      const readiness: Record<string, { ready: boolean; blockers: string[] }> =
+        {};
+      for (const key of communicationTemplateKeys) {
+        const result = await communicationReadiness(db, row, key);
+        readiness[key] = { ready: result.ready, blockers: result.blockers };
       }
-      const providerName=paymentProvider.provider;const results=await db.batch([{sql:'INSERT INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,provider_refund_id,idempotency_key,reason,breakdown_json,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,?,1)',params:[id,kind,status,amount,providerName,providerPaymentId||null,providerRefundId||null,parsed.data.idempotencyKey,parsed.data.reason,JSON.stringify({...payment.breakdown,action:parsed.data.action})]},audit(identity,'RESERVATION',id,'PAYMENT_LEDGER_APPENDED',{kind,status,amountCents:amount,provider:providerName,testOnly:true,idempotencyKey:parsed.data.idempotencyKey})]);return json({entryId:results[0]?.lastRowId,kind,status,amountCents:amount,testOnly:true,clientSecret,publishableKey:clientSecret?dependencies.stripePublishableKey:undefined},201);}
+      const records = await db.all<Record<string, unknown>>(
+        "SELECT id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,copied_at,safe_error_classification,created_at FROM communication_records WHERE reservation_id=? ORDER BY id DESC",
+        [id],
+      );
+      for (const record of records) {
+        record.latest_gmail_attempt =
+          (await db.first(
+            "SELECT attempt_number,state,safe_error_classification,attempted_at,completed_at FROM gmail_delivery_attempts WHERE communication_id=? ORDER BY id DESC LIMIT 1",
+            [Number(record.id)],
+          )) || null;
+      }
+      return json({
+        records,
+        readiness,
+        provider: { name: "GMAIL_TEST", sendAvailable: true },
+        legalReviewStatus: communicationTemplateManifest.legalReviewStatus,
+        templateManifest: communicationTemplateManifest,
+      });
+    }
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          templateKey: z.enum(communicationTemplateKeys),
+          idempotencyKey: z
+            .string()
+            .trim()
+            .min(12)
+            .max(120)
+            .regex(/^[A-Za-z0-9_-]+$/),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          {
+            error: "Select an approved communication type and idempotency key.",
+          },
+          400,
+        );
+      const prior = await db.first(
+        "SELECT * FROM communication_records WHERE idempotency_key=?",
+        [parsed.data.idempotencyKey],
+      );
+      if (prior) return json({ record: prior, idempotent: true });
+      const row = await db.first(
+        `SELECT r.*,t.name trailer_name,trim(coalesce(c.first_name,'')||' '||coalesce(c.last_name,'')) customer_name,c.email customer_email,(SELECT delivery_charge_cents FROM booking_intent_conversions bic JOIN booking_intents bi ON bi.id=bic.intent_id WHERE bic.reservation_id=r.id) delivery_charge_cents FROM reservations r JOIN trailers t ON t.id=r.trailer_id LEFT JOIN customers c ON c.id=r.customer_id WHERE r.id=?`,
+        [id],
+      );
+      if (!row) throw new Error("Reservation not found.");
+      if (Number(row.is_synthetic) !== 1)
+        return json(
+          {
+            error:
+              "Communication preparation is limited to synthetic staging records.",
+          },
+          403,
+        );
+      const readiness = await communicationReadiness(
+        db,
+        row,
+        parsed.data.templateKey,
+      );
+      if (!readiness.ready)
+        return json(
+          {
+            error: "Communication prerequisites are incomplete.",
+            blockers: readiness.blockers,
+          },
+          409,
+        );
+      const breakdown = paymentBreakdown({
+        rentalChargeCents: Number(row.rental_charge_cents),
+        dollyDays: Number(row.dolly_days),
+        deliveryChargeCents: Number(row.delivery_charge_cents || 0),
+      });
+      const choice = String(
+        readiness.agreement?.pickup_inspection_choice || "DECLINE_FORM",
+      ) as InspectionChoice;
+      const deposit = readiness.deposit;
+      const rendered = renderCommunication(parsed.data.templateKey, {
+        customerName: String(row.customer_name || ""),
+        confirmationCode: String(row.confirmation_code),
+        pickupAt: String(row.pickup_at),
+        returnAt: String(row.return_at),
+        trailerName: String(row.trailer_name),
+        fulfillment:
+          Number(row.delivery_requested) === 1
+            ? "Approved delivery"
+            : "Customer pickup",
+        deliverySummary:
+          Number(row.delivery_requested) === 1
+            ? "Owner-approved delivery details are stored with the reservation."
+            : null,
+        rentalCents: breakdown.rentalCents,
+        dollyCents: breakdown.dollyCents,
+        deliveryCents: breakdown.deliveryCents,
+        depositCents: breakdown.depositCents,
+        totalCents: breakdown.totalCents,
+        inspectionChoice: choice,
+        depositDecision: deposit
+          ? (String(deposit.decision) as "RELEASE_RECORDED" | "RETAIN_RECORDED")
+          : null,
+        depositAmountCents: Number(deposit?.amount_cents || 0),
+        refundCompleted: Boolean(readiness.refund),
+        supportEmailLabel: "Trailer Bros Gmail sender identity",
+        voiceContactPlaceholder:
+          "[Trailer Bros Google Voice contact configured at send time]",
+      });
+      const sourceTemplateHash = await communicationHash(
+        communicationTemplateManifest,
+      );
+      const renderedContentHash = await communicationHash(
+        `${rendered.subject}\n${rendered.plainText}\n${rendered.html}`,
+      );
+      const renderedAt = iso(now);
+      const noSend = await createNoSendCommunicationProvider().prepare({
+        recipient: String(row.customer_email || ""),
+        subject: rendered.subject,
+        body: rendered.plainText,
+        idempotencyKey: parsed.data.idempotencyKey,
+      });
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO communication_records(reservation_id,communication_type,recipient,template_key,template_version,source_template_hash,rendered_content_hash,subject_text,body_text,body_html,state,status,idempotency_key,rendered_at,prepared_at,safe_error_classification,actor,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,?,?,'PREVIEWED',?,?,?,?,?,1)",
+          params: [
+            id,
+            rendered.templateKey,
+            String(row.customer_email || ""),
+            rendered.templateKey,
+            rendered.templateVersion,
+            sourceTemplateHash,
+            renderedContentHash,
+            rendered.subject,
+            rendered.plainText,
+            rendered.html,
+            noSend.state,
+            parsed.data.idempotencyKey,
+            renderedAt,
+            renderedAt,
+            noSend.safeErrorClassification,
+            identity.email,
+          ],
+        },
+        audit(identity, "RESERVATION", id, "COMMUNICATION_PREPARED", {
+          communicationType: rendered.templateKey,
+          templateVersion: rendered.templateVersion,
+          sourceTemplateHash,
+          renderedContentHash,
+          formats: ["text/plain", "text/html"],
+          inspectionChoice: choice,
+          inspectionLinkIncluded: choice === "SEND_FORM",
+          authoritativePrerequisites: true,
+          provider: "NO_SEND",
+          deliveryAction: "NOT_EXECUTED",
+          synthetic: true,
+        }),
+      ]);
+      return json(
+        {
+          id: results[0]?.lastRowId,
+          ...rendered,
+          state: noSend.state,
+          renderedAt,
+          sourceTemplateHash,
+          renderedContentHash,
+          inspectionLinkIncluded: choice === "SEND_FORM",
+          sendAvailable: false,
+        },
+        201,
+      );
+    }
+    match = url.pathname.match(
+      /^\/api\/communications\/(\d+)\/gmail-test-send$/,
+    );
+    if (method === "POST" && match) {
+      if (environment.ENVIRONMENT !== "staging")
+        return json({ error: "Gmail test delivery is staging-only." }, 403);
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          confirm: z.literal(true),
+          idempotencyKey: z
+            .string()
+            .trim()
+            .min(12)
+            .max(120)
+            .regex(/^[A-Za-z0-9_-]+$/),
+          retryOverrideReason: z.string().trim().min(8).max(240).optional(),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          {
+            error:
+              "Explicit confirmation and a valid idempotency key are required.",
+          },
+          400,
+        );
+      const config = gmailConfiguration(environment);
+      if (!config.configured || !config.configuration)
+        return json({ error: "Gmail delivery is not configured." }, 503);
+      const record = await db.first<Record<string, unknown>>(
+        "SELECT * FROM communication_records WHERE id=?",
+        [id],
+      );
+      if (!record || Number(record.is_synthetic) !== 1)
+        return json(
+          { error: "Synthetic communication preview not found." },
+          404,
+        );
+      const reservationRow = await db.first<Record<string, unknown>>(
+        "SELECT * FROM reservations WHERE id=?",
+        [Number(record.reservation_id)],
+      );
+      if (!reservationRow)
+        return json({ error: "Reservation not found." }, 404);
+      const readiness = await communicationReadiness(
+        db,
+        reservationRow,
+        String(record.communication_type) as CommunicationTemplateKey,
+      );
+      if (!readiness.ready)
+        return json(
+          {
+            error: "Communication prerequisites are incomplete.",
+            blockers: readiness.blockers,
+          },
+          409,
+        );
+      const prior = await db.first<Record<string, unknown>>(
+        "SELECT * FROM gmail_delivery_attempts WHERE communication_id=? ORDER BY id DESC LIMIT 1",
+        [id],
+      );
+      if (
+        prior &&
+        ["SENDING", "ACCEPTED_BY_GMAIL"].includes(String(prior.state))
+      )
+        return json(
+          {
+            error:
+              "This communication is already sending or was accepted by Gmail.",
+          },
+          409,
+        );
+      if (prior && !parsed.data.retryOverrideReason)
+        return json(
+          {
+            error:
+              "A failed or unknown attempt requires an owner retry reason.",
+          },
+          409,
+        );
+      const connection = await db.first<Record<string, unknown>>(
+        "SELECT * FROM gmail_connections WHERE status='CONNECTED' ORDER BY id DESC LIMIT 1",
+      );
+      if (
+        !connection ||
+        Date.parse(String(connection.token_expires_at)) <= now.getTime()
+      )
+        return json(
+          { error: "Gmail authorization is unavailable or expired." },
+          503,
+        );
+      const bundle = JSON.parse(
+        await decryptToken(
+          {
+            ciphertext: String(connection.encrypted_token_bundle),
+            iv: String(connection.token_iv),
+            keyVersion: String(connection.key_version),
+          },
+          config.configuration.tokenEncryptionKey,
+        ),
+      ) as { accessToken: string };
+      const stableMessageId = `tb-${String(record.rendered_content_hash).slice(0, 32)}`;
+      const agreementAttachment = String(record.communication_type) === "BOOKING_CONFIRMATION"
+        ? await db.first<Record<string, unknown>>(
+            "SELECT d.document_hash,d.template_version,d.content_type,d.content_text FROM agreement_documents d JOIN agreement_instances a ON a.id=d.agreement_id WHERE a.reservation_id=? AND a.status='SIGNED' ORDER BY d.id DESC LIMIT 1",
+            [Number(record.reservation_id)],
+          )
+        : null;
+      if (String(record.communication_type) === "BOOKING_CONFIRMATION" && (
+        !agreementAttachment ||
+        String(agreementAttachment.template_version) !== AGREEMENT_SOURCE_VERSION ||
+        String(agreementAttachment.content_type) !== "application/pdf;base64"
+      )) return json({error:"The current immutable agreement PDF must be generated before sending this booking confirmation."},409);
+      const attemptNumber = Number(prior?.attempt_number || 0) + 1;
+      await db.batch([
+        {
+          sql: "INSERT INTO gmail_delivery_attempts(communication_id,attempt_number,idempotency_key,stable_message_id,state,attempted_at,actor,is_synthetic) VALUES (?,?,?,?,'SENDING',?,?,1)",
+          params: [
+            id,
+            attemptNumber,
+            parsed.data.idempotencyKey,
+            stableMessageId,
+            iso(now),
+            identity.email,
+          ],
+        },
+        audit(
+          identity,
+          "RESERVATION",
+          Number(record.reservation_id),
+          "GMAIL_TEST_SEND_STARTED",
+          {
+            communicationId: id,
+            attemptNumber,
+            recipientRestrictedToOwner: true,
+            synthetic: true,
+          },
+        ),
+      ]);
+      const result = await (
+        dependencies.gmailTransport || createGmailTransport()
+      ).send({
+        accessToken: bundle.accessToken,
+        sender: config.configuration.approvedSender,
+        recipient: config.configuration.testRecipient,
+        subject: String(record.subject_text),
+        body: String(record.body_text),
+        htmlBody: String(record.body_html || ""),
+        stableMessageId,
+        attachment: agreementAttachment ? {
+          filename: `Trailer-Bros-Rental-Agreement-${AGREEMENT_SOURCE_VERSION}.pdf`,
+          contentType: "application/pdf",
+          base64Content: String(agreementAttachment.content_text),
+        } : undefined,
+      });
+      await db.batch([
+        {
+          sql: "UPDATE gmail_delivery_attempts SET state=?,provider_message_id=?,safe_error_classification=?,completed_at=? WHERE communication_id=? AND attempt_number=? AND state='SENDING'",
+          params: [
+            result.state,
+            result.providerMessageId || null,
+            result.safeErrorClassification || null,
+            iso(now),
+            id,
+            attemptNumber,
+          ],
+        },
+        audit(
+          identity,
+          "RESERVATION",
+          Number(record.reservation_id),
+          "GMAIL_TEST_SEND_RECORDED",
+          {
+            communicationId: id,
+            attemptNumber,
+            state: result.state,
+            acceptedByProvider: result.state === "ACCEPTED_BY_GMAIL",
+            deliveryOrReadClaim: false,
+            recipientRestrictedToOwner: true,
+            formats: ["text/plain", "text/html"],
+            agreementAttachment: agreementAttachment ? {
+              included: true,
+              documentHash: agreementAttachment.document_hash,
+              templateVersion: agreementAttachment.template_version,
+              contentType: "application/pdf",
+            } : { included: false },
+            synthetic: true,
+          },
+        ),
+      ]);
+      return json(
+        {
+          state: result.state,
+          acceptedByGmail: result.state === "ACCEPTED_BY_GMAIL",
+          deliveryConfirmed: false,
+          readConfirmed: false,
+          safeErrorClassification: result.safeErrorClassification || null,
+        },
+        result.state === "ACCEPTED_BY_GMAIL"
+          ? 202
+          : result.state === "FAILED"
+            ? 502
+            : 503,
+      );
+    }
+    match = url.pathname.match(/^\/api\/communications\/(\d+)\/copied$/);
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const record = await db.first(
+        "SELECT * FROM communication_records WHERE id=?",
+        [id],
+      );
+      if (!record)
+        return json({ error: "Communication preview not found." }, 404);
+      const copiedAt = iso(now);
+      await db.batch([
+        {
+          sql: "UPDATE communication_records SET state='COPIED',status='COPIED',copied_at=? WHERE id=?",
+          params: [copiedAt, id],
+        },
+        audit(
+          identity,
+          "RESERVATION",
+          Number(record.reservation_id),
+          "COMMUNICATION_COPIED",
+          {
+            communicationId: id,
+            communicationType: record.communication_type,
+            copiedAt,
+            deliveryAction: "NOT_EXECUTED",
+            synthetic: true,
+          },
+        ),
+      ]);
+      return json({ id, state: "COPIED", copiedAt });
+    }
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/agreements$/);
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const row = await db.first(
+        `SELECT r.*,c.first_name,c.last_name,c.email,c.phone,t.name trailer_name,t.unit_code FROM reservations r LEFT JOIN customers c ON c.id=r.customer_id JOIN trailers t ON t.id=r.trailer_id WHERE r.id=?`,
+        [id],
+      );
+      if (!row) throw new Error("Reservation not found.");
+      const content = internalAgreementSource;
+      const hash = await agreementTemplateHash(content);
+      const renderedAt = iso(now);
+      const renterSnapshot = {
+        name: `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+        email: row.email || null,
+        phone: row.phone || null,
+      };
+      const reservationSnapshot = {
+        reservationId: id,
+        confirmationCode: row.confirmation_code,
+        trailerName: row.trailer_name,
+        unitCode: row.unit_code,
+        pickupAt: row.pickup_at,
+        returnAt: row.return_at,
+        channel: row.channel,
+        source: row.external_source || null,
+      };
+      const quoteSnapshot = {
+        rentalChargeCents: row.rental_charge_cents,
+        dollyDays: row.dolly_days,
+        securityDepositCents: 10000,
+        paymentAction: "NOT_EXECUTED",
+      };
+      await db.batch([
+        {
+          sql: "INSERT OR IGNORE INTO agreement_templates(version,source_manifest_version,content_json,content_hash,legal_review_status,is_synthetic) VALUES (?,?,?,?,?,1)",
+          params: [
+            content.sourceVersion,
+            content.sourceVersion,
+            JSON.stringify(content),
+            hash,
+            AGREEMENT_LEGAL_STATUS,
+          ],
+        },
+        {
+          sql: `INSERT INTO agreement_instances(reservation_id,template_id,status,template_version,template_hash,renter_snapshot_json,reservation_snapshot_json,quote_snapshot_json,rendered_at,is_synthetic) SELECT ?,id,'OPENED',version,content_hash,?,?,?,?,1 FROM agreement_templates WHERE content_hash=?`,
+          params: [
+            id,
+            JSON.stringify(renterSnapshot),
+            JSON.stringify(reservationSnapshot),
+            JSON.stringify(quoteSnapshot),
+            renderedAt,
+            hash,
+          ],
+        },
+        {
+          sql: "INSERT OR IGNORE INTO pickup_condition_choices(reservation_id,status,is_synthetic) VALUES (?,'PENDING',1)",
+          params: [id],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'AGREEMENT',id,'AGREEMENT_OPENED',?,? FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC LIMIT 1",
+          params: [
+            identity.email,
+            JSON.stringify({
+              templateVersion: content.sourceVersion,
+              templateHash: hash,
+              renderedAt,
+              synthetic: true,
+              deliveryAction: "NOT_EXECUTED",
+            }),
+            id,
+          ],
+        },
+      ]);
+      const created = await db.first(
+        "SELECT id,status,template_version,template_hash,rendered_at FROM agreement_instances WHERE reservation_id=? ORDER BY id DESC",
+        [id],
+      );
+      return json(created, 201);
+    }
 
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/payment-reconcile$/);
-    if(method==='POST'&&match){const id=Number(match[1]);if(paymentProvider.provider!=='STRIPE_TEST')return json({error:'Stripe test reconciliation is not configured.'},503);const payment=await reservationPayment(db,id);const blockers=await paymentReadiness(db,payment.row);if(blockers.length)return json({error:'Payment readiness checks no longer pass.',blockers},409);const pending=await db.first<{provider_payment_id:string;amount_cents:number}>('SELECT provider_payment_id,amount_cents FROM payment_ledger_entries WHERE reservation_id=? AND kind=\'PAYMENT_PENDING\' ORDER BY id DESC',[id]);if(!pending?.provider_payment_id)return json({error:'No pending Stripe test payment is available.'},409);const result=await paymentProvider.retrievePayment(String(pending.provider_payment_id));if(result.status==='PROCESSING'||result.status==='REQUIRES_CONFIRMATION')return json({status:result.status,reconciled:false});const priorOutcome=await existingPaymentOutcome(db,result.providerPaymentId);if(priorOutcome)return json({status:result.status,reconciled:true,idempotent:true});const key=`stripe_reconcile_${result.providerPaymentId}_${result.status.toLowerCase()}`;const kind=result.status==='SUCCEEDED'?'PAYMENT_COLLECTED':'PAYMENT_FAILED';await db.batch([{sql:'INSERT INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,is_synthetic) VALUES (?,?,?,?,\'STRIPE_TEST\',?,?,\'Server-side Stripe test reconciliation\',1)',params:[id,kind,result.status,pending.amount_cents,result.providerPaymentId,key]},audit(identity,'RESERVATION',id,'PAYMENT_RECONCILED',{kind,status:result.status,provider:'STRIPE_TEST',testOnly:true})]);return json({status:result.status,reconciled:true});}
+    match = url.pathname.match(/^\/api\/agreements\/(\d+)\/sign$/);
+    if (method === "POST" && match) {
+      const agreementId = Number(match[1]);
+      const parsed = z
+        .object({
+          printedName: z.string().trim().min(3).max(120),
+          electronicRecordsConsent: z.literal(true),
+          termsAcknowledged: z.literal(true),
+          driverInsuranceAcknowledged: z.literal(true),
+          inspectionOpportunityAcknowledged: z.literal(true),
+          pickupInspectionChoice: z.enum(["SEND_FORM", "DECLINE_FORM"]),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          {
+            error:
+              "All acknowledgments, printed name, and one explicit pickup-condition inspection choice are required.",
+          },
+          400,
+        );
+      const agreement = await db.first(
+        "SELECT * FROM agreement_instances WHERE id=?",
+        [agreementId],
+      );
+      if (!agreement) return json({ error: "Agreement not found." }, 404);
+      if (agreement.status !== "OPENED")
+        return json({ error: "Only an opened agreement may be signed." }, 400);
+      const signedAt = iso(now);
+      const choice = parsed.data.pickupInspectionChoice;
+      const evidence = {
+        method: "SYNTHETIC_IN_PERSON_PREVIEW",
+        explicitAffirmativeAction: true,
+        externalSignatureProvider: false,
+        pickupInspectionChoice: choice,
+        attorneyReviewRequired: true,
+      };
+      const pickupStatement: SqlStatement =
+        choice === "DECLINE_FORM"
+          ? {
+              sql: `INSERT INTO pickup_condition_choices(reservation_id,status,decline_acknowledgment,decided_at,actor,is_synthetic) VALUES (?,'DECLINED',?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='DECLINED',checklist_json='{}',general_notes=NULL,marked_damage_json='[]',customer_acknowledged_at=NULL,decline_acknowledgment=excluded.decline_acknowledgment,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,
+              params: [
+                Number(agreement.reservation_id),
+                "Customer explicitly selected DECLINE_FORM in the signed agreement.",
+                signedAt,
+                identity.email,
+              ],
+            }
+          : {
+              sql: "INSERT INTO pickup_condition_choices(reservation_id,status,actor,is_synthetic) VALUES (?,'PENDING',?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='PENDING',decline_acknowledgment=NULL,decided_at=NULL,actor=excluded.actor,updated_at=datetime('now')",
+              params: [Number(agreement.reservation_id), identity.email],
+            };
+      await db.batch([
+        {
+          sql: "UPDATE agreement_instances SET status='SIGNED',electronic_consent_at=?,terms_acknowledged_at=?,driver_insurance_acknowledged_at=?,inspection_opportunity_acknowledged_at=?,pickup_inspection_choice=?,pickup_inspection_choice_at=?,signed_at=?,printed_name=?,signature_evidence_json=?,updated_at=datetime('now') WHERE id=? AND status='OPENED'",
+          params: [
+            signedAt,
+            signedAt,
+            signedAt,
+            signedAt,
+            choice,
+            signedAt,
+            signedAt,
+            parsed.data.printedName,
+            JSON.stringify(evidence),
+            agreementId,
+          ],
+        },
+        pickupStatement,
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'PICKUP_INSPECTION_CHOICE_RECORDED',?,?)",
+          params: [
+            agreementId,
+            identity.email,
+            JSON.stringify({
+              reservationId: agreement.reservation_id,
+              choice,
+              choiceAt: signedAt,
+              templateVersion: agreement.template_version,
+              templateHash: agreement.template_hash,
+              deliberate: true,
+              inferred: false,
+              attorneyReviewRequired: true,
+              synthetic: true,
+            }),
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'AGREEMENT_SIGNED',?,?)",
+          params: [
+            agreementId,
+            identity.email,
+            JSON.stringify({
+              signedAt,
+              printedName: parsed.data.printedName,
+              templateHash: agreement.template_hash,
+              explicitConsents: true,
+              pickupInspectionChoice: choice,
+              synthetic: true,
+            }),
+          ],
+        },
+      ]);
+      return json(
+        {
+          id: agreementId,
+          status: "SIGNED",
+          signedAt,
+          pickupInspectionChoice: choice,
+        },
+        201,
+      );
+    }
 
-    if(method==='POST'&&url.pathname==='/api/payments/webhooks/stripe')return handleStripeWebhookRequest(request,db,paymentProvider,now);
-    if(method==='POST'&&url.pathname==='/api/payments/webhooks/mock'){const raw=await request.text();let event;try{event=await paymentProvider.verifyWebhook(raw,request.headers.get('x-mock-signature')||'')}catch{return json({error:'Webhook verification failed.'},401)}const prior=await db.first('SELECT id FROM payment_webhook_events WHERE provider_event_id=?',[event.providerEventId]);if(prior)return json({duplicate:true,processed:false});const payloadHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw)))).map(value=>value.toString(16).padStart(2,'0')).join('');await db.batch([{sql:'INSERT INTO payment_webhook_events(provider_event_id,event_type,provider_payment_id,processing_status,sanitized_status,payload_hash,provider_created_at,processed_at,is_synthetic) VALUES (?,?,?,\'UNMATCHED\',?,?,?,?,1)',params:[event.providerEventId,event.type,event.providerPaymentId||null,event.status,payloadHash,event.createdAt,iso(now)]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('PAYMENT_WEBHOOK',last_insert_rowid(),'PAYMENT_WEBHOOK_RECONCILED',?,?)",params:[identity.email,JSON.stringify({providerEventId:event.providerEventId,eventType:event.type,status:event.status,processingStatus:'UNMATCHED',testOnly:true,payloadStored:false})]}]);return json({processed:false,duplicate:false,status:event.status,processingStatus:'UNMATCHED'},201);}
+    match = url.pathname.match(/^\/api\/agreements\/(\d+)\/render-document$/);
+    if (method === "POST" && match) {
+      const agreementId = Number(match[1]);
+      const agreement = await db.first(
+        "SELECT * FROM agreement_instances WHERE id=?",
+        [agreementId],
+      );
+      if (!agreement) return json({ error: "Agreement not found." }, 404);
+      if (agreement.status !== "SIGNED")
+        return json({ error: "Only a signed agreement may be rendered." }, 400);
+      const existing = await db.first(
+        "SELECT id,document_hash,renderer_version,template_version,generated_at FROM agreement_documents WHERE agreement_id=? ORDER BY id DESC LIMIT 1",
+        [agreementId],
+      );
+      if (existing)
+        return json({ ...existing, immutable: true, idempotent: true });
+      const template = await db.first(
+        "SELECT * FROM agreement_templates WHERE id=?",
+        [Number(agreement.template_id)],
+      );
+      if (!template) throw new Error("Agreement template not found.");
+      const pickup =
+        (await db.first(
+          "SELECT status,checklist_json,general_notes,marked_damage_json,customer_acknowledged_at,decline_acknowledgment,decided_at FROM pickup_condition_choices WHERE reservation_id=?",
+          [Number(agreement.reservation_id)],
+        )) || null;
+      const rendered = renderAgreementPdf({
+        agreement,
+        template,
+        pickupCondition: pickup,
+      });
+      const generatedAt = iso(now);
+      const hash = await agreementPdfHash(rendered.bytes);
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO agreement_documents(agreement_id,document_hash,renderer_version,template_version,content_type,content_text,generated_at,is_synthetic) VALUES (?,?,?,?,?,?,?,1)",
+          params: [
+            agreementId,
+            hash,
+            AGREEMENT_PDF_RENDERER_VERSION,
+            String(agreement.template_version),
+            "application/pdf;base64",
+            bytesToBase64(rendered.bytes),
+            generatedAt,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('AGREEMENT',?,'AGREEMENT_DOCUMENT_RENDERED',?,?)",
+          params: [
+            agreementId,
+            identity.email,
+            JSON.stringify({
+              documentHash: hash,
+              rendererVersion: AGREEMENT_PDF_RENDERER_VERSION,
+              templateVersion: agreement.template_version,
+              generatedAt,
+              immutable: true,
+              synthetic: true,
+            }),
+          ],
+        },
+      ]);
+      return json(
+        {
+          id: results[0]?.lastRowId,
+          documentHash: hash,
+          rendererVersion: AGREEMENT_PDF_RENDERER_VERSION,
+          templateVersion: agreement.template_version,
+          generatedAt,
+          pageCount: rendered.pageCount,
+          immutable: true,
+        },
+        201,
+      );
+    }
+    match = url.pathname.match(/^\/api\/agreement-documents\/(\d+)$/);
+    if (method === "GET" && match) {
+      const document = await db.first(
+        "SELECT content_text,content_type FROM agreement_documents WHERE id=?",
+        [Number(match[1])],
+      );
+      if (!document)
+        return json({ error: "Agreement document not found." }, 404);
+      const pdf=String(document.content_type)==='application/pdf;base64';
+      return new Response(pdf?base64ToBytes(String(document.content_text)):String(document.content_text), {
+        headers: {
+          "content-type": pdf?"application/pdf":"text/html; charset=utf-8",
+          "content-disposition":
+            `attachment; filename="trailer-bros-agreement.${pdf?'pdf':'html'}"`,
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
 
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/transition$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const parsed=z.object({to:z.enum(reservationStatuses),notes:z.string().trim().optional()}).safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const row=await reservation(db,id);if(!row)throw new Error('Reservation not found.');const from=row.status as ReservationStatus;const to=parsed.data.to;if(!canTransition(from,to))throw new Error(`Transition from ${from} to ${to} is not permitted.`);if(to==='CHECKED_OUT'&&!await db.first("SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='PICKUP'",[id]))throw new Error('A pickup inspection is required before check-out.');if(to==='INSPECTION_PENDING'&&!await db.first("SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='RETURN'",[id]))throw new Error('A return inspection is required first.');if(to==='COMPLETED'&&!await db.first('SELECT 1 present FROM deposit_decisions WHERE reservation_id=?',[id]))throw new Error('A deliberate deposit decision is required before completion.');await db.batch([{sql:"UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",params:[to,id]},audit(identity,'RESERVATION',id,'STATUS_TRANSITIONED',{from,to,notes:parsed.data.notes||null})]);return json(await reservation(db,id));}
+    match = url.pathname.match(
+      /^\/api\/reservations\/(\d+)\/pickup-condition\/(complete|decline)$/,
+    );
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      if (!(await reservation(db, id)))
+        throw new Error("Reservation not found.");
+      const action = match[2];
+      if (action === "complete") {
+        const parsed = z
+          .object({
+            checklist: z
+              .record(z.string(), z.boolean())
+              .refine((value) => Object.keys(value).length > 0),
+            generalNotes: z.string().trim().max(1000).optional(),
+            markedDamageAreas: z
+              .array(z.string().trim().min(1).max(80))
+              .max(30)
+              .default([]),
+            customerAcknowledged: z.literal(true),
+          })
+          .safeParse(await body(request));
+        if (!parsed.success)
+          return json(
+            {
+              error:
+                "Checklist answers and explicit customer acknowledgment are required.",
+            },
+            400,
+          );
+        const decidedAt = iso(now);
+        await db.batch([
+          {
+            sql: `INSERT INTO pickup_condition_choices(reservation_id,status,checklist_json,general_notes,marked_damage_json,customer_acknowledged_at,decided_at,actor,is_synthetic) VALUES (?,'COMPLETED',?,?,?,?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='COMPLETED',checklist_json=excluded.checklist_json,general_notes=excluded.general_notes,marked_damage_json=excluded.marked_damage_json,customer_acknowledged_at=excluded.customer_acknowledged_at,decline_acknowledgment=NULL,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,
+            params: [
+              id,
+              JSON.stringify(parsed.data.checklist),
+              parsed.data.generalNotes || null,
+              JSON.stringify(parsed.data.markedDamageAreas),
+              decidedAt,
+              decidedAt,
+              identity.email,
+            ],
+          },
+          audit(identity, "RESERVATION", id, "PICKUP_CONDITION_COMPLETED", {
+            decidedAt,
+            checklistKeys: Object.keys(parsed.data.checklist),
+            markedDamageCount: parsed.data.markedDamageAreas.length,
+            customerAcknowledged: true,
+            hostedPhotoUpload: false,
+            synthetic: true,
+          }),
+        ]);
+        return json({ reservationId: id, status: "COMPLETED", decidedAt }, 201);
+      }
+      const parsed = z
+        .object({
+          affirmativeDecline: z.literal(true),
+          acknowledgment: z.literal(
+            "I affirmatively decline the offered pre-pickup condition inspection.",
+          ),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          {
+            error:
+              "An affirmative inspection-decline acknowledgment is required.",
+          },
+          400,
+        );
+      const decidedAt = iso(now);
+      await db.batch([
+        {
+          sql: `INSERT INTO pickup_condition_choices(reservation_id,status,decline_acknowledgment,decided_at,actor,is_synthetic) VALUES (?,'DECLINED',?,?,?,1) ON CONFLICT(reservation_id) DO UPDATE SET status='DECLINED',checklist_json='{}',general_notes=NULL,marked_damage_json='[]',customer_acknowledged_at=NULL,decline_acknowledgment=excluded.decline_acknowledgment,decided_at=excluded.decided_at,actor=excluded.actor,updated_at=datetime('now')`,
+          params: [id, parsed.data.acknowledgment, decidedAt, identity.email],
+        },
+        audit(identity, "RESERVATION", id, "PICKUP_CONDITION_DECLINED", {
+          decidedAt,
+          affirmativeAction: true,
+          automaticDefectAcceptance: false,
+          automaticDepositForfeiture: false,
+          synthetic: true,
+        }),
+      ]);
+      return json({ reservationId: id, status: "DECLINED", decidedAt }, 201);
+    }
+    if (method === "POST" && url.pathname === "/api/reservations/external") {
+      const parsed = manualBooking.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const value = parsed.data;
+      validateBookingWindow(value.pickupAt, value.returnAt);
+      const names = value.customerName.split(/\s+/);
+      const last = names.pop() ?? "";
+      const first = names.join(" ");
+      const code = `EXT-${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
+      await db.batch([
+        {
+          sql: "INSERT INTO customers(first_name,last_name) VALUES (?,?)",
+          params: [first || last, first ? last : ""],
+        },
+        {
+          sql: "INSERT INTO reservations(confirmation_code,trailer_id,customer_id,channel,external_source,external_reference,status,pickup_at,return_at,rental_charge_cents,notes,is_synthetic) VALUES (?,?,last_insert_rowid(),'EXTERNAL',?,?,'PENDING_REVIEW',?,?,?,?,?)",
+          params: [
+            code,
+            value.trailerId,
+            value.source,
+            value.externalReference || null,
+            iso(value.pickupAt),
+            iso(value.returnAt),
+            value.rentalChargeCents,
+            value.notes || null,
+            value.isSynthetic ? 1 : 0,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',id,'EXTERNAL_BOOKING_CREATED',?,? FROM reservations WHERE confirmation_code=?",
+          params: [
+            identity.email,
+            JSON.stringify({
+              source: value.source,
+              isSynthetic: value.isSynthetic,
+            }),
+            code,
+          ],
+        },
+      ]);
+      const created = await db.first(
+        "SELECT id FROM reservations WHERE confirmation_code=?",
+        [code],
+      );
+      return json({ id: Number(created?.id), confirmationCode: code }, 201);
+    }
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)$/);
+    if (method === "PATCH" && match) {
+      const id = Number(match[1]);
+      const parsed = editReservation.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const value = parsed.data;
+      validateBookingWindow(value.pickupAt, value.returnAt);
+      const before = await reservation(db, id);
+      if (!before) throw new Error("Reservation not found.");
+      if (["COMPLETED", "CANCELLED", "NO_SHOW"].includes(String(before.status)))
+        throw new Error("Terminal reservations cannot be edited.");
+      const after = {
+        ...before,
+        pickup_at: iso(value.pickupAt),
+        return_at: iso(value.returnAt),
+        notes: value.notes || null,
+        external_reference: value.externalReference || null,
+        rental_charge_cents: value.rentalChargeCents,
+        dolly_days: value.dollyDays,
+        version: value.version + 1,
+      };
+      const results = await db.batch([
+        {
+          sql: "UPDATE reservations SET pickup_at=?,return_at=?,notes=?,external_reference=?,rental_charge_cents=?,dolly_days=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?",
+          params: [
+            after.pickup_at as string,
+            after.return_at as string,
+            after.notes as SqlValue,
+            after.external_reference as SqlValue,
+            value.rentalChargeCents,
+            value.dollyDays,
+            id,
+            value.version,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) SELECT 'RESERVATION',?,'RESERVATION_EDITED',?,? WHERE changes()>0",
+          params: [
+            id,
+            identity.email,
+            JSON.stringify({ reason: value.reason, before, after }),
+          ],
+        },
+      ]);
+      if (!results[0]?.changes)
+        throw new Error(
+          "This reservation changed since it was opened. Refresh and try again.",
+        );
+      return json(await reservation(db, id));
+    }
 
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/outcome$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const parsed=z.object({type:z.enum(['CANCELLATION','NO_SHOW']),notes:z.string().trim().min(2)}).safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const row=await reservation(db,id);if(!row)throw new Error('Reservation not found.');const from=row.status as ReservationStatus;const to=parsed.data.type==='NO_SHOW'?'NO_SHOW':'CANCELLED';if(!canTransition(from,to))throw new Error(`${parsed.data.type==='NO_SHOW'?'No-show':'Cancellation'} is not permitted from ${from}.`);const decidedAt=now;const outcome=cancellationOutcome({pickupAt:new Date(row.pickup_at as string),decidedAt,rentalChargeCents:Number(row.rental_charge_cents),noShow:parsed.data.type==='NO_SHOW'});await db.batch([{sql:'INSERT INTO cancellation_outcomes(reservation_id,type,decided_at,notice_hours,rental_refund_cents,retained_cents,notes) VALUES (?,?,?,?,?,?,?)',params:[id,parsed.data.type,iso(decidedAt),Math.floor(outcome.noticeHours),outcome.rentalRefundCents,outcome.retainedCents,parsed.data.notes]},{sql:"UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",params:[to,id]},audit(identity,'RESERVATION',id,'CANCELLATION_OUTCOME_RECORDED',{...outcome,type:parsed.data.type,paymentAction:'NOT_EXECUTED'})]);return json(outcome,201);}
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/payment-preview$/);
+    if (method === "GET" && match) {
+      const id = Number(match[1]);
+      const payment = await reservationPayment(db, id);
+      const blockers = await paymentReadiness(db, payment.row);
+      return json({
+        breakdown: payment.breakdown,
+        ledger: payment.ledger,
+        ready: blockers.length === 0,
+        blockers,
+        testOnly: true,
+        provider: paymentProvider.provider,
+        stripeTestConfigured: paymentProvider.provider === "STRIPE_TEST",
+        publishableKey:
+          paymentProvider.provider === "STRIPE_TEST"
+            ? dependencies.stripePublishableKey
+            : undefined,
+        liveProcessorConnected: false,
+        collectedRevenueAvailable: true,
+      });
+    }
 
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/inspections\/(pickup|return)$/i);
-    if(method==='POST'&&match){const id=Number(match[1]);const type=match[2].toUpperCase();const parsed=inspection.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const row=await reservation(db,id);if(!row)throw new Error('Reservation not found.');if(type==='PICKUP'&&row.status!=='CONFIRMED')throw new Error('Pickup inspection requires a confirmed reservation.');if(type==='RETURN'&&row.status!=='CHECKED_OUT')throw new Error('Return inspection requires a checked-out reservation.');const value=parsed.data;const to=type==='PICKUP'?'CHECKED_OUT':'INSPECTION_PENDING';const statements:SqlStatement[]=[{sql:'INSERT INTO condition_inspections(reservation_id,type,condition_notes,usage_trip_notes,damage_found,damage_notes,inspected_at,actor) VALUES (?,?,?,?,?,?,?,?)',params:[id,type,value.conditionNotes,value.usageTripNotes||null,value.damageFound?1:0,value.damageNotes||null,iso(now),identity.email]}];for(const reference of value.photoReferences)statements.push({sql:'INSERT INTO inspection_photos(inspection_id,local_reference,caption) SELECT id,?,? FROM condition_inspections WHERE reservation_id=? AND type=?',params:[reference,'Local metadata only; no hosted attachment',id,type]});statements.push({sql:"UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",params:[to,id]},audit(identity,'RESERVATION',id,`${type}_INSPECTION_RECORDED`,{photoMetadataCount:value.photoReferences.length,hostedPhotoUpload:false,damageFound:value.damageFound,statusTransition:to}));const results=await db.batch(statements);return json({id:results[0]?.lastRowId,status:to,hostedPhotoUpload:false},201);}
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/payment-actions$/);
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          action: z.enum([
+            "COLLECT",
+            "FULL_REFUND",
+            "POLICY_REFUND",
+            "DEPOSIT_RELEASE",
+            "DEPOSIT_RETAIN",
+          ]),
+          idempotencyKey: paymentIdempotency,
+          reason: z.string().trim().min(3).max(300),
+          amountCents: z.coerce.number().int().nonnegative().optional(),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const existing = await db.first(
+        "SELECT * FROM payment_ledger_entries WHERE idempotency_key=?",
+        [parsed.data.idempotencyKey],
+      );
+      if (existing) return json({ entry: existing, idempotent: true });
+      const payment = await reservationPayment(db, id);
+      if (Number(payment.row.is_synthetic) !== 1)
+        return json(
+          {
+            error:
+              "Payment rehearsal is limited to synthetic staging reservations.",
+          },
+          403,
+        );
+      let kind = "PAYMENT_COLLECTED",
+        amount = payment.breakdown.totalCents,
+        providerPaymentId: string | undefined,
+        providerRefundId: string | undefined,
+        clientSecret: string | undefined,
+        status = "SUCCEEDED";
+      if (parsed.data.action === "COLLECT") {
+        const blockers = await paymentReadiness(db, payment.row);
+        if (blockers.length)
+          return json(
+            { error: "Payment readiness checks did not pass.", blockers },
+            409,
+          );
+        if (
+          await db.first(
+            "SELECT 1 present FROM payment_ledger_entries WHERE reservation_id=? AND kind IN ('PAYMENT_PENDING','PAYMENT_COLLECTED')",
+            [id],
+          )
+        )
+          return json(
+            {
+              error:
+                "A Stripe test payment is already pending or collected for this reservation.",
+            },
+            409,
+          );
+        const result = await paymentProvider.createPayment({
+          amountCents: amount,
+          currency: "usd",
+          idempotencyKey: parsed.data.idempotencyKey,
+          metadata: { reservationId: String(id), synthetic: "true" },
+        });
+        providerPaymentId = result.providerPaymentId;
+        clientSecret = result.clientSecret;
+        status = result.status;
+        kind =
+          result.status === "SUCCEEDED"
+            ? "PAYMENT_COLLECTED"
+            : result.status === "FAILED"
+              ? "PAYMENT_FAILED"
+              : "PAYMENT_PENDING";
+      } else {
+        const collected = await db.first<{
+          provider_payment_id: string;
+          amount_cents: number;
+        }>(
+          "SELECT provider_payment_id,amount_cents FROM payment_ledger_entries WHERE reservation_id=? AND kind='PAYMENT_COLLECTED' AND status='SUCCEEDED' ORDER BY id DESC",
+          [id],
+        );
+        if (!collected)
+          return json(
+            {
+              error:
+                "No successful synthetic payment is available for this action.",
+            },
+            409,
+          );
+        providerPaymentId = String(collected.provider_payment_id);
+        if (
+          parsed.data.action === "FULL_REFUND" ||
+          parsed.data.action === "POLICY_REFUND"
+        ) {
+          const outcome = await db.first<{ type: string; decided_at: string }>(
+            "SELECT type,decided_at FROM cancellation_outcomes WHERE reservation_id=?",
+            [id],
+          );
+          if (!outcome)
+            return json(
+              {
+                error:
+                  "A recorded cancellation or no-show outcome is required before refunding.",
+              },
+              409,
+            );
+          const policy = cancellationRefund({
+            paid: payment.breakdown,
+            pickupAt: new Date(String(payment.row.pickup_at)),
+            decidedAt: new Date(outcome.decided_at),
+            noShow: outcome.type === "NO_SHOW",
+          });
+          if (
+            parsed.data.action === "FULL_REFUND" &&
+            policy.policy !== "FULL_REFUND"
+          )
+            return json(
+              {
+                error:
+                  "The recorded cancellation outcome does not permit a full refund.",
+              },
+              409,
+            );
+          amount =
+            parsed.data.action === "FULL_REFUND"
+              ? Number(collected.amount_cents)
+              : policy.refundCents;
+        }
+        if (parsed.data.action === "DEPOSIT_RELEASE") {
+          if (
+            !(await db.first(
+              "SELECT 1 present FROM deposit_decisions WHERE reservation_id=? AND decision='RELEASE_RECORDED'",
+              [id],
+            ))
+          )
+            return json(
+              {
+                error:
+                  "A recorded clean-return deposit release decision is required.",
+              },
+              409,
+            );
+          if (
+            await db.first(
+              "SELECT 1 present FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND json_extract(breakdown_json,'$.action')='DEPOSIT_RELEASE'",
+              [id],
+            )
+          )
+            return json(
+              {
+                error:
+                  "The security deposit release has already been refunded.",
+              },
+              409,
+            );
+          amount = depositRefund(Number(collected.amount_cents));
+        }
+        if (parsed.data.action === "DEPOSIT_RETAIN") {
+          const decision = await db.first<{
+            amount_cents: number;
+            reason: string;
+            damage_notes: string;
+          }>(
+            "SELECT amount_cents,reason,damage_notes FROM deposit_decisions WHERE reservation_id=? AND decision='RETAIN_RECORDED'",
+            [id],
+          );
+          const inspectionRow = await db.first<{ id: number }>(
+            "SELECT id FROM condition_inspections WHERE reservation_id=? AND type='RETURN' ORDER BY id DESC",
+            [id],
+          );
+          if (!decision || !inspectionRow || !decision.damage_notes)
+            return json(
+              {
+                error:
+                  "A linked return inspection and documented damage-retain decision are required.",
+              },
+              409,
+            );
+          amount = Math.min(10_000, Number(decision.amount_cents));
+          kind = "DEPOSIT_RETAINED";
+          status = "SUCCEEDED";
+        } else {
+          const refunded = await db.first<{ total: number }>(
+            "SELECT coalesce(sum(amount_cents),0) total FROM payment_ledger_entries WHERE reservation_id=? AND kind='REFUND_SUCCEEDED' AND status='SUCCEEDED'",
+            [id],
+          );
+          if (
+            Number(refunded?.total || 0) + amount >
+            Number(collected.amount_cents)
+          )
+            return json(
+              {
+                error:
+                  "This refund would exceed the amount originally collected.",
+              },
+              409,
+            );
+          const result = await paymentProvider.createRefund({
+            providerPaymentId,
+            amountCents: amount,
+            idempotencyKey: parsed.data.idempotencyKey,
+            reason: parsed.data.reason,
+          });
+          providerRefundId = result.providerRefundId;
+          status = result.status;
+          kind =
+            result.status === "SUCCEEDED"
+              ? "REFUND_SUCCEEDED"
+              : "REFUND_FAILED";
+        }
+      }
+      const providerName = paymentProvider.provider;
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,provider_refund_id,idempotency_key,reason,breakdown_json,is_synthetic) VALUES (?,?,?,?,?,?,?,?,?,?,1)",
+          params: [
+            id,
+            kind,
+            status,
+            amount,
+            providerName,
+            providerPaymentId || null,
+            providerRefundId || null,
+            parsed.data.idempotencyKey,
+            parsed.data.reason,
+            JSON.stringify({
+              ...payment.breakdown,
+              action: parsed.data.action,
+            }),
+          ],
+        },
+        audit(identity, "RESERVATION", id, "PAYMENT_LEDGER_APPENDED", {
+          kind,
+          status,
+          amountCents: amount,
+          provider: providerName,
+          testOnly: true,
+          idempotencyKey: parsed.data.idempotencyKey,
+        }),
+      ]);
+      return json(
+        {
+          entryId: results[0]?.lastRowId,
+          kind,
+          status,
+          amountCents: amount,
+          testOnly: true,
+          clientSecret,
+          publishableKey: clientSecret
+            ? dependencies.stripePublishableKey
+            : undefined,
+        },
+        201,
+      );
+    }
 
-    match=url.pathname.match(/^\/api\/reservations\/(\d+)\/deposit-decision$/);
-    if(method==='POST'&&match){const id=Number(match[1]);const parsed=z.object({decision:z.enum(['RELEASE_RECORDED','RETAIN_RECORDED']),amountCents:z.coerce.number().int().nonnegative(),reason:z.string().trim().min(2),damageNotes:z.string().trim().optional()}).safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const row=await reservation(db,id);if(!row)throw new Error('Reservation not found.');if(row.status!=='INSPECTION_PENDING')throw new Error('Deposit decisions require Inspection Pending status.');if(!await db.first("SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='RETURN'",[id]))throw new Error('A completed return inspection is required.');const value=parsed.data;if(value.decision==='RETAIN_RECORDED'&&(value.amountCents<=0||!value.damageNotes))throw new Error('Damage retain requires amount, reason, and damage notes.');if(value.decision==='RELEASE_RECORDED'&&value.amountCents!==0)throw new Error('A release record must have a zero retained amount.');const results=await db.batch([{sql:'INSERT INTO deposit_decisions(reservation_id,decision,amount_cents,reason,damage_notes,decided_at,actor) VALUES (?,?,?,?,?,?,?)',params:[id,value.decision,value.amountCents,value.reason,value.damageNotes||null,iso(now),identity.email]},audit(identity,'RESERVATION',id,'DEPOSIT_DECISION_RECORDED',{...value,paymentAction:'NOT_EXECUTED'})]);return json({id:results[0]?.lastRowId,paymentAction:'NOT_EXECUTED'},201);}
+    match = url.pathname.match(
+      /^\/api\/reservations\/(\d+)\/payment-reconcile$/,
+    );
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      if (paymentProvider.provider !== "STRIPE_TEST")
+        return json(
+          { error: "Stripe test reconciliation is not configured." },
+          503,
+        );
+      const payment = await reservationPayment(db, id);
+      const blockers = await paymentReadiness(db, payment.row);
+      if (blockers.length)
+        return json(
+          { error: "Payment readiness checks no longer pass.", blockers },
+          409,
+        );
+      const pending = await db.first<{
+        provider_payment_id: string;
+        amount_cents: number;
+      }>(
+        "SELECT provider_payment_id,amount_cents FROM payment_ledger_entries WHERE reservation_id=? AND kind='PAYMENT_PENDING' ORDER BY id DESC",
+        [id],
+      );
+      if (!pending?.provider_payment_id)
+        return json(
+          { error: "No pending Stripe test payment is available." },
+          409,
+        );
+      const result = await paymentProvider.retrievePayment(
+        String(pending.provider_payment_id),
+      );
+      if (
+        result.status === "PROCESSING" ||
+        result.status === "REQUIRES_CONFIRMATION"
+      )
+        return json({ status: result.status, reconciled: false });
+      const priorOutcome = await existingPaymentOutcome(
+        db,
+        result.providerPaymentId,
+      );
+      if (priorOutcome)
+        return json({
+          status: result.status,
+          reconciled: true,
+          idempotent: true,
+        });
+      const key = `stripe_reconcile_${result.providerPaymentId}_${result.status.toLowerCase()}`;
+      const kind =
+        result.status === "SUCCEEDED" ? "PAYMENT_COLLECTED" : "PAYMENT_FAILED";
+      await db.batch([
+        {
+          sql: "INSERT INTO payment_ledger_entries(reservation_id,kind,status,amount_cents,provider,provider_payment_id,idempotency_key,reason,is_synthetic) VALUES (?,?,?,?,'STRIPE_TEST',?,?,'Server-side Stripe test reconciliation',1)",
+          params: [
+            id,
+            kind,
+            result.status,
+            pending.amount_cents,
+            result.providerPaymentId,
+            key,
+          ],
+        },
+        audit(identity, "RESERVATION", id, "PAYMENT_RECONCILED", {
+          kind,
+          status: result.status,
+          provider: "STRIPE_TEST",
+          testOnly: true,
+        }),
+      ]);
+      return json({ status: result.status, reconciled: true });
+    }
 
-    if(method==='POST'&&url.pathname==='/api/availability-blocks'){const parsed=blackout.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const value=parsed.data;validateBookingWindow(value.startAt,value.endAt);const results=await db.batch([{sql:'INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason,notes,is_synthetic) VALUES (?,?,?,?,?,?)',params:[value.trailerId,iso(value.startAt),iso(value.endAt),value.reason,value.notes||null,value.isSynthetic?1:0]},{sql:"INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('BLACKOUT',last_insert_rowid(),'BLACKOUT_CREATED',?,?)",params:[identity.email,JSON.stringify({...value,startAt:iso(value.startAt),endAt:iso(value.endAt)})]}]);return json({id:results[0]?.lastRowId},201);}
-    match=url.pathname.match(/^\/api\/availability-blocks\/(\d+)$/);
-    if(method==='PATCH'&&match){const id=Number(match[1]);const parsed=blackout.safeParse(await body(request));if(!parsed.success)return json({error:parsed.error.issues[0]?.message},400);const value=parsed.data;validateBookingWindow(value.startAt,value.endAt);const before=await db.first('SELECT * FROM availability_blocks WHERE id=?',[id]);if(!before)throw new Error('Blackout not found.');const after={...before,trailer_id:value.trailerId,start_at:iso(value.startAt),end_at:iso(value.endAt),reason:value.reason,notes:value.notes||null};await db.batch([{sql:"UPDATE availability_blocks SET trailer_id=?,start_at=?,end_at=?,reason=?,notes=?,updated_at=datetime('now') WHERE id=?",params:[value.trailerId,after.start_at as string,after.end_at as string,value.reason,value.notes||null,id]},audit(identity,'BLACKOUT',id,'BLACKOUT_EDITED',{before,after})]);return json({id});}
-    if(method==='DELETE'&&match){const id=Number(match[1]);const parsed=z.object({confirm:z.literal(true),reason:z.string().trim().min(2)}).safeParse(await body(request));if(!parsed.success)return json({error:'Confirmed deletion and a reason are required.'},400);const before=await db.first('SELECT * FROM availability_blocks WHERE id=?',[id]);if(!before)throw new Error('Blackout not found.');await db.batch([audit(identity,'BLACKOUT',id,'BLACKOUT_DELETED',{before,reason:parsed.data.reason}),{sql:'DELETE FROM availability_blocks WHERE id=?',params:[id]}]);return new Response(null,{status:204});}
-    return json({error:'Not found.'},404);
-  } catch(error){return failure(error);}
+    if (method === "POST" && url.pathname === "/api/payments/webhooks/stripe")
+      return handleStripeWebhookRequest(request, db, paymentProvider, now);
+    if (method === "POST" && url.pathname === "/api/payments/webhooks/mock") {
+      const raw = await request.text();
+      let event;
+      try {
+        event = await paymentProvider.verifyWebhook(
+          raw,
+          request.headers.get("x-mock-signature") || "",
+        );
+      } catch {
+        return json({ error: "Webhook verification failed." }, 401);
+      }
+      const prior = await db.first(
+        "SELECT id FROM payment_webhook_events WHERE provider_event_id=?",
+        [event.providerEventId],
+      );
+      if (prior) return json({ duplicate: true, processed: false });
+      const payloadHash = Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)),
+        ),
+      )
+        .map((value) => value.toString(16).padStart(2, "0"))
+        .join("");
+      await db.batch([
+        {
+          sql: "INSERT INTO payment_webhook_events(provider_event_id,event_type,provider_payment_id,processing_status,sanitized_status,payload_hash,provider_created_at,processed_at,is_synthetic) VALUES (?,?,?,'UNMATCHED',?,?,?,?,1)",
+          params: [
+            event.providerEventId,
+            event.type,
+            event.providerPaymentId || null,
+            event.status,
+            payloadHash,
+            event.createdAt,
+            iso(now),
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('PAYMENT_WEBHOOK',last_insert_rowid(),'PAYMENT_WEBHOOK_RECONCILED',?,?)",
+          params: [
+            identity.email,
+            JSON.stringify({
+              providerEventId: event.providerEventId,
+              eventType: event.type,
+              status: event.status,
+              processingStatus: "UNMATCHED",
+              testOnly: true,
+              payloadStored: false,
+            }),
+          ],
+        },
+      ]);
+      return json(
+        {
+          processed: false,
+          duplicate: false,
+          status: event.status,
+          processingStatus: "UNMATCHED",
+        },
+        201,
+      );
+    }
+
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/transition$/);
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          to: z.enum(reservationStatuses),
+          notes: z.string().trim().optional(),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const row = await reservation(db, id);
+      if (!row) throw new Error("Reservation not found.");
+      const from = row.status as ReservationStatus;
+      const to = parsed.data.to;
+      if (!canTransition(from, to))
+        throw new Error(`Transition from ${from} to ${to} is not permitted.`);
+      if (
+        to === "CHECKED_OUT" &&
+        !(await db.first(
+          "SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='PICKUP'",
+          [id],
+        ))
+      )
+        throw new Error("A pickup inspection is required before check-out.");
+      if (
+        to === "INSPECTION_PENDING" &&
+        !(await db.first(
+          "SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='RETURN'",
+          [id],
+        ))
+      )
+        throw new Error("A return inspection is required first.");
+      if (
+        to === "COMPLETED" &&
+        !(await db.first(
+          "SELECT 1 present FROM deposit_decisions WHERE reservation_id=?",
+          [id],
+        ))
+      )
+        throw new Error(
+          "A deliberate deposit decision is required before completion.",
+        );
+      await db.batch([
+        {
+          sql: "UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",
+          params: [to, id],
+        },
+        audit(identity, "RESERVATION", id, "STATUS_TRANSITIONED", {
+          from,
+          to,
+          notes: parsed.data.notes || null,
+        }),
+      ]);
+      return json(await reservation(db, id));
+    }
+
+    match = url.pathname.match(/^\/api\/reservations\/(\d+)\/outcome$/);
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          type: z.enum(["CANCELLATION", "NO_SHOW"]),
+          notes: z.string().trim().min(2),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const row = await reservation(db, id);
+      if (!row) throw new Error("Reservation not found.");
+      const from = row.status as ReservationStatus;
+      const to = parsed.data.type === "NO_SHOW" ? "NO_SHOW" : "CANCELLED";
+      if (!canTransition(from, to))
+        throw new Error(
+          `${parsed.data.type === "NO_SHOW" ? "No-show" : "Cancellation"} is not permitted from ${from}.`,
+        );
+      const decidedAt = now;
+      const outcome = cancellationOutcome({
+        pickupAt: new Date(row.pickup_at as string),
+        decidedAt,
+        rentalChargeCents: Number(row.rental_charge_cents),
+        noShow: parsed.data.type === "NO_SHOW",
+      });
+      await db.batch([
+        {
+          sql: "INSERT INTO cancellation_outcomes(reservation_id,type,decided_at,notice_hours,rental_refund_cents,retained_cents,notes) VALUES (?,?,?,?,?,?,?)",
+          params: [
+            id,
+            parsed.data.type,
+            iso(decidedAt),
+            Math.floor(outcome.noticeHours),
+            outcome.rentalRefundCents,
+            outcome.retainedCents,
+            parsed.data.notes,
+          ],
+        },
+        {
+          sql: "UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",
+          params: [to, id],
+        },
+        audit(identity, "RESERVATION", id, "CANCELLATION_OUTCOME_RECORDED", {
+          ...outcome,
+          type: parsed.data.type,
+          paymentAction: "NOT_EXECUTED",
+        }),
+      ]);
+      return json(outcome, 201);
+    }
+
+    match = url.pathname.match(
+      /^\/api\/reservations\/(\d+)\/inspections\/(pickup|return)$/i,
+    );
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const type = match[2].toUpperCase();
+      const parsed = inspection.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const row = await reservation(db, id);
+      if (!row) throw new Error("Reservation not found.");
+      if (type === "PICKUP" && row.status !== "CONFIRMED")
+        throw new Error("Pickup inspection requires a confirmed reservation.");
+      if (type === "RETURN" && row.status !== "CHECKED_OUT")
+        throw new Error(
+          "Return inspection requires a checked-out reservation.",
+        );
+      const value = parsed.data;
+      const to = type === "PICKUP" ? "CHECKED_OUT" : "INSPECTION_PENDING";
+      const statements: SqlStatement[] = [
+        {
+          sql: "INSERT INTO condition_inspections(reservation_id,type,condition_notes,usage_trip_notes,damage_found,damage_notes,inspected_at,actor) VALUES (?,?,?,?,?,?,?,?)",
+          params: [
+            id,
+            type,
+            value.conditionNotes,
+            value.usageTripNotes || null,
+            value.damageFound ? 1 : 0,
+            value.damageNotes || null,
+            iso(now),
+            identity.email,
+          ],
+        },
+      ];
+      for (const reference of value.photoReferences)
+        statements.push({
+          sql: "INSERT INTO inspection_photos(inspection_id,local_reference,caption) SELECT id,?,? FROM condition_inspections WHERE reservation_id=? AND type=?",
+          params: [
+            reference,
+            "Local metadata only; no hosted attachment",
+            id,
+            type,
+          ],
+        });
+      statements.push(
+        {
+          sql: "UPDATE reservations SET status=?,version=version+1,updated_at=datetime('now') WHERE id=?",
+          params: [to, id],
+        },
+        audit(identity, "RESERVATION", id, `${type}_INSPECTION_RECORDED`, {
+          photoMetadataCount: value.photoReferences.length,
+          hostedPhotoUpload: false,
+          damageFound: value.damageFound,
+          statusTransition: to,
+        }),
+      );
+      const results = await db.batch(statements);
+      return json(
+        { id: results[0]?.lastRowId, status: to, hostedPhotoUpload: false },
+        201,
+      );
+    }
+
+    match = url.pathname.match(
+      /^\/api\/reservations\/(\d+)\/deposit-decision$/,
+    );
+    if (method === "POST" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({
+          decision: z.enum(["RELEASE_RECORDED", "RETAIN_RECORDED"]),
+          amountCents: z.coerce.number().int().nonnegative(),
+          reason: z.string().trim().min(2),
+          damageNotes: z.string().trim().optional(),
+        })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const row = await reservation(db, id);
+      if (!row) throw new Error("Reservation not found.");
+      if (row.status !== "INSPECTION_PENDING")
+        throw new Error("Deposit decisions require Inspection Pending status.");
+      if (
+        !(await db.first(
+          "SELECT 1 present FROM condition_inspections WHERE reservation_id=? AND type='RETURN'",
+          [id],
+        ))
+      )
+        throw new Error("A completed return inspection is required.");
+      const value = parsed.data;
+      if (
+        value.decision === "RETAIN_RECORDED" &&
+        (value.amountCents <= 0 || !value.damageNotes)
+      )
+        throw new Error(
+          "Damage retain requires amount, reason, and damage notes.",
+        );
+      if (value.decision === "RELEASE_RECORDED" && value.amountCents !== 0)
+        throw new Error("A release record must have a zero retained amount.");
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO deposit_decisions(reservation_id,decision,amount_cents,reason,damage_notes,decided_at,actor) VALUES (?,?,?,?,?,?,?)",
+          params: [
+            id,
+            value.decision,
+            value.amountCents,
+            value.reason,
+            value.damageNotes || null,
+            iso(now),
+            identity.email,
+          ],
+        },
+        audit(identity, "RESERVATION", id, "DEPOSIT_DECISION_RECORDED", {
+          ...value,
+          paymentAction: "NOT_EXECUTED",
+        }),
+      ]);
+      return json(
+        { id: results[0]?.lastRowId, paymentAction: "NOT_EXECUTED" },
+        201,
+      );
+    }
+
+    if (method === "POST" && url.pathname === "/api/availability-blocks") {
+      const parsed = blackout.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const value = parsed.data;
+      validateBookingWindow(value.startAt, value.endAt);
+      const results = await db.batch([
+        {
+          sql: "INSERT INTO availability_blocks(trailer_id,start_at,end_at,reason,notes,is_synthetic) VALUES (?,?,?,?,?,?)",
+          params: [
+            value.trailerId,
+            iso(value.startAt),
+            iso(value.endAt),
+            value.reason,
+            value.notes || null,
+            value.isSynthetic ? 1 : 0,
+          ],
+        },
+        {
+          sql: "INSERT INTO audit_events(aggregate_type,aggregate_id,action,actor,payload_json) VALUES ('BLACKOUT',last_insert_rowid(),'BLACKOUT_CREATED',?,?)",
+          params: [
+            identity.email,
+            JSON.stringify({
+              ...value,
+              startAt: iso(value.startAt),
+              endAt: iso(value.endAt),
+            }),
+          ],
+        },
+      ]);
+      return json({ id: results[0]?.lastRowId }, 201);
+    }
+    match = url.pathname.match(/^\/api\/availability-blocks\/(\d+)$/);
+    if (method === "PATCH" && match) {
+      const id = Number(match[1]);
+      const parsed = blackout.safeParse(await body(request));
+      if (!parsed.success)
+        return json({ error: parsed.error.issues[0]?.message }, 400);
+      const value = parsed.data;
+      validateBookingWindow(value.startAt, value.endAt);
+      const before = await db.first(
+        "SELECT * FROM availability_blocks WHERE id=?",
+        [id],
+      );
+      if (!before) throw new Error("Blackout not found.");
+      const after = {
+        ...before,
+        trailer_id: value.trailerId,
+        start_at: iso(value.startAt),
+        end_at: iso(value.endAt),
+        reason: value.reason,
+        notes: value.notes || null,
+      };
+      await db.batch([
+        {
+          sql: "UPDATE availability_blocks SET trailer_id=?,start_at=?,end_at=?,reason=?,notes=?,updated_at=datetime('now') WHERE id=?",
+          params: [
+            value.trailerId,
+            after.start_at as string,
+            after.end_at as string,
+            value.reason,
+            value.notes || null,
+            id,
+          ],
+        },
+        audit(identity, "BLACKOUT", id, "BLACKOUT_EDITED", { before, after }),
+      ]);
+      return json({ id });
+    }
+    if (method === "DELETE" && match) {
+      const id = Number(match[1]);
+      const parsed = z
+        .object({ confirm: z.literal(true), reason: z.string().trim().min(2) })
+        .safeParse(await body(request));
+      if (!parsed.success)
+        return json(
+          { error: "Confirmed deletion and a reason are required." },
+          400,
+        );
+      const before = await db.first(
+        "SELECT * FROM availability_blocks WHERE id=?",
+        [id],
+      );
+      if (!before) throw new Error("Blackout not found.");
+      await db.batch([
+        audit(identity, "BLACKOUT", id, "BLACKOUT_DELETED", {
+          before,
+          reason: parsed.data.reason,
+        }),
+        { sql: "DELETE FROM availability_blocks WHERE id=?", params: [id] },
+      ]);
+      return new Response(null, { status: 204 });
+    }
+    return json({ error: "Not found." }, 404);
+  } catch (error) {
+    return failure(error);
+  }
 }

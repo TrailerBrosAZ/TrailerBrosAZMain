@@ -4,9 +4,9 @@ Delivery quoting is a protected-staging, server-only design. It uses one Google 
 
 ## Rules and persistence
 
-- Zone 1: 0–10 road miles, $20.
-- Zone 2: over 10–20 road miles, $40.
-- Zone 3: over 20–35 road miles, $60.
+- Delivery is $2.50 per one-way road mile.
+- The server-calculated road distance is rounded up to the next whole mile before pricing.
+- Example: 10.1 road miles bills as 11 miles, or $27.50.
 - Over 35 road miles is unavailable for online delivery.
 - Routing failure is retained as `ROUTING_UNAVAILABLE`, with no fee, for owner review.
 - Intent submission always recalculates server-side and stores the status, exact distance for the owner, zone, fee, and timestamp as a snapshot.

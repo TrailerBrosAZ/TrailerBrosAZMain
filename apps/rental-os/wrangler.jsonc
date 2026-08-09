@@ -1,6 +1,6 @@
 {
   "$schema":"./node_modules/wrangler/config-schema.json","name":"trailer-bros-rental-os-local","main":"src/worker/index.ts","compatibility_date":"2026-07-13","workers_dev":false,"preview_urls":false,
-  "assets":{"directory":"./dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":true},
+  "assets":{"directory":"./dist","binding":"ASSETS","not_found_handling":"single-page-application","html_handling":"none","run_worker_first":true},
   "d1_databases":[{"binding":"DB","database_name":"rental-os-local","database_id":"local-development-only","migrations_dir":"drizzle"}],
   "vars":{"ENVIRONMENT":"development","AUTH_MODE":"mock","ALLOWED_OWNER_EMAIL":"owner@example.test","ALLOWED_TESTER_EMAILS":""},
   "env":{"staging":{"name":"configure-during-phase-3-staging","workers_dev":false,"preview_urls":false,"vars":{"ENVIRONMENT":"staging","AUTH_MODE":"cloudflare-access","ALLOWED_OWNER_EMAIL":"CONFIGURE_DURING_PHASE_3","ALLOWED_TESTER_EMAILS":"CONFIGURE_DURING_EXTERNAL_TESTING","ACCESS_TEAM_DOMAIN":"CONFIGURE_DURING_PHASE_3","ACCESS_AUD":"CONFIGURE_DURING_PHASE_3"}},"production":{"name":"configure-after-staging-approval","workers_dev":false,"preview_urls":false,"vars":{"ENVIRONMENT":"production","AUTH_MODE":"cloudflare-access","ALLOWED_OWNER_EMAIL":"CONFIGURE_AFTER_STAGING_APPROVAL","ALLOWED_TESTER_EMAILS":"CONFIGURE_AFTER_PRODUCTION_APPROVAL","ACCESS_TEAM_DOMAIN":"CONFIGURE_AFTER_STAGING_APPROVAL","ACCESS_AUD":"CONFIGURE_AFTER_STAGING_APPROVAL"}}}

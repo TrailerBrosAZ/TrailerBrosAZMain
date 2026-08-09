@@ -6,7 +6,7 @@ The customer launch preview now presents the complete intended journey: authorit
 
 ## Customer experience
 
-The protected preview uses a focused five-step journey: authoritative availability, renter/trip details, review and qualification, agreement plus Stripe test-mode payment, and a clear booking outcome. Each step replaces the previous pane so the customer does not navigate a long implementation ledger. Live payment, public access, and unreviewed legal wording remain blocked.
+The protected preview uses a focused four-step journey: authoritative schedule and add-ons, renter/trip details, agreement with all qualification acknowledgments and signature evidence, and final review plus Stripe test-mode payment. A clear confirmation screen follows successful server-side reconciliation. Each step replaces the previous pane so the customer does not navigate a long implementation ledger. Live payment, public access, and unreviewed legal wording remain blocked.
 
 Payment is the last customer action. A browser success signal never confirms a booking. After signed-webhook reconciliation records collection, the server performs the separately idempotent final availability and evidence transaction. Only that successful server transaction produces the customer-facing confirmed state.
 
@@ -18,7 +18,8 @@ Payment is the last customer action. A browser success signal never confirms a b
 - Pickup and return are selected as separate calendar dates and constrained time choices. Times use 15-minute increments from 6:00 AM through 10:00 PM in `America/Phoenix`; arbitrary minute values are rejected by the shared rule and API.
 - Availability checks include persisted reservations in `Pending Review`, `Confirmed`, `Checked Out`, and `Inspection Pending`, plus all availability blocks.
 - Booking intents never block availability and never appear as reservations.
-- A standard qualified intent with no owner exception is `SUBMITTED` and has a 30-minute quote/checkout-validity window.
+- A standard qualified intent with no owner exception is `SUBMITTED` and has a 15-minute quote/checkout-validity window. After a successful availability check, an authoritative 15-minute checkout hold blocks overlapping reservations and blackouts. The opaque raw hold token remains in the browser only; D1 stores its hash.
+- The customer sees a persistent countdown. Expiration retains the hold and intent records for audit but releases availability and requires a fresh availability, qualification, and quote check.
 - An interstate or delivery request is explicitly `REVIEW_REQUIRED` and remains available for owner review for 24 hours.
 - Both states remain non-blocking. Owner review or future approval does not reserve dates or guarantee availability.
 - After either window ends, the operational state is `EXPIRED`; the record and audit history are retained rather than deleted. Expiration means pricing, qualification answers, and authoritative availability must all be revalidated before proceeding.

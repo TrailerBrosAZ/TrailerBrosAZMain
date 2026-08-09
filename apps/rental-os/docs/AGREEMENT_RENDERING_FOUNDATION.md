@@ -1,6 +1,6 @@
 # Agreement rendering foundation
 
-The owner-only staging application can render a signed synthetic agreement snapshot into deterministic, print-ready HTML. The immutable document includes the source template version and attorney-review flag, renter/reservation/quote snapshots, explicit acknowledgment timestamps, signature evidence, and pickup-condition choice. It records a SHA-256 content hash, renderer version, generation time, and audit event.
+The owner-only staging application renders a signed synthetic agreement snapshot into a deterministic PDF. The immutable document includes canonical source version `TB-RA-2026-08-v1`, its SHA-256 source hash, owner-draft/attorney-review status, renter/reservation/quote snapshots, explicit acknowledgment timestamps, drawn signature evidence, and pickup-condition choice. It records a PDF SHA-256 content hash, renderer version, generation time, and audit event.
 
 The database rejects update or deletion of generated documents. Repeated generation is idempotent and returns the existing artifact. The protected download uses `no-store` and `nosniff` headers.
 

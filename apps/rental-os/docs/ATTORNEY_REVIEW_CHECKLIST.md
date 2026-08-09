@@ -31,7 +31,7 @@ Use this checklist to document counsel's decisions for a specific agreement vers
 
 - [ ] Pickup inspection offer/decline, return inspection, damage documentation, ordinary wear, valuation, customer notice, and dispute opportunity are fair.
 - [ ] Deposit-retain process requires adequate evidence, reason, amount, and customer communication.
-- [ ] Delivery approval, distance zones, address handling, failed routing, handoff, and online unavailability beyond 35 miles are sufficiently disclosed.
+- [ ] Delivery approval, $2.50-per-one-way-road-mile calculation, whole-mile rounding, address handling, failed routing, and owner-review handoff are sufficiently disclosed.
 - [ ] Governing law, Maricopa County venue, dispute process, indemnity, waiver, limitation of liability, repossession, default, attorney fees, and collection remedies are enforceable and appropriately scoped.
 - [ ] Any prohibited, unconscionable, misleading, or regulated wording is identified for removal or revision.
 

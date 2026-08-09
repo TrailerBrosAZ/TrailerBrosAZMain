@@ -26,7 +26,8 @@ export type CancellationOutcome = { rentalRefundCents: number; retainedCents: nu
 export function cancellationOutcome(input: { pickupAt: Date; decidedAt: Date; rentalChargeCents: number; noShow?: boolean }): CancellationOutcome {
   const noticeHours = (input.pickupAt.getTime() - input.decidedAt.getTime()) / 3_600_000;
   if (!input.noShow && noticeHours >= 48) return { rentalRefundCents: input.rentalChargeCents, retainedCents: 0, label: 'Full rental refund recorded', noticeHours };
-  return { rentalRefundCents: input.rentalChargeCents, retainedCents: 10_000, label: input.noShow ? 'No-show: $100 retained outcome recorded' : 'Late cancellation: $100 retained outcome recorded', noticeHours };
+  const retainedCents=Math.min(10_000,Math.max(0,input.rentalChargeCents));
+  return { rentalRefundCents: Math.max(0,input.rentalChargeCents-retainedCents), retainedCents, label: input.noShow ? 'No-show: late cancellation charge recorded' : 'Late cancellation charge recorded', noticeHours };
 }
 
 export function validateBookingWindow(startAt: Date, endAt: Date) {
