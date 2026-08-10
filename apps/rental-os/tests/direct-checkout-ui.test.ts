@@ -135,7 +135,7 @@ describe("protected direct checkout UI contract", () => {
   it("keeps payment last and uses server-authoritative automatic finalization", () => {
     expect(wizard).toContain('"Review & payment"');
     expect(wizard).toContain("Review the complete rental");
-    expect(wizard).toContain("<AgreementTermsPreview renterName={legalName} renterEmail={email} renterPhone={phone} />");
+    expect(wizard).toContain("onReadComplete={setAgreementReadVersion}");
     expect(wizard).toContain("<SignaturePad");
     expect(wizard).toContain("agreementDraft={{");
     expect(checkout).toContain("beginWithAgreement");
@@ -186,5 +186,19 @@ describe("protected direct checkout UI contract", () => {
     expect(styles).toContain(
       "@media(max-width:440px){.compact-date-time{grid-template-columns:1fr",
     );
+  });
+  it("requires reading the current agreement before confirmations or submission", () => {
+    expect(checkout).toContain("agreementBottomReached(event.currentTarget)");
+    expect(checkout).toContain("tabIndex={0}");
+    expect(checkout).toContain("event.key==='End'");
+    expect(checkout).toContain("element.scrollTop=element.scrollHeight");
+    expect(wizard).toContain("disabled={!agreementReadComplete}");
+    expect(wizard).toContain("!agreementReadComplete ||");
+    expect(wizard).toContain("setAgreementReadVersion(null)");
+    expect(wizard).toContain("AGREEMENT_PREVIEW_VERSION");
+    expect(styles).toContain("height:clamp(560px,65vh,760px)");
+    expect(styles).toContain("overflow-x:hidden");
+    expect(styles).toContain("height:clamp(380px,54vh,560px)");
+    expect(styles).toContain("font-size:14px");
   });
 });

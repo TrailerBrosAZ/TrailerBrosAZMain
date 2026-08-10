@@ -17,9 +17,15 @@ import {
   type BookingQuote,
 } from "../shared/booking";
 import DirectCheckoutPreview, {
+  AGREEMENT_PREVIEW_VERSION,
   AgreementTermsPreview,
   SignaturePad,
 } from "./DirectCheckoutPreview";
+import { agreementReadGateUnlocked } from "../shared/agreementScrollGate";
+import {
+  customerDeliveryQuoteLines,
+  customerDeliveryQuoteSummary,
+} from "../shared/customerDeliveryPresentation";
 
 type Trailer = { id: number; name: string; published_payload_lbs: number };
 type Intent = Record<string, unknown> & {
@@ -112,6 +118,7 @@ export function CustomerBookingPreview({
   const [dolly, setDolly] = useState(false);
   const [qualificationConfirmed, setQualificationConfirmed] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [agreementReadVersion, setAgreementReadVersion] = useState<string | null>(null);
   const [agreementAttempted, setAgreementAttempted] = useState(false);
   const agreementValidationRef = useRef<HTMLDivElement>(null);
   const [agreementPrintedName, setAgreementPrintedName] = useState("");
@@ -147,6 +154,14 @@ export function CustomerBookingPreview({
   }, [pickupAt, returnAt, dolly]);
   const deliveryFee =
     deliveryQuote?.status === "AVAILABLE" ? deliveryQuote.feeCents || 0 : 0;
+  const agreementReadComplete = agreementReadGateUnlocked(
+    agreementReadVersion,
+    AGREEMENT_PREVIEW_VERSION,
+  );
+
+  useEffect(() => {
+    if (!agreementAccepted) setAgreementReadVersion(null);
+  }, [legalName, email, phone, agreementAccepted]);
 
   function goToStep(target: number) {
     if (target >= step || target > 3) return;
@@ -305,6 +320,7 @@ export function CustomerBookingPreview({
       agreementPrintedName.trim().toLowerCase() ===
       legalName.trim().toLowerCase();
     if (
+      !agreementReadComplete ||
       !qualificationConfirmed ||
       !agreementAccepted ||
       !agreementSignature ||
@@ -502,6 +518,7 @@ export function CustomerBookingPreview({
                   quote={quote}
                   dolly={dolly}
                   deliveryFee={deliveryFee}
+                  deliveryQuote={deliveryQuote}
                   expanded
                 />
                 <button
@@ -667,9 +684,14 @@ export function CustomerBookingPreview({
               title="Rental agreement"
               detail="Review the operative agreement, complete every acknowledgment, and sign before final review and payment."
             />
-            <AgreementTermsPreview renterName={legalName} renterEmail={email} renterPhone={phone} />
+            <AgreementTermsPreview
+              renterName={legalName}
+              renterEmail={email}
+              renterPhone={phone}
+              onReadComplete={setAgreementReadVersion}
+            />
             <div ref={agreementValidationRef}>
-              <section className="qualification-confirmation" aria-labelledby="qualification-title">
+              <section className={`qualification-confirmation ${agreementReadComplete ? "" : "agreement-confirmations-locked"}`} aria-labelledby="qualification-title">
                 <strong id="qualification-title">Required renter confirmations</strong>
                 <ul>
                   <li>I am at least 25 years old.</li>
@@ -685,6 +707,7 @@ export function CustomerBookingPreview({
                 >
                   <input
                     type="checkbox"
+                    disabled={!agreementReadComplete}
                     checked={qualificationConfirmed}
                     aria-invalid={agreementAttempted && !qualificationConfirmed}
                     onChange={(event) => setQualificationConfirmed(event.target.checked)}
@@ -719,6 +742,7 @@ export function CustomerBookingPreview({
               >
                 <input
                   type="checkbox"
+                  disabled={!agreementReadComplete}
                   checked={agreementAccepted}
                   aria-invalid={agreementAttempted && !agreementAccepted}
                   onChange={(event) =>
@@ -812,6 +836,7 @@ export function CustomerBookingPreview({
               quote={quote}
               dolly={dolly}
               deliveryFee={deliveryFee}
+              deliveryQuote={deliveryQuote}
               expanded
             />
             <DirectCheckoutPreview
@@ -968,11 +993,13 @@ function QuoteSummary({
   quote,
   dolly,
   deliveryFee,
+  deliveryQuote,
   expanded = false,
 }: {
   quote: BookingQuote | null;
   dolly: boolean;
   deliveryFee: number;
+  deliveryQuote: DeliveryQuote | null;
   expanded?: boolean;
 }) {
   if (!quote)
@@ -1017,7 +1044,10 @@ function QuoteSummary({
           </div>
           {deliveryFee > 0 && (
             <div>
-              <dt>Approved delivery estimate</dt>
+              <dt>
+                Delivery: {customerDeliveryQuoteLines(deliveryQuote!).distance} ×{" "}
+                {customerDeliveryQuoteLines(deliveryQuote!).rate}
+              </dt>
               <dd>{money(deliveryFee)}</dd>
             </div>
           )}
@@ -1038,7 +1068,7 @@ function DeliveryResult({ quote }: { quote: DeliveryQuote }) {
   if (quote.status === "AVAILABLE")
     return (
       <div className="delivery-result available">
-        Delivery available · {quote.billableMiles} one-way road mile{quote.billableMiles===1?'':'s'}, rounded up · {money(quote.feeCents || 0)}
+        Delivery available · {customerDeliveryQuoteSummary(quote)}
       </div>
     );
   if (quote.status === "OUT_OF_AREA")

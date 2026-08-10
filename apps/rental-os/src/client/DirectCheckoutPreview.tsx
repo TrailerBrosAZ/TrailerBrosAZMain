@@ -6,6 +6,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { agreementClausesFromMarkdown, internalAgreementSource, renderCanonicalAgreementVariables } from "../shared/agreement.js";
+import { agreementBottomReached } from "../shared/agreementScrollGate.js";
 import { recoverCheckoutAfterConfirmationError } from "./checkoutRecovery.js";
 // Security contract: Signed server reconciliation—not the browser—controls confirmation.
 // State contract: ['PAYMENT_PENDING','PAYMENT_REQUIRED'].includes(session.state)
@@ -30,6 +31,7 @@ export type AgreementDraft = {
   signatureEvidence: string;
   inspectionChoice: "SEND_FORM" | "DECLINE_FORM";
 };
+export const AGREEMENT_PREVIEW_VERSION = internalAgreementSource.sourceVersion;
 type StripeElementsLike = {
   create(type: "payment"): { mount(selector: string): void; unmount(): void };
 };
@@ -467,10 +469,22 @@ export default function DirectCheckoutPreview({
   );
 }
 
-export function AgreementTermsPreview({renterName='Not recorded',renterEmail='Not recorded',renterPhone='Not recorded',bookingId='Pending until reservation confirmation'}:{renterName?:string;renterEmail?:string;renterPhone?:string;bookingId?:string}) {
+export function AgreementTermsPreview({renterName='Not recorded',renterEmail='Not recorded',renterPhone='Not recorded',bookingId='Pending until reservation confirmation',onReadComplete}:{renterName?:string;renterEmail?:string;renterPhone?:string;bookingId?:string;onReadComplete?:(version:string)=>void}) {
   const clauses=agreementClausesFromMarkdown(renderCanonicalAgreementVariables(internalAgreementSource.canonicalMarkdown,{renterName,renterEmail,renterPhone,agreementVersion:internalAgreementSource.sourceVersion,bookingId,signature:'Drawn signature recorded with the executed agreement',signedAt:'Recorded in Arizona time when signed'}));
   return (
-    <section className="agreement-terms-preview" aria-labelledby="agreement-terms-title">
+    <section
+      className="agreement-terms-preview"
+      aria-labelledby="agreement-terms-title"
+      tabIndex={0}
+      onScroll={(event)=>{if(agreementBottomReached(event.currentTarget)) onReadComplete?.(AGREEMENT_PREVIEW_VERSION);}}
+      onKeyDown={(event)=>{
+        const element=event.currentTarget;
+        const distances:Record<string,number>={ArrowDown:48,ArrowUp:-48,PageDown:element.clientHeight*.85,PageUp:-element.clientHeight*.85};
+        if(event.key in distances){event.preventDefault();element.scrollBy({top:distances[event.key],behavior:'smooth'});}
+        if(event.key==='Home'){event.preventDefault();element.scrollTop=0;}
+        if(event.key==='End'){event.preventDefault();element.scrollTop=element.scrollHeight;}
+      }}
+    >
       <header><strong id="agreement-terms-title">Rental Agreement Terms</strong><span>Controlled staging preview</span></header>
       <div className="agreement-review-notice" role="note">
         <strong>Agreement version TB-RA-2026-08-v1 - owner draft, attorney review pending</strong>
