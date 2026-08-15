@@ -18,7 +18,7 @@ describe('Version 1B persistence rules',()=>{
  it('creates lifecycle records and tracks both migrations',()=>{
   const tables=db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row=>(row as {name:string}).name);
   expect(tables).toEqual(expect.arrayContaining(['condition_inspections','inspection_photos','cancellation_outcomes','deposit_decisions','audit_events','booking_intents','agreement_templates','attorney_approval_records','agreement_instances','agreement_documents','pickup_condition_choices','booking_intent_conversions','direct_checkout_sessions','direct_checkout_agreements','secure_links','secure_link_attempts']));
-  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:17});
+  expect(db.prepare('SELECT count(*) count FROM app_migrations').get()).toEqual({count:18});
   expect(db.prepare("SELECT name,dflt_value FROM pragma_table_info('reservations') WHERE name='is_synthetic'").get()).toEqual({name:'is_synthetic',dflt_value:'false'});
  });
  it('keeps booking intents separate from schedule blocking and enforces idempotency',()=>{const sql="INSERT INTO booking_intents(idempotency_key,trailer_id,legal_name,email,phone,age_25_confirmed,named_renter_only_towing,tow_vehicle_details,hitch_ball_acknowledged,brake_controller_acknowledged,insurance_acknowledged,intended_use,trip_type,fulfillment_type,pickup_at,return_at,rental_days,rental_charge_cents,dolly_charge_cents,security_deposit_cents,tax_cents,estimated_due_before_delivery_cents,expires_at) VALUES ('ONE',1,'Synthetic','s@example.test','555-0100',1,1,'Truck',1,1,1,'Use','IN_STATE','PICKUP','2027-01-10T08:00:00Z','2027-01-10T12:00:00Z',1,4000,0,10000,0,14000,'2027-01-01T00:30:00Z')";db.exec(sql);expect(()=>addReservation('2027-01-10T09:00:00Z','2027-01-10T10:00:00Z')).not.toThrow();expect(()=>db.exec(sql)).toThrow();});
@@ -32,5 +32,10 @@ describe('Version 1B persistence rules',()=>{
   db.prepare("INSERT INTO cancellation_outcomes(reservation_id,type,decided_at,notice_hours,rental_refund_cents,retained_cents,notes) VALUES (1,'CANCELLATION','2027-01-10T07:00:00Z',1,18000,10000,'Late cancellation')").run();
   expect(db.prepare('SELECT rental_refund_cents,retained_cents,payment_action FROM cancellation_outcomes').get()).toEqual({rental_refund_cents:18000,retained_cents:10000,payment_action:'NOT_EXECUTED'});
   expect(db.prepare('SELECT count(*) count FROM condition_inspections').get()).toEqual({count:0});
+ });
+ it('keeps canonical agreement templates immutable after creation',()=>{
+  db.prepare("INSERT INTO agreement_templates(version,source_manifest_version,content_json,content_hash) VALUES ('test-v1','test-v1','{}','template-hash')").run();
+  expect(()=>db.prepare("UPDATE agreement_templates SET content_json='{\"changed\":true}' WHERE version='test-v1'").run()).toThrow(/AGREEMENT_TEMPLATE_IMMUTABLE/);
+  expect(()=>db.prepare("DELETE FROM agreement_templates WHERE version='test-v1'").run()).toThrow(/AGREEMENT_TEMPLATE_IMMUTABLE/);
  });
 });

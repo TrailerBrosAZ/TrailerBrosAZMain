@@ -81,6 +81,7 @@ export function migrate(db: Database.Database) {
     "0014_neat_stephen_strange.sql",
     "0015_superb_silver_surfer.sql",
     "0016_windy_epoch.sql",
+    "0017_agreement_integrity_guards.sql",
   ]) {
     if (db.prepare("SELECT 1 FROM app_migrations WHERE name=?").get(name))
       continue;

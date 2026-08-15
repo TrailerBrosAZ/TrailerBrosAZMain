@@ -21,7 +21,7 @@ import {
   agreementTemplateHash,
   internalAgreementSource,
 } from "../shared/agreement.js";
-import {base64ToBytes,bytesToBase64,agreementPdfHash,AGREEMENT_PDF_RENDERER_VERSION,renderAgreementPdf} from "../shared/agreementPdf.js";
+import {bytesToBase64,agreementPdfHash,AGREEMENT_PDF_RENDERER_VERSION,renderAgreementPdf,verifiedAgreementPdfBytes} from "../shared/agreementPdf.js";
 import {
   communicationHash,
   communicationTemplateKeys,
@@ -2413,15 +2413,18 @@ export async function handleApiRequest(
       const stableMessageId = `tb-${String(record.rendered_content_hash).slice(0, 32)}`;
       const agreementAttachment = String(record.communication_type) === "BOOKING_CONFIRMATION"
         ? await db.first<Record<string, unknown>>(
-            "SELECT d.document_hash,d.template_version,d.content_type,d.content_text FROM agreement_documents d JOIN agreement_instances a ON a.id=d.agreement_id WHERE a.reservation_id=? AND a.status='SIGNED' ORDER BY d.id DESC LIMIT 1",
+            "SELECT d.document_hash,d.template_version,d.content_type,d.content_text,a.template_hash FROM agreement_documents d JOIN agreement_instances a ON a.id=d.agreement_id WHERE a.reservation_id=? AND a.status='SIGNED' ORDER BY d.id DESC LIMIT 1",
             [Number(record.reservation_id)],
           )
         : null;
+      const activeAgreementHash=await agreementTemplateHash(internalAgreementSource);
+      const agreementAttachmentBytes=agreementAttachment?await verifiedAgreementPdfBytes(agreementAttachment):null;
       if (String(record.communication_type) === "BOOKING_CONFIRMATION" && (
         !agreementAttachment ||
         String(agreementAttachment.template_version) !== AGREEMENT_SOURCE_VERSION ||
-        String(agreementAttachment.content_type) !== "application/pdf;base64"
-      )) return json({error:"The current immutable agreement PDF must be generated before sending this booking confirmation."},409);
+        String(agreementAttachment.template_hash) !== activeAgreementHash ||
+        !agreementAttachmentBytes
+      )) return json({error:"The current immutable agreement PDF must be generated and pass integrity verification before sending this booking confirmation."},409);
       const attemptNumber = Number(prior?.attempt_number || 0) + 1;
       await db.batch([
         {
@@ -2817,13 +2820,15 @@ export async function handleApiRequest(
     match = url.pathname.match(/^\/api\/agreement-documents\/(\d+)$/);
     if (method === "GET" && match) {
       const document = await db.first(
-        "SELECT content_text,content_type FROM agreement_documents WHERE id=?",
+        "SELECT content_text,content_type,document_hash FROM agreement_documents WHERE id=?",
         [Number(match[1])],
       );
       if (!document)
         return json({ error: "Agreement document not found." }, 404);
       const pdf=String(document.content_type)==='application/pdf;base64';
-      return new Response(pdf?base64ToBytes(String(document.content_text)):String(document.content_text), {
+      const verifiedPdf=pdf?await verifiedAgreementPdfBytes(document):null;
+      if(pdf&&!verifiedPdf)return json({error:"Agreement document integrity verification failed."},409);
+      return new Response(pdf?verifiedPdf!:String(document.content_text), {
         headers: {
           "content-type": pdf?"application/pdf":"text/html; charset=utf-8",
           "content-disposition":

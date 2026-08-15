@@ -1,6 +1,6 @@
-# Trailer Bros Rental OS — Version 1C protected-staging checkpoint
+# Trailer Bros Rental OS — protected-staging release candidate
 
-Owner-facing Rental OS with local development support and a protected Cloudflare staging deployment using synthetic data only. The application remains isolated from the production GitHub Pages site and does not connect to Stripe, email, SMS, Google Calendar, or Google Drive.
+Owner-facing Rental OS with local development support and a protected Cloudflare staging deployment using synthetic data only. The application remains isolated from the production GitHub Pages site. Protected staging uses Stripe test mode, server-side Google Routes quoting, and an exact-recipient Gmail test-send workflow; live payments, general customer email, SMS, Google Calendar, and Google Drive remain disabled.
 
 Google Calendar is formally deferred for the initial controlled pilot and is not a launch dependency. Rental OS is the sole authoritative reservation and availability system. A future post-pilot Calendar integration may be considered only as a one-way informational copy; Calendar must never write to Rental OS or become an availability authority.
 
@@ -13,8 +13,8 @@ Google Calendar is formally deferred for the initial controlled pilot and is not
 - Manual availability blackouts
 - Owner-controlled reservation edit/reschedule and lifecycle actions
 - Pickup and return condition inspections with notes, damage documentation, and preserved local-only photo metadata. Hosted photo attachments are disabled; secure photo storage belongs to a later phase.
-- Protected synthetic agreement and pickup-condition foundation with versioned snapshots, explicit consent choices, immutable signed records, and audited completion or decline. No public link, message delivery, PDF archive, or legal-finality claim is enabled.
-- Auditable cancellation/no-show outcomes and deliberate post-return deposit decisions; no payment actions execute
+- Protected synthetic agreement and pickup-condition workflow with a canonical versioned source, scroll-gated acknowledgments, drawn signature evidence, immutable accepted snapshots, deterministic hashed PDF output, owner download, exact-recipient Gmail test attachment, and audited completion or decline. No public link, production archive, or legal-finality claim is enabled.
+- Auditable cancellation/no-show outcomes and deliberate post-return deposit decisions. Stripe test-mode collection/refund rehearsal is implemented; live payment actions remain disabled.
 - Reservation/source filters, blackout edit/delete controls, and reservation audit history
 - SQLite persistence with Drizzle schema and a checked-in SQL migration
 - Database triggers that reject overlapping active reservations and blackouts on inserts and updates
@@ -83,4 +83,4 @@ SQLite and D1 run the checked-in overlap triggers inside atomic write batches, p
 
 Local authorization uses a development-only mock owner identity supplied by the loopback adapter. Protected staging verifies Cloudflare Access JWT issuer, audience, signature, and the exact approved owner identity; mock authorization fails closed outside development. Staging uses a separate Worker and D1 database with synthetic data only. No production Worker, database, hostname, customer access, or production configuration has been created.
 
-This is not production-ready authentication or payment infrastructure. Cancellation and deposit decisions are explicitly owner-recorded placeholders with `payment_action = NOT_EXECUTED`. Signed synthetic agreement records are database-immutable, but attorney-approved final text, PDF/archive delivery, public signing links, Stripe, fixed-template email, and calendar-copy integrations remain intentionally unimplemented.
+This is not a public-production authorization. Signed synthetic agreement records and generated documents are database-immutable; download and Gmail attachment paths re-verify stored PDF bytes against their SHA-256 hash. Public launch remains fail-closed pending counsel disposition, a separately approved public customer-access boundary, production Worker/D1 and backups, live Stripe and webhook acceptance, production Gmail delivery operations, privacy/tax/insurance/entity decisions, monitoring, owner runbook acceptance, and controlled public-site integration. See `docs/PRE_PRODUCTION_CONVERGENCE_AUDIT.md`.

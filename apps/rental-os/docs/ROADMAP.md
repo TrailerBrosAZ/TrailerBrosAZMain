@@ -8,11 +8,11 @@ A later, separately approved integration may create or update a one-way informat
 
 ## Direct confirmation and closeout foundation
 
-Protected staging now prepares exactly two auditable, deterministic previews after authoritative prerequisites: booking confirmation and rental closeout. No message is sent. Public/Gmail enablement remains gated by attorney review, secure customer access, provider credentials, privacy/retention approval, backups, and production acceptance.
+Protected staging prepares exactly two auditable, deterministic previews after authoritative prerequisites: booking confirmation and rental closeout. An owner-confirmed synthetic self-send adapter is implemented for the exact configured test recipient only; it never sends automatically and currently requires owner Gmail reauthorization. Public/customer delivery remains gated by attorney review, secure customer access, production Gmail configuration, privacy/retention approval, backups, and production acceptance.
 
 ## Stripe Payment Foundation
 
-Protected staging defines an append-only synthetic payment ledger, deterministic provider contract, payment/refund/deposit policy calculations, sanitized webhook journal, and owner-only mock preview. Stripe credentials, checkout, cards, public webhooks, live money movement, communications, and reservation confirmation remain disabled. See `PAYMENT_FOUNDATION.md` for the contract and launch gates.
+Protected staging implements an append-only synthetic payment ledger, Stripe test-mode provider adapter, Payment Element checkout, signed exact-path webhook verification/deduplication, server reconciliation, payment/refund/deposit policy calculations, and explicit post-collection reservation confirmation. Card data remains in Stripe.js. Live keys, live money movement, production webhooks, public checkout, and customer communications remain disabled. See `PAYMENT_FOUNDATION.md` for the contract and launch gates.
 
 ## Priority order
 
@@ -25,7 +25,7 @@ The Rental OS remains the authoritative reservation and availability calendar. R
 - Implemented on the feature branch: actionable dashboard summary cards, an accessible **Needs Attention** drawer, and direct reservation links.
 - Implemented on the feature branch: a private owner-only Analytics route with deterministic database calculations and explicit `America/Phoenix` boundaries.
 - Implemented metrics: reservation requests, active/completed rentals, booked rental revenue, confirmed-booking revenue, cancellations and no-shows, average rental duration, utilization, lead-source performance, weekly and monthly request trends, requested pickup day of week, delivery and dolly uptake, and upcoming unbooked availability.
-- Implemented safeguards: booked revenue is separated from collected revenue; collected revenue, fees, refunds, and net revenue remain explicitly unavailable until Stripe exists.
+- Implemented safeguards: booked revenue is separated from collected revenue; analytics do not present test-ledger activity as production collected revenue, fees, refunds, or net revenue.
 - Implemented controls and evidence: date-range presets, custom dates, adjacent comparison, documented metric contracts, deterministic threshold insights, explicit insufficient-data states, synthetic exclusion by default, and automated analytics coverage.
 - The exact definitions and thresholds are maintained in [Analytics metric contracts](ANALYTICS_METRICS.md).
 
@@ -56,7 +56,7 @@ Public agreement signing and live checkout are fail-closed. The owner dashboard 
 
 ## Customer Booking Foundation
 
-Implemented for protected synthetic staging: customer schedule selection, authoritative availability checks, qualification and towing requirements, deterministic quotes, international rejection, explicit non-blocking `SUBMITTED` 30-minute quote windows and `REVIEW_REQUIRED` 24-hour approval-review windows, retained expired records, idempotent submission, atomic availability revalidation, minimized audit events, and owner-only intent review. Payment, agreement, communication, reservation conversion, public exposure, and live customer records remain disabled. See [Customer Booking Foundation contract](CUSTOMER_BOOKING_FOUNDATION.md).
+Implemented for protected synthetic staging: a four-step booking wizard; authoritative calendar and 15-minute checkout holds; qualification and towing requirements; deterministic rental/dolly/delivery quotes; international rejection; immutable agreement acceptance and pickup-condition choice; Stripe test-mode collection and webhook reconciliation; explicit, idempotent, transaction-safe reservation confirmation; secure-link preparation; deterministic confirmation preview; retained intent/session/audit history; and owner review. Public exposure, live Stripe, automatic customer communication, attorney approval, and real customer records remain disabled. See [Customer Booking Foundation contract](CUSTOMER_BOOKING_FOUNDATION.md) and [Direct checkout orchestration](DIRECT_CHECKOUT_ORCHESTRATION.md).
 
 ## Backup and operational hardening
 
@@ -64,11 +64,11 @@ Protected staging uses authenticated health diagnostics, repeatable D1 export ve
 
 ## Owner communication preparation
 
-Implemented in protected synthetic staging: stored, audited owner previews for the two currently approved deterministic templates—booking confirmation and rental closeout—and an explicit copy-text action. No message is sent and no Gmail, Google Voice, SMS, or other delivery integration is connected. See [Deterministic communication preparation](COMMUNICATION_PREPARATION.md).
+Implemented in protected synthetic staging: stored, audited owner previews for the two approved deterministic templates—booking confirmation and rental closeout—plus copy-text and exact-recipient, confirmation-gated Gmail synthetic self-send. No customer-recipient delivery, Google Voice, SMS, or other delivery integration is connected. See [Deterministic communication preparation](COMMUNICATION_PREPARATION.md).
 
 ### Gmail test-mode delivery readiness
 
-The protected staging architecture now defines exact-account OAuth authorization, encrypted D1 token storage, deterministic Gmail delivery attempts, stable message identifiers, retry/resend controls, and an owner-only synthetic self-send gate. `NO_SEND` remains the default until the owner separately configures and authorizes Gmail. No Google resource, credential, authorization, or message send is part of the checkpoint. See [Gmail test-mode integration runbook](GMAIL_TEST_MODE_RUNBOOK.md).
+Protected staging implements exact-account OAuth authorization, encrypted D1 token storage, deterministic Gmail delivery attempts, stable message identifiers, retry/resend controls, verified-PDF attachment gating, and an owner-only synthetic self-send gate. The current connection requires owner reauthorization; `NO_SEND` remains the fail-closed state whenever authorization or an authoritative prerequisite is absent. No production Gmail sender or customer-recipient rule is enabled. See [Gmail test-mode integration runbook](GMAIL_TEST_MODE_RUNBOOK.md).
 # Direct Checkout Orchestration Foundation
 
 Protected staging now composes availability, authoritative quoting, qualification, immutable pre-reservation agreement evidence, explicit pickup-condition choice, Stripe test payment reconciliation, atomic reservation conversion, secure-link creation, and prepared Booking Confirmation into an expiring synthetic direct-checkout state machine. Public access, live Stripe, attorney approval, customer delivery, and automatic email remain blocked pending separate approval. See `DIRECT_CHECKOUT_ORCHESTRATION.md`.

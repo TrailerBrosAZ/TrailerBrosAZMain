@@ -11,6 +11,17 @@ export const readinessRequirementIds = [
   'backup-recovery',
   'synthetic-reconciliation',
   'public-live-disabled',
+  'production-infrastructure',
+  'public-customer-access',
+  'stripe-live',
+  'gmail-production',
+  'public-site-entrypoint',
+  'backup-automation',
+  'monitoring-alerts',
+  'tax-decision',
+  'insurance-acceptance',
+  'entity-title-alignment',
+  'owner-runbook-acceptance',
 ] as const;
 
 export type ReadinessRequirementId = typeof readinessRequirementIds[number];
@@ -33,7 +44,21 @@ export function evaluateTestReadiness(evidence: ReadinessEvidence[]) {
   };
 }
 
-const protectedPilotNonBlocking = new Set<ReadinessRequirementId>(['attorney-approval', 'google-calendar']);
+const protectedPilotNonBlocking = new Set<ReadinessRequirementId>([
+  'attorney-approval',
+  'google-calendar',
+  'production-infrastructure',
+  'public-customer-access',
+  'stripe-live',
+  'gmail-production',
+  'public-site-entrypoint',
+  'backup-automation',
+  'monitoring-alerts',
+  'tax-decision',
+  'insurance-acceptance',
+  'entity-title-alignment',
+  'owner-runbook-acceptance',
+]);
 export function evaluateProtectedPilotReadiness(evidence: ReadinessEvidence[]) {
   const byId = new Map(evidence.map(item => [item.id, item]));
   const missing = readinessRequirementIds.filter(id => !byId.has(id) && !protectedPilotNonBlocking.has(id));
@@ -58,4 +83,15 @@ export const verifiedCheckpointEvidence: ReadinessEvidence[] = [
   { id: 'backup-recovery', state: 'PASS', critical: true, evidence: 'Verified staging exports, isolated remote recovery aggregate comparison, temporary-resource removal, and final restorable-artifact integrity checks passed.' },
   { id: 'synthetic-reconciliation', state: 'PASS', critical: true, evidence: 'Final count-only cross-table reconciliation found zero non-synthetic operational/provider-test records.' },
   { id: 'public-live-disabled', state: 'PASS', critical: true, evidence: 'Checked-in environment policy disables live/public configuration and this checkpoint makes no public changes.' },
+  { id: 'production-infrastructure', state: 'NOT_VERIFIED', critical: true, evidence: 'No production Worker, D1 database, bindings, migration run, backup baseline, or production acceptance evidence is authorized or verified.' },
+  { id: 'public-customer-access', state: 'BLOCKED', critical: true, evidence: 'Customer routes remain protected by Cloudflare Access; a separately reviewed public customer boundary, abuse controls, and owner/admin isolation are required.' },
+  { id: 'stripe-live', state: 'BLOCKED', critical: true, evidence: 'Only Stripe test mode is implemented and accepted. Live restricted keys, webhook destination, live reconciliation, refund/deposit acceptance, and owner approval are absent.' },
+  { id: 'gmail-production', state: 'BLOCKED', critical: true, evidence: 'Gmail remains exact-recipient staging test mode. Customer-recipient sending, support/bounce procedures, production OAuth/secrets, and delivery acceptance are absent.' },
+  { id: 'public-site-entrypoint', state: 'BLOCKED', critical: true, evidence: 'The public Trailer Bros website has no approved booking entry point and remains intentionally unchanged.' },
+  { id: 'backup-automation', state: 'BLOCKED', critical: true, evidence: 'Manual verified export/restore exists; independent encrypted daily production backup automation and retention monitoring are not enabled.' },
+  { id: 'monitoring-alerts', state: 'BLOCKED', critical: true, evidence: 'Health diagnostics and runbooks exist, but production alert delivery, error visibility, and incident notification acceptance are not configured.' },
+  { id: 'tax-decision', state: 'BLOCKED', critical: true, evidence: 'No separate Arizona tax line is implemented; owner must obtain and record qualified tax/accounting guidance before public collection.' },
+  { id: 'insurance-acceptance', state: 'BLOCKED', critical: true, evidence: 'Insurance acknowledgement language and the verification operating procedure require counsel/owner acceptance before public use.' },
+  { id: 'entity-title-alignment', state: 'BLOCKED', critical: true, evidence: 'The contracting entity, equipment title/ownership, Stripe/Gmail sender identity, public disclosures, and agreement header must be verified as aligned.' },
+  { id: 'owner-runbook-acceptance', state: 'NOT_VERIFIED', critical: true, evidence: 'The owner has not yet completed and signed off the production deployment, rollback, payment exception, communication, backup, and incident drills.' },
 ];

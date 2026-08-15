@@ -120,6 +120,13 @@
       "when": 1784968823867,
       "tag": "0016_windy_epoch",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1786824000000,
+      "tag": "0017_agreement_integrity_guards",
+      "breakpoints": true
     }
   ]
 }

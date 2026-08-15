@@ -22,3 +22,10 @@ export function renderAgreementPdf(input:PdfInput){
 export function bytesToBase64(bytes:Uint8Array){let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary)}
 export function base64ToBytes(value:string){const binary=atob(value);return Uint8Array.from(binary,character=>character.charCodeAt(0))}
 export async function agreementPdfHash(bytes:Uint8Array){const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(value=>value.toString(16).padStart(2,'0')).join('')}
+export async function verifiedAgreementPdfBytes(record:Record<string,unknown>){
+ if(String(record.content_type)!=='application/pdf;base64')return null;
+ try{
+  const bytes=base64ToBytes(String(record.content_text));
+  return await agreementPdfHash(bytes)===String(record.document_hash)?bytes:null;
+ }catch{return null}
+}

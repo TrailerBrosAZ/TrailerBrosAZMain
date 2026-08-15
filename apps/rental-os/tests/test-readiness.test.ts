@@ -44,7 +44,20 @@ describe('fail-closed readiness evaluation', () => {
   it('cannot report ready while critical evidence is blocked or missing', () => {
     const result = evaluateTestReadiness(verifiedCheckpointEvidence);
     expect(result.status).toBe('NOT_READY');
-    expect(result.blocking.map(item => item.id)).toEqual(['attorney-approval']);
+    expect(result.blocking.map(item => item.id)).toEqual(expect.arrayContaining([
+      'attorney-approval',
+      'production-infrastructure',
+      'public-customer-access',
+      'stripe-live',
+      'gmail-production',
+      'public-site-entrypoint',
+      'backup-automation',
+      'monitoring-alerts',
+      'tax-decision',
+      'insurance-acceptance',
+      'entity-title-alignment',
+      'owner-runbook-acceptance',
+    ]));
     expect(result.blocking.map(item => item.id)).not.toContain('google-calendar');
     expect(verifiedCheckpointEvidence.find(item => item.id === 'google-calendar')).toMatchObject({ state: 'DEFERRED', critical: false });
   });

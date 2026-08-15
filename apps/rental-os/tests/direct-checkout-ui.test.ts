@@ -61,7 +61,7 @@ describe("protected direct checkout UI contract", () => {
     );
     expect(checkout).toContain("automatically verifying the payment with Stripe");
   });
-  it("reconciles client errors before retry and finalizes only after authoritative collection", () => {
+  it("reconciles client errors before retry and requires explicit final confirmation after authoritative collection", () => {
     expect(checkout).toContain(
       "recoverCheckoutAfterConfirmationError(onRefresh)",
     );
@@ -73,7 +73,9 @@ describe("protected direct checkout UI contract", () => {
     expect(checkout).toContain(
       "/api/customer-preview/direct-checkout/finalize",
     );
-    expect(checkout).toContain("No additional action is needed.");
+    expect(checkout).toContain("Confirm reservation");
+    expect(checkout).toContain("onClick={() => void finalizeReservation()}");
+    expect(checkout).not.toContain("No additional action is needed.");
     expect(checkout).toContain(
       "['PAYMENT_PENDING','PAYMENT_REQUIRED'].includes(session.state)",
     );
@@ -132,7 +134,7 @@ describe("protected direct checkout UI contract", () => {
       "The intent endpoint validates the opaque hold token",
     );
   });
-  it("keeps payment last and uses server-authoritative automatic finalization", () => {
+  it("keeps payment last and uses explicit server-authoritative finalization", () => {
     expect(wizard).toContain('"Review & payment"');
     expect(wizard).toContain("Review the complete rental");
     expect(wizard).toContain("onReadComplete={setAgreementReadVersion}");
@@ -200,5 +202,13 @@ describe("protected direct checkout UI contract", () => {
     expect(styles).toContain("overflow-x:hidden");
     expect(styles).toContain("height:clamp(380px,54vh,560px)");
     expect(styles).toContain("font-size:14px");
+  });
+  it("renders canonical Markdown emphasis without exposing formatting tokens", () => {
+    expect(checkout).toContain("renderAgreementInlineText(paragraph)");
+    expect(checkout).toContain("renderAgreementInlineText(bullet)");
+    expect(checkout).toContain('part.startsWith("**")');
+    expect(checkout).toContain("<strong key=");
+    expect(checkout).toContain("<code key=");
+    expect(checkout).not.toContain("<p key={paragraph}>{paragraph}</p>");
   });
 });

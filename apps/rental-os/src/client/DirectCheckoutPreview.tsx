@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -32,6 +32,21 @@ export type AgreementDraft = {
   inspectionChoice: "SEND_FORM" | "DECLINE_FORM";
 };
 export const AGREEMENT_PREVIEW_VERSION = internalAgreementSource.sourceVersion;
+
+function renderAgreementInlineText(text: string): ReactNode[] {
+  return text
+    .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+    .filter(Boolean)
+    .map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={`${index}-${part}`}>{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return <code key={`${index}-${part}`}>{part.slice(1, -1)}</code>;
+      }
+      return part;
+    });
+}
 type StripeElementsLike = {
   create(type: "payment"): { mount(selector: string): void; unmount(): void };
 };
@@ -222,14 +237,7 @@ export default function DirectCheckoutPreview({
       idempotencyKey: `checkout_payment_${agreement.sessionId}`,
     });
   }
-  useEffect(() => {
-    if (!agreementDraft || !eligible || session || autoStarted.current) return;
-    autoStarted.current = true;
-    void beginWithAgreement(agreementDraft);
-    // beginWithAgreement is intentionally guarded to run once per mounted checkout.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agreementDraft, eligible, session]);
-  useEffect(() => {
+  async function finalizeReservation() {
     if (
       session?.state !== "PAYMENT_COLLECTED" ||
       !token ||
@@ -240,30 +248,40 @@ export default function DirectCheckoutPreview({
     finalizing.current = true;
     setBusy(true);
     setError("");
-    void fetch("/api/customer-preview/direct-checkout/finalize", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        token,
-        csrfToken,
-        idempotencyKey: `checkout_convert_${session.sessionId}`,
-      }),
-    })
-      .then(async (response) => {
-        const result = await response.json();
-        if (!response.ok)
-          throw new Error(
-            result.error ||
-              "Your payment was accepted, but the booking could not be finalized. Do not retry payment; contact Trailer Bros.",
-          );
-        setSession((current) => ({ ...current, ...result }) as Session);
-      })
-      .catch((caught) => setError((caught as Error).message))
-      .finally(() => {
-        setBusy(false);
-        finalizing.current = false;
-      });
-  }, [session?.state, session?.sessionId, token, csrfToken]);
+    try {
+      const response = await fetch(
+        "/api/customer-preview/direct-checkout/finalize",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            token,
+            csrfToken,
+            idempotencyKey: `checkout_convert_${session.sessionId}`,
+          }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.error ||
+            "Your payment was accepted, but the booking could not be finalized. Do not retry payment; contact Trailer Bros.",
+        );
+      setSession((current) => ({ ...current, ...result }) as Session);
+    } catch (caught) {
+      setError((caught as Error).message);
+    } finally {
+      setBusy(false);
+      finalizing.current = false;
+    }
+  }
+  useEffect(() => {
+    if (!agreementDraft || !eligible || session || autoStarted.current) return;
+    autoStarted.current = true;
+    void beginWithAgreement(agreementDraft);
+    // beginWithAgreement is intentionally guarded to run once per mounted checkout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agreementDraft, eligible, session]);
   useEffect(() => {
     if (session?.state === "COMPLETE") onComplete?.();
   }, [session?.state, onComplete]);
@@ -425,9 +443,17 @@ export default function DirectCheckoutPreview({
           <div>
             <strong>Payment accepted</strong>
             <p>
-              We are completing the final availability and booking checks now.
-              No additional action is needed.
+              Your payment is collected. Confirm the reservation to run one
+              final server-side availability and evidence check.
             </p>
+            <button
+              type="button"
+              className="primary"
+              disabled={busy}
+              onClick={() => void finalizeReservation()}
+            >
+              {busy ? "Confirming reservation…" : "Confirm reservation"}
+            </button>
           </div>
         </div>
       )}
@@ -494,8 +520,8 @@ export function AgreementTermsPreview({renterName='Not recorded',renterEmail='No
         {clauses.map((clause) => (
           <section key={clause.heading} className="agreement-clause">
             <h3>{clause.heading}</h3>
-            {"paragraphs" in clause && clause.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            {"bullets" in clause && <ul>{clause.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}
+            {"paragraphs" in clause && clause.paragraphs.map((paragraph) => <p key={paragraph}>{renderAgreementInlineText(paragraph)}</p>)}
+            {"bullets" in clause && <ul>{clause.bullets.map((bullet) => <li key={bullet}>{renderAgreementInlineText(bullet)}</li>)}</ul>}
           </section>
         ))}
       </div>

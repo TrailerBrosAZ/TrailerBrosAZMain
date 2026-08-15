@@ -1,4 +1,6 @@
-# Protected staging acceptance evidence
+# Protected staging acceptance evidence — historical checkpoint
+
+This file preserves the July 22 acceptance checkpoint. It is not current production-readiness evidence. The dated pre-production convergence result and current release classifications are recorded in `PRE_PRODUCTION_CONVERGENCE_AUDIT.md`; public launch remains fail-closed.
 
 Checkpoint date: 2026-07-22 Arizona time. Environment: existing protected synthetic staging only. Worker version: `d7f65f7c…`. No production, public-site, DNS, live-payment, or real-customer configuration changed.
 

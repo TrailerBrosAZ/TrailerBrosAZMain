@@ -13,7 +13,7 @@ Only the customer-facing section is present in the canonical source. Research, c
 
 ## Output control
 
-The customer review screen, direct-checkout evidence, reservation agreement instance, owner detail, and immutable PDF all carry the same template version and hash. `agreement-pdf-v1` creates a real PDF containing the complete canonical terms, transaction snapshot, acknowledgments, Arizona-aware acceptance instant, and drawn-signature evidence. The stored PDF bytes are immutable and retrieved by document ID. A new wording version cannot silently reuse an earlier signature; payment and final conversion fail closed when agreement evidence is not the active version/hash.
+The customer review screen, direct-checkout evidence, reservation agreement instance, owner detail, and immutable PDF all carry the same template version and hash. `agreement-pdf-v1` creates a real PDF containing the complete canonical terms, transaction snapshot, acknowledgments, Arizona-aware acceptance instant, and drawn-signature evidence. The stored PDF bytes are immutable; download and Gmail attachment paths recompute their SHA-256 hash and fail closed on any mismatch. Agreement template rows, signed instances, checkout acceptance records, and generated documents reject update/delete operations. A new wording version cannot silently reuse an earlier signature; payment and final conversion fail closed when agreement evidence is not the active version/hash.
 
 ## Historical and legacy sources
 
