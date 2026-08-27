@@ -42,3 +42,17 @@ The generated machine-readable artifact is `data/test-readiness-evidence.json` (
 ## Synthetic-data cleanup
 
 The evidence dataset is retained temporarily for audit and regression review. Before any approved real-customer pilot, take another verified export and execute an owner-approved cleanup plan that preserves immutable audit/provider reconciliation evidence. Never delete audit history merely to make counts look clean.
+
+## 2026-08-26 Gmail reauthorization and fresh acceptance addendum
+
+This addendum records a fresh protected-staging acceptance after the owner completed Gmail reauthorization. It contains no OAuth code, token, credential, recipient address, full provider identifier, message body, or real customer data.
+
+- Gmail authorization returned `CONNECTED` with only the identity scopes and `gmail.send`; the integration remained exact-recipient and synthetic-only.
+- One new synthetic direct checkout produced one confirmed reservation, one signed immutable `TB-RA-2026-08-v1` agreement, one reconciled Stripe test collection, and one distinct signed webhook record. Payment collection still required the separate final reservation-confirmation action.
+- The owner generated one deterministic `agreement-pdf-v1` artifact. The 41,389 decoded PDF bytes recomputed to the exact stored SHA-256 document hash. The Booking Confirmation send path independently repeated the same integrity check before attaching those bytes.
+- One deterministic Booking Confirmation with matching HTML/plain-text alternatives and the expected synthetic confirmation subject was accepted by Gmail for the configured owner test recipient. D1 contains one immutable communication record, one delivery attempt in `ACCEPTED_BY_GMAIL`, one send-started audit event, and one send-recorded audit event.
+- Refreshing and reopening the reservation left the send control disabled with the explicit duplicate-blocked explanation. Server tests also passed for accepted-attempt replay rejection, failed/unknown safe retry requirements, duplicate checkout/reconciliation, and signed-webhook deduplication.
+- Targeted Gmail, communication, agreement/PDF, checkout-recovery, direct-checkout, and webhook suites passed: 13 files and 89 tests. Full preflight passed: 38 files and 306 tests, plus lint, typecheck, readiness gate, build, environment validation, Worker dry run, schema generation, D1 migration/restore rehearsal, and HTTP smoke.
+- Gmail API acceptance is not represented as inbox delivery or read receipt. Customer-recipient sending and production Gmail remain blocked.
+
+Protected synthetic staging acceptance is complete for the tested Gmail provider path. Public launch remains `NOT_READY` and fail-closed under the blockers listed in `PRE_PRODUCTION_CONVERGENCE_AUDIT.md`.
