@@ -16,9 +16,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
-  <link rel="stylesheet" href="/site.css?v=20260929-2" />
+  <link rel="stylesheet" href="/site.css?v=20260929-3" />
   <link rel="stylesheet" href="/fleet.css?v=20260929-2" />
-  <script src="/site.js" defer></script>
+  <script src="/site.js?v=20260929-3" defer></script>
   <noscript><style>.fade-in-up { opacity: 1; transform: none; } .hamburger { display: none; } .nav-links { display: flex; }</style></noscript>
   <script>if (location.pathname === '/index.html') history.replaceState(null, '', '/' + location.search + location.hash);</script>
 </head>
@@ -132,7 +132,15 @@
             <p class="fleet-deposit"><strong>$100</strong> refundable security deposit</p>
           </div>
           <p class="fleet-tow"><strong>Towing requirements</strong>2 5/16-inch ball hitch · 7-pin connector · Brake controller</p>
-          <div class="fleet-actions"><a class="fleet-button" href="https://trailerbrosaz.com/booking-os/">Book the Utility Trailer</a><a class="fleet-button fleet-button--secondary" href="/trailers#utility">Explore the UTX &#8599;</a></div><p class="fleet-notice">Check your preferred dates for current availability.</p>
+          <div class="fleet-actions"><a class="fleet-button" href="https://trailerbrosaz.com/booking-os/">Book the Utility Trailer</a><a class="fleet-button fleet-button--secondary" href="/trailers#utility">Explore the UTX &#8599;</a></div>
+          <div class="rental-flow" id="how-it-works">
+            <ol aria-label="How renting works">
+              <li>Choose dates</li>
+              <li><span aria-hidden="true">&#8594;</span> Reserve online</li>
+              <li><span aria-hidden="true">&#8594;</span> Pick up &amp; return</li>
+            </ol>
+            <a href="/faq">Rental FAQs &#8599;</a>
+          </div>
         </div>
       </article><article class="fleet-card" aria-labelledby="home-slx-title">
         <div class="trailer-gallery" data-gallery role="region" aria-label="RawMaxx SLX photo gallery" aria-roledescription="carousel">
@@ -186,43 +194,20 @@
     <p class="fleet-note">¹ SLX width includes the drive-over fenders. Payload figures are approximate; match your load to the trailer and your tow vehicle’s ratings.</p>
   </section>
 
-  <!-- HOW IT WORKS -->
-  <section id="how-it-works" class="how-it-works-section">
-    <h2 class="section-heading fade-in-up">How It Works</h2>
-    <p class="section-subhead fade-in-up">No complicated process, no surprises. Here's all it takes to get rolling.</p>
-    <div class="hiw-steps">
-      <div class="hiw-step fade-in-up" data-step="1" style="transition-delay:0s;">
-        <div class="hiw-icon">📋</div>
-        <h3>Choose Your Dates</h3>
-        <p>Check availability, select pickup or delivery, and see your rental total before you commit.</p>
-      </div>
-      <div class="hiw-step fade-in-up" data-step="2" style="transition-delay:0.1s;">
-        <div class="hiw-icon">✅</div>
-        <h3>Sign &amp; Reserve</h3>
-        <p>Review your rental agreement, sign securely, and pay online. Your booking result confirms the dates and payment status.</p>
-      </div>
-      <div class="hiw-step fade-in-up" data-step="3" style="transition-delay:0.2s;">
-        <div class="hiw-icon">🚛</div>
-        <h3>Coordinate Pickup</h3>
-        <p>We'll confirm the pickup location and handoff details for your reserved time. Straps are included and we'll make sure you're set before you head out.</p>
-      </div>
-      <div class="hiw-step fade-in-up" data-step="4" style="transition-delay:0.3s;">
-        <div class="hiw-icon">🔄</div>
-        <h3>Easy Drop-Off</h3>
-        <p>Return at your agreed time and location. After inspection, we initiate any refundable deposit balance within 48 hours; your payment provider determines when it appears in your account.</p>
-      </div>
-    </div>
-    <a href="https://trailerbrosaz.com/booking-os/" class="btn-primary" style="display:inline-block;margin-top:36px;">Check Dates &amp; Book</a>
-  </section>
-
   <!-- TESTIMONIALS -->
-  <section id="testimonials" class="testimonial-section">
-    <h2 class="section-heading fade-in-up">What Renters Say</h2>
-    <div class="testimonial-carousel-wrap">
-      <div class="testimonial-grid">
+  <section id="testimonials" class="testimonial-section" aria-labelledby="reviews-heading" data-reviews>
+    <div class="home-section-heading">
+      <div>
+        <p class="eyebrow">From our renters</p>
+        <h2 id="reviews-heading">What renters say.</h2>
+      </div>
+      <button class="review-control review-pause" type="button" data-review-pause aria-controls="review-track" hidden>Pause reviews</button>
+    </div>
+    <div class="testimonial-carousel-wrap" role="region" aria-label="Renter reviews" tabindex="0">
+      <div class="testimonial-grid" id="review-track">
         <!-- original set -->
         <div class="testimonial-card">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
           <p class="testimonial-quote">"On time, great pricing, nice trailer, and easy to communicate with. Would highly recommend Colton for your trailer rental needs."</p>
           <div class="testimonial-author">
             <span class="testimonial-name">Bob</span>
@@ -230,7 +215,7 @@
           </div>
         </div>
         <div class="testimonial-card">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
           <p class="testimonial-quote">"Quick, easy and perfect for what we needed!"</p>
           <div class="testimonial-author">
             <span class="testimonial-name">Anastasia F.</span>
@@ -238,7 +223,7 @@
           </div>
         </div>
         <div class="testimonial-card">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" role="img" aria-label="5 out of 5 stars">★★★★★</div>
           <p class="testimonial-quote">"The trailer was in really good condition and perfect what I needed. Colton was responsive and helpful as well!"</p>
           <div class="testimonial-author">
             <span class="testimonial-name">Jordan S.</span>
@@ -272,44 +257,45 @@
         </div>
       </div>
     </div>
-    <p class="testimonial-cta-nudge">Happy with your rental? <a href="https://g.page/r/CYugmW_VJ6HjEBM/review" target="_blank">Leave us a Google review.</a></p>
-  </section>
-
-  <!-- SERVICE AREA MAP -->
-  <section id="service-area" class="service-area-section">
-    <h2 class="section-heading fade-in-up">Where We Serve</h2>
-    <p class="section-subhead fade-in-up">Based in Mesa. Serving the greater East Valley.</p>
-    <div class="map-container-wrap">
-      <div id="service-map"></div>
-    </div>
-    <div class="city-chips" id="cityChips"></div>
-  </section>
-
-  <!-- BOOK CTA -->
-  <section class="book-cta fade-in-up" id="book">
-    <h2>Ready to Book the Utility Trailer?</h2>
-    <p>Choose dates, review your total, sign the agreement, and reserve online. Your saved booking lets you return to your progress.</p>
-    <p class="deposit-note">Online checkout collects the rental total and a $100 refundable security deposit. Any delivery or dolly charge is shown before signing.</p>
-    <div class="trust-grid">
-      <div class="trust-item fade-in-up" style="transition-delay:0s">
-        <span class="trust-icon">✅</span>
-        <p>Transparent pricing.<br>No surprise fees.</p>
-      </div>
-      <div class="trust-item fade-in-up" style="transition-delay:0.08s">
-        <span class="trust-icon">👥</span>
-        <p>Local owner-operated<br>rentals.</p>
-      </div>
-      <div class="trust-item fade-in-up" style="transition-delay:0.16s">
-        <span class="trust-icon">🕐</span>
-        <p>Flexible pickup and<br>return times.</p>
-      </div>
-      <div class="trust-item fade-in-up" style="transition-delay:0.24s">
-        <span class="trust-icon">🛠</span>
-        <p>Pickup condition<br>checked with you.</p>
+    <div class="review-footer">
+      <p class="testimonial-cta-nudge">Happy with your rental? <a href="https://g.page/r/CYugmW_VJ6HjEBM/review" target="_blank" rel="noopener">Leave us a Google review &#8599;</a></p>
+      <div class="review-mobile-controls" data-review-controls hidden>
+        <button class="review-control" type="button" data-review-previous aria-label="Previous review" aria-controls="review-track" disabled>&#8592;</button>
+        <span class="review-position" data-review-position role="status" aria-live="polite" aria-atomic="true">1 / 3</span>
+        <button class="review-control" type="button" data-review-next aria-label="Next review" aria-controls="review-track">&#8594;</button>
       </div>
     </div>
-    <a href="https://trailerbrosaz.com/booking-os/" class="btn-primary">Check Dates &amp; Book</a>
-    <p class="contact-line">Questions? Call or text <a href="tel:4807445599">(480) 744-5599</a></p>
+  </section>
+
+  <!-- SERVICE AREA AND BOOKING -->
+  <section id="service-area" class="service-area-section" aria-labelledby="service-heading">
+    <div class="service-intro home-section-heading">
+      <p class="eyebrow">Local. Owner-operated.</p>
+      <h2 id="service-heading">Where we serve.</h2>
+      <p class="service-description">Based in Mesa. Here for the East Valley.</p>
+      <p class="service-detail">A local crew, a trailer for your haul, and pickup and return details coordinated with you.</p>
+    </div>
+    <div class="service-map-panel">
+      <div class="map-container-wrap">
+        <div id="service-map" role="region" aria-label="Map of the East Valley service area" aria-describedby="map-help"></div>
+      </div>
+      <p class="map-help" id="map-help">Choose a city to highlight its service area.</p>
+      <div class="city-chips" id="cityChips" role="group" aria-label="Service area cities">
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Mesa</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Gilbert</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Chandler</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Tempe</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Apache Junction</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Queen Creek</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>San Tan Valley</button>
+        <button class="city-chip" type="button" aria-pressed="false" disabled>Gold Canyon</button>
+      </div>
+    </div>
+    <div class="service-booking" id="book">
+      <p>Have a haul in mind? Check utility trailer availability or talk it through with us.</p>
+      <a href="https://trailerbrosaz.com/booking-os/" class="fleet-button">Book the Utility Trailer</a>
+      <p class="service-contact"><a href="tel:4807445599">Call (480) 744-5599</a><span aria-hidden="true"> · </span><a href="sms:4807445599">Text us</a></p>
+    </div>
   </section>
 
   </main>
@@ -342,19 +328,15 @@
     (function() {
       if (!document.getElementById('service-map')) return;
 
-      const SERVICE_CITIES = [
-        'Mesa','Gilbert','Chandler','Tempe',
-        'Apache Junction','Queen Creek','San Tan Valley','Gold Canyon'
-      ];
-
-      const chipsContainer = document.getElementById('cityChips');
-      SERVICE_CITIES.forEach(name => {
-        const chip = document.createElement('div');
-        chip.className = 'city-chip';
-        chip.textContent = name;
-        chip.id = 'chip-' + name.replace(/\s+/g, '');
-        chipsContainer.appendChild(chip);
-      });
+      const chips = [...document.querySelectorAll('#cityChips .city-chip')];
+      const help = document.getElementById('map-help');
+      const fallback = () => {
+        help.textContent = 'Serving the cities below. Call or text us to confirm your location.';
+      };
+      if (!window.L) {
+        fallback();
+        return;
+      }
 
       const map = L.map('service-map', {
         center: [33.32, -111.72],
@@ -374,71 +356,63 @@
       }).addTo(map);
 
       const layers = {};
+      let selectedCity = null;
+      let hoveredCity = null;
+      let focusedCity = null;
+      const style = active => ({
+        color: active ? '#e8620a' : 'rgba(232,98,10,0.6)',
+        weight: active ? 2.5 : 1.5,
+        fillColor: '#e8620a',
+        fillOpacity: active ? 0.25 : 0.08
+      });
 
-      function getStyle(active) {
-        return {
-          color: active ? 'rgba(232,98,10,1)' : 'rgba(232,98,10,0.6)',
-          weight: active ? 2.5 : 1.5,
-          fillColor: '#E8620A',
-          fillOpacity: active ? 0.25 : 0.08,
-        };
+      function updateHighlights() {
+        chips.forEach(chip => {
+          const name = chip.textContent;
+          const active = [selectedCity, hoveredCity, focusedCity].includes(name);
+          chip.classList.toggle('chip-active', active);
+          chip.setAttribute('aria-pressed', String(name === selectedCity));
+          if (layers[name]) layers[name].setStyle(style(active));
+        });
       }
 
-      function activateCity(name) {
-        const layer = layers[name];
-        if (layer) layer.setStyle(getStyle(true));
-        const chip = document.getElementById('chip-' + name.replace(/\s+/g, ''));
-        if (chip) chip.classList.add('chip-active');
-      }
-
-      function deactivateCity(name) {
-        const layer = layers[name];
-        if (layer) layer.setStyle(getStyle(false));
-        const chip = document.getElementById('chip-' + name.replace(/\s+/g, ''));
-        if (chip) chip.classList.remove('chip-active');
+      function selectCity(name) {
+        selectedCity = selectedCity === name ? null : name;
+        updateHighlights();
       }
 
       fetch('/service-area.geojson')
-        .then(r => r.json())
+        .then(response => {
+          if (!response.ok) throw new Error('Service area unavailable');
+          return response.json();
+        })
         .then(data => {
-          L.geoJSON(data, {
-            style: () => getStyle(false),
+          const area = L.geoJSON(data, {
+            style: () => style(false),
             onEachFeature: (feature, layer) => {
               const name = feature.properties.name;
               layers[name] = layer;
-
-              layer.bindTooltip(name, {
-                permanent: false,
-                direction: 'center',
-                className: 'map-city-tooltip'
-              });
-
-              layer.on('mouseover', () => activateCity(name));
-              layer.on('mouseout', () => deactivateCity(name));
+              layer.bindTooltip(name, { direction: 'center', className: 'map-city-tooltip' });
+              layer.on('mouseover', () => { hoveredCity = name; updateHighlights(); });
+              layer.on('mouseout', () => { hoveredCity = null; updateHighlights(); });
+              layer.on('click', () => selectCity(name));
             }
           }).addTo(map);
+          const fitArea = () => map.fitBounds(area.getBounds(), { padding: [20, 20], animate: false });
+          fitArea();
+          map.on('resize', fitArea);
 
-          SERVICE_CITIES.forEach(name => {
-            const chip = document.getElementById('chip-' + name.replace(/\s+/g, ''));
-            if (chip) {
-              chip.addEventListener('mouseenter', () => activateCity(name));
-              chip.addEventListener('mouseleave', () => deactivateCity(name));
-            }
+          chips.forEach(chip => {
+            const name = chip.textContent;
+            chip.disabled = !layers[name];
+            chip.addEventListener('mouseenter', () => { hoveredCity = name; updateHighlights(); });
+            chip.addEventListener('mouseleave', () => { hoveredCity = null; updateHighlights(); });
+            chip.addEventListener('focus', () => { focusedCity = name; updateHighlights(); });
+            chip.addEventListener('blur', () => { focusedCity = null; updateHighlights(); });
+            chip.addEventListener('click', () => selectCity(name));
           });
         })
-        .catch(() => {
-          SERVICE_CITIES.forEach(name => {
-            const chip = document.getElementById('chip-' + name.replace(/\s+/g, ''));
-            if (chip) {
-              chip.style.borderColor = 'var(--accent)';
-              chip.style.color = '#fff';
-            }
-          });
-        });
-
-      const style = document.createElement('style');
-      style.textContent = '.map-city-tooltip { background: #131618; border: 1px solid #E8620A; color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 8px; box-shadow: none; } .map-city-tooltip::before { display: none; } .leaflet-control-attribution { font-size: 10px; opacity: 0.4; }';
-      document.head.appendChild(style);
+        .catch(fallback);
     })();
   </script>
 

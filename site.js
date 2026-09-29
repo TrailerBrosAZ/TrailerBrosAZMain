@@ -45,6 +45,66 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
   showSlide(0);
 });
 
+// Desktop motion is optional; mobile reviews use native touch scrolling.
+const reviews = document.querySelector('[data-reviews]');
+if (reviews) {
+  const viewport = reviews.querySelector('.testimonial-carousel-wrap');
+  const cards = [...reviews.querySelectorAll('.testimonial-card:not([aria-hidden="true"])')];
+  const pause = reviews.querySelector('[data-review-pause]');
+  const controls = reviews.querySelector('[data-review-controls]');
+  const previous = reviews.querySelector('[data-review-previous]');
+  const next = reviews.querySelector('[data-review-next]');
+  const position = reviews.querySelector('[data-review-position]');
+  const mobile = window.matchMedia('(max-width: 700px)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let current = 0;
+
+  function updatePosition() {
+    if (!mobile.matches) return;
+    const step = cards[1].offsetLeft - cards[0].offsetLeft;
+    current = Math.max(0, Math.min(cards.length - 1, Math.round(viewport.scrollLeft / step)));
+    previous.disabled = current === 0;
+    next.disabled = current === cards.length - 1;
+    const label = `${current + 1} / ${cards.length}`;
+    if (position.textContent !== label) position.textContent = label;
+  }
+
+  function showReview(index) {
+    const target = Math.max(0, Math.min(cards.length - 1, index));
+    viewport.scrollTo({
+      left: cards[target].offsetLeft - cards[0].offsetLeft,
+      behavior: reducedMotion.matches ? 'auto' : 'smooth',
+    });
+  }
+
+  function syncReviewMode() {
+    pause.hidden = mobile.matches || reducedMotion.matches;
+    controls.hidden = !mobile.matches;
+    viewport.scrollLeft = 0;
+    updatePosition();
+  }
+
+  pause.addEventListener('click', () => {
+    const paused = reviews.classList.toggle('reviews-paused');
+    pause.textContent = paused ? 'Play reviews' : 'Pause reviews';
+  });
+  previous.addEventListener('click', () => showReview(current - 1));
+  next.addEventListener('click', () => showReview(current + 1));
+  viewport.addEventListener('scroll', updatePosition, { passive: true });
+  viewport.addEventListener('keydown', (event) => {
+    if (!mobile.matches || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'Home') showReview(0);
+    else if (event.key === 'End') showReview(cards.length - 1);
+    else showReview(current + (event.key === 'ArrowRight' ? 1 : -1));
+  });
+  mobile.addEventListener('change', syncReviewMode);
+  reducedMotion.addEventListener('change', syncReviewMode);
+  new ResizeObserver(updatePosition).observe(viewport);
+  reviews.classList.add('reviews-ready');
+  syncReviewMode();
+}
+
 const menu = document.getElementById('hamburger');
 const navLinks = document.getElementById('navLinks');
 if (menu && navLinks) {
