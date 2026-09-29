@@ -341,11 +341,11 @@ footer {
 .review-mobile-controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .review-position { min-width: 38px; color: var(--text-muted); font-size: 14px; text-align: center; font-variant-numeric: tabular-nums; }
 
-/* One local-service section pairs the map with pickup, contact and booking. */
-.service-area-section { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.65fr); grid-template-areas: 'intro map' 'booking map'; column-gap: 64px; row-gap: 28px; align-items: start; }
+/* One local-service section pairs the map with pickup details and contact. */
+.service-area-section { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.65fr); grid-template-areas: 'intro map' 'contact map'; column-gap: 64px; row-gap: 28px; align-items: start; }
 .service-intro { grid-area: intro; display: block; margin: 0; padding-top: 12px; }
 .service-description { color: var(--text-light); font-size: 21px; line-height: 1.5; margin: 24px 0 12px; max-width: 350px; }
-.service-detail, .service-booking > p { color: var(--text-muted); font-size: 17px; line-height: 1.75; margin: 0; max-width: 410px; }
+.service-detail, .service-contact > p { color: var(--text-muted); font-size: 17px; line-height: 1.75; margin: 0; max-width: 410px; }
 .service-map-panel { grid-area: map; min-width: 0; }
 .map-container-wrap { border-radius: 18px; overflow: hidden; border: 1px solid #ffffff24; }
 #service-map { height: 460px; width: 100%; background: #1a1d21; }
@@ -355,10 +355,11 @@ footer {
 .city-chip:hover:not(:disabled), .city-chip.chip-active { border-color: #f18b46; color: #fff; background: #e8620a12; }
 .city-chip:disabled { cursor: default; }
 .city-chip[aria-pressed="true"] { background: #e8620a26; border-color: #f18b46; color: #fff; }
-.service-booking { grid-area: booking; align-self: start; border-top: 1px solid #ffffff21; padding-top: 24px; scroll-margin-top: 110px; }
-.service-booking .fleet-button { margin-top: 20px; }
-.service-booking .service-contact { margin-top: 18px; font-size: 16px; }
-.service-contact a { display: inline-block; color: #f18b46; padding-block: 7px; text-decoration: underline; text-underline-offset: 4px; }
+.service-contact { grid-area: contact; align-self: start; border-top: 1px solid #ffffff21; padding-top: 24px; scroll-margin-top: 110px; }
+.service-contact h3 { color: #fff; font-size: 24px; line-height: 1.3; margin: 0 0 12px; }
+.service-contact-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 410px; margin-top: 20px; }
+.service-contact-actions .fleet-button { padding-inline: 10px; }
+.service-contact-actions .fleet-button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 .map-city-tooltip { background: #131618; border: 1px solid #e8620a; color: #fff; font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 8px; box-shadow: none; }
 .map-city-tooltip::before { display: none; }
 #service-map .leaflet-control-attribution { font-size: 10px; background: #131618e6; color: #c5ccd0; }
@@ -377,9 +378,9 @@ footer {
 }
 @media (max-width: 960px) {
   .testimonial-section, .service-area-section { padding-inline: 20px; margin-bottom: 60px; }
-  .service-area-section { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'intro' 'map' 'booking'; gap: 28px; }
+  .service-area-section { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'intro' 'map' 'contact'; gap: 28px; }
   .service-intro { padding-top: 0; }
-  .service-description, .service-detail, .service-booking > p { max-width: 650px; }
+  .service-description, .service-detail, .service-contact > p { max-width: 650px; }
   #service-map { height: 420px; }
 }
 @media (max-width: 700px) {
@@ -396,7 +397,7 @@ footer {
   .review-footer { flex-direction: column; align-items: start; gap: 18px; margin-top: 20px; }
   .review-mobile-controls { order: -1; }
   .service-description { font-size: 20px; margin-top: 20px; }
-  .service-detail, .service-booking > p { font-size: 16px; }
+  .service-detail, .service-contact > p { font-size: 16px; }
   #service-map { height: 340px; }
   .map-help { margin-top: 14px; }
   .city-chip { padding-inline: 13px; }
