@@ -1,0 +1,179 @@
+/* Public trailer catalog. Booking inventory and checkout are managed separately. */
+:root { --fleet-paper: #f2f2f0; --fleet-ink: #202326; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid #e8620a; outline-offset: 5px; }
+.skip-link { position: absolute; top: -80px; left: 20px; z-index: 200; padding: 14px 20px; background: #fff; color: #202326; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+.nav-links a[aria-current="page"] { color: var(--accent); opacity: 1; }
+.footer-links { flex-wrap: wrap; justify-content: center; }
+.fleet-section, .catalog-section { max-width: 1200px; padding: 0 24px; margin: 72px auto 88px; }
+#trailers, #utility, #slx, #compare { scroll-margin-top: 110px; }
+.fleet-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }
+.eyebrow { color: #f18b46; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 12px; }
+.fleet-heading h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -1px; margin: 0 0 12px; }
+.fleet-heading p:not(.eyebrow) { color: #afb3b5; line-height: 1.6; max-width: 580px; margin: 0; }
+.text-link { color: #f18b46; text-underline-offset: 5px; font-size: 14px; font-weight: 600; }
+.fleet-heading > .text-link { white-space: nowrap; padding-bottom: 4px; }
+.fleet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.fleet-card { min-width: 0; display: flex; flex-direction: column; background: var(--fleet-paper); color: var(--fleet-ink); border-radius: 18px; overflow: hidden; border: 1px solid #ffffff24; box-shadow: 0 18px 48px #0004; }
+.fleet-card-body { padding: 26px 28px 28px; display: flex; flex: 1; flex-direction: column; }
+.fleet-card-topline { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.fleet-model { color: #62676a; font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; }
+.fleet-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; background: #e2ebe3; color: #285735; font-size: 11px; font-weight: 700; border-radius: 5px; }
+.fleet-status::before { content: ""; width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+.fleet-status--soon { color: #853b0a; background: #fbe2d1; }
+.fleet-title { color: var(--fleet-ink); font-size: clamp(23px, 2.2vw, 28px); line-height: 1.18; letter-spacing: -.7px; margin: 0 0 10px; }
+.fleet-kicker { display: block; font-size: 13px; font-weight: 500; color: #62676a; letter-spacing: 0; margin-bottom: 7px; }
+.fleet-description { font-size: 14px; line-height: 1.65; color: #555b5e; margin: 0 0 22px; }
+.fleet-facts { display: grid; grid-template-columns: 1fr 1fr; border-block: 1px solid #d9dad6; margin: 0 0 20px; padding: 17px 0; gap: 12px; }
+.fleet-facts div { min-width: 0; }
+.fleet-facts div + div { border-left: 1px solid #d9dad6; padding-left: 18px; }
+.fleet-facts dt { font-size: 10px; color: #62676a; text-transform: uppercase; letter-spacing: .8px; line-height: 1.4; margin-bottom: 5px; }
+.fleet-facts dd { font-size: clamp(19px, 2vw, 24px); font-weight: 700; letter-spacing: -.7px; margin: 0; }
+.fleet-facts dd small { font-size: 12px; letter-spacing: 0; font-weight: 500; }
+.fleet-specs { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; font-size: 12px; line-height: 1.5; margin: 0 0 24px; padding: 0; }
+.fleet-specs li { position: relative; padding-left: 17px; }
+.fleet-specs li::before { content: "✓"; color: #aa490c; font-weight: 700; position: absolute; left: 0; }
+.fleet-rates { margin-top: auto; }
+.fleet-rates-label { font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; color: #62676a; margin: 0 0 10px; }
+.fleet-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border: 1px solid #d9dad6; border-radius: 10px; overflow: hidden; }
+.fleet-prices div { text-align: center; padding: 14px 6px; }
+.fleet-prices div:first-child { background: #f9e4d6; }
+.fleet-prices div + div { border-left: 1px solid #d9dad6; }
+.fleet-prices dt { font-size: 10px; color: #5a6063; margin-bottom: 7px; }
+.fleet-prices dd { font-size: clamp(20px, 2.2vw, 26px); font-weight: 700; letter-spacing: -.8px; margin: 0; }
+.fleet-deposit { font-size: 12px; color: #565c5f; margin: 12px 0 0; }
+.fleet-tow { border-top: 1px solid #d9dad6; padding-top: 17px; margin: 20px 0 0; font-size: 12px; line-height: 1.7; color: #565c5f; }
+.fleet-tow strong { color: #343a3d; display: block; margin-bottom: 3px; }
+.fleet-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.fleet-button { display: inline-flex; justify-content: center; align-items: center; padding: 13px 18px; min-height: 46px; border: 1px solid #b44700; border-radius: 7px; background: #b44700; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; line-height: 1.4; transition: background .2s ease, border-color .2s ease; }
+.fleet-button:hover { background: #933a00; border-color: #933a00; }
+.fleet-button--secondary { color: #333a3e; border-color: #b9bcb9; background: transparent; }
+.fleet-button--secondary:hover { background: #e4e5df; border-color: #828782; }
+.fleet-notice { font-size: 12px; line-height: 1.6; color: #686d6f; margin: 13px 0 0; }
+.fleet-note { margin: 22px 0 0; color: #999fa2; font-size: 12px; line-height: 1.7; }
+
+/* One reserved frame per gallery; every source keeps its original proportions. */
+.trailer-gallery { min-width: 0; margin: 0; background: #e6e6e1; }
+.gallery-stage { position: relative; background: #191d20; aspect-ratio: 4 / 3; overflow: hidden; touch-action: pan-y pinch-zoom; }
+.gallery-slide { margin: 0; width: 100%; height: 100%; }
+.gallery-slide img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gallery-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 46px; display: grid; place-items: center; cursor: pointer; background: #131618bf; color: #fff; border: 1px solid #ffffff40; border-radius: 7px; font-size: 23px; transition: background .2s ease; }
+.gallery-arrow:hover { background: #131618; }
+.gallery-prev { left: 12px; }
+.gallery-next { right: 12px; }
+.gallery-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px; min-height: 44px; }
+.gallery-dots { display: flex; gap: 0; }
+.gallery-dot { display: grid; place-items: center; width: 27px; height: 44px; padding: 0; cursor: pointer; border: 0; background: transparent; border-radius: 4px; }
+.gallery-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #a4a8a5; }
+.gallery-dot[aria-pressed="true"]::before { background: #b44700; width: 17px; border-radius: 4px; }
+.gallery-count { font-size: 11px; color: #505758; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gallery-thumbs { display: none; padding: 14px 0 0; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; background: var(--bg-dark); }
+.gallery-thumb { min-width: 0; padding: 0; overflow: hidden; background: #202629; border: 2px solid transparent; border-radius: 6px; cursor: pointer; aspect-ratio: 4 / 3; }
+.gallery-thumb[aria-pressed="true"] { border-color: #f18b46; }
+.gallery-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* The catalog gives each trailer its own gallery and a deeper explanation. */
+.catalog-hero { max-width: 1200px; margin: 0 auto; padding: 65px 24px 42px; border-bottom: 1px solid #ffffff1f; }
+.catalog-hero h1 { margin: 0; max-width: 850px; font-size: clamp(36px, 5.5vw, 66px); line-height: 1.06; letter-spacing: -2px; }
+.catalog-intro { font-size: 17px; line-height: 1.7; max-width: 620px; margin: 22px 0 26px; color: #b2b8bc; }
+.catalog-jumps { display: flex; flex-wrap: wrap; gap: 10px; }
+.catalog-jumps a { padding: 12px 17px; font-size: 13px; text-decoration: none; border: 1px solid #ffffff36; border-radius: 7px; color: #e6e6e6; }
+.catalog-jumps a:hover { border-color: #f18b46; color: #f18b46; }
+.catalog-jumps small { margin-left: 7px; color: #f18b46; }
+.catalog-section { margin-top: 48px; }
+.trailer-detail + .trailer-detail { border-top: 1px solid #ffffff24; padding-top: 56px; margin-top: 64px; }
+.detail-heading { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 28px; }
+.detail-heading h2 { font-size: clamp(27px, 4vw, 40px); letter-spacing: -1px; margin: 0; line-height: 1.15; }
+.detail-heading .fleet-kicker { color: #b2b8bc; margin-bottom: 8px; }
+.detail-heading .fleet-model { color: #f18b46; display: block; margin-bottom: 12px; }
+.detail-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+.detail-visual { min-width: 0; }
+.detail-visual .trailer-gallery { background: transparent; }
+.detail-visual .gallery-stage { border: 1px solid #ffffff20; border-radius: 12px; }
+.detail-visual .gallery-toolbar { color: #fff; background: transparent; padding-inline: 0; }
+.detail-visual .gallery-count { color: #b2b8bc; }
+.detail-visual .gallery-dot[aria-pressed="true"]::before { background: #f18b46; }
+.detail-visual .gallery-thumbs { display: grid; }
+.detail-copy { color: #b2b8bc; font-size: 15px; line-height: 1.8; margin: 24px 0 20px; }
+.detail-use { padding: 22px 24px; background: #202629; border: 1px solid #ffffff12; border-left: 3px solid #e8620a; border-radius: 0 10px 10px 0; }
+.detail-use h3 { font-size: 15px; margin: 0 0 10px; color: #f2f2f0; }
+.detail-use ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.75; color: #b2b8bc; }
+.detail-use li + li { margin-top: 5px; }
+.detail-use p { font-size: 13px; line-height: 1.75; color: #b2b8bc; margin: 14px 0 0; }
+.detail-spec-panel { min-width: 0; border-radius: 14px; background: var(--fleet-paper); color: var(--fleet-ink); padding: 28px; }
+.detail-spec-panel h3 { font-size: 16px; margin: 0 0 20px; }
+.detail-spec-panel .fleet-specs { font-size: 13px; margin-bottom: 28px; }
+.detail-spec-panel .fleet-facts { margin-bottom: 24px; }
+.comparison { max-width: 1200px; padding: 0 24px; margin: 0 auto 80px; }
+.comparison h2 { font-size: clamp(27px, 4vw, 38px); letter-spacing: -1px; margin: 0 0 12px; }
+.comparison > p { max-width: 680px; color: #b2b8bc; line-height: 1.7; font-size: 15px; margin: 0 0 26px; }
+.comparison-table-wrap { border: 1px solid #ffffff29; border-radius: 12px; overflow: hidden; }
+.comparison table { border-collapse: collapse; width: 100%; font-size: 14px; table-layout: fixed; }
+.comparison caption { text-align: left; padding: 20px 24px; color: #b2b8bc; font-size: 12px; background: #1a1f22; }
+.comparison th, .comparison td { text-align: left; padding: 18px 24px; line-height: 1.6; vertical-align: top; overflow-wrap: break-word; }
+.comparison thead { background: #252b2e; color: #fff; }
+.comparison thead th:first-child { width: 23%; }
+.comparison tbody th { color: #b2b8bc; font-weight: 500; }
+.comparison tbody tr { border-top: 1px solid #ffffff17; }
+.comparison tbody tr:nth-child(even) { background: #ffffff03; }
+.comparison td { color: #e6e6e6; }
+.comparison a { color: #f18b46; text-underline-offset: 4px; }
+.comparison small { display: block; color: #b2b8bc; font-size: 11px; }
+.catalog-help { max-width: 1152px; margin: 0 auto 80px; padding: 34px; border: 1px solid #ffffff21; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 28px; background: linear-gradient(115deg, #2a2420, #202326); }
+.catalog-help h2 { font-size: 24px; margin: 0 0 10px; }
+.catalog-help p { color: #b2b8bc; font-size: 14px; max-width: 630px; line-height: 1.7; margin: 0; }
+.catalog-help .fleet-button { flex-shrink: 0; }
+
+@media (max-width: 1040px) {
+  nav { padding: 12px 24px; flex-wrap: wrap; }
+  .hamburger { display: flex; min-width: 44px; min-height: 44px; justify-content: center; align-items: center; }
+  .nav-right { display: contents; }
+  .nav-phone-cta { display: none; }
+  .nav-links { display: none; width: 100%; flex-direction: column; gap: 0; padding: 8px 0 12px; }
+  .nav-links.open { display: flex; }
+  .nav-links li { border-bottom: 1px solid #ffffff0d; }
+  .nav-links a { display: block; padding: 12px 4px; }
+  .nav-links .nav-cta { display: inline-block; padding: 12px 18px; margin-top: 8px; }
+  .fleet-card-body { padding: 24px 22px; }
+  .fleet-specs { grid-template-columns: 1fr; }
+  .detail-layout { gap: 24px; }
+  .catalog-help { margin-inline: 24px; }
+}
+@media (max-width: 760px) {
+  .fleet-section, .catalog-section { padding-inline: 20px; margin-block: 44px 60px; }
+  .fleet-heading { display: block; }
+  .fleet-heading > .text-link { display: inline-block; margin-top: 16px; }
+  .fleet-grid { grid-template-columns: 1fr; gap: 26px; }
+  .fleet-card-body { padding: 24px; }
+  .fleet-specs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fleet-title { font-size: 27px; }
+  .fleet-prices dd { font-size: 26px; }
+  .catalog-hero { padding: 44px 20px 32px; }
+  .catalog-hero h1 { letter-spacing: -1.4px; }
+  .catalog-intro { font-size: 15px; }
+  .detail-heading { align-items: start; flex-direction: column; gap: 15px; }
+  .detail-layout { grid-template-columns: 1fr; gap: 24px; }
+  .detail-spec-panel { padding: 24px; }
+  .detail-visual .gallery-thumbs { display: none; }
+  .trailer-detail + .trailer-detail { margin-top: 44px; padding-top: 38px; }
+  .comparison { padding-inline: 20px; margin-bottom: 44px; }
+  .comparison th, .comparison td { padding: 13px 10px; font-size: 12px; }
+  .comparison thead th:first-child { width: 25%; }
+  .comparison caption { padding: 16px 12px; }
+  .catalog-help { margin: 0 20px 56px; padding: 26px; flex-direction: column; align-items: start; gap: 20px; }
+}
+@media (max-width: 380px) {
+  .fleet-section, .catalog-section, .comparison { padding-inline: 14px; }
+  .fleet-card-body, .detail-spec-panel { padding: 20px; }
+  .fleet-specs { grid-template-columns: 1fr; }
+  .fleet-actions { flex-direction: column; }
+  .fleet-prices dd { font-size: 23px; }
+  .gallery-toolbar { padding-inline: 10px; }
+  .gallery-dot { width: 25px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .fade-in-up { opacity: 1; transform: none; }
+}
