@@ -16,8 +16,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
-  <link rel="stylesheet" href="/site.css" />
-  <link rel="stylesheet" href="/fleet.css" />
+  <link rel="stylesheet" href="/site.css?v=20260929-2" />
+  <link rel="stylesheet" href="/fleet.css?v=20260929-2" />
   <script src="/site.js" defer></script>
   <noscript><style>.fade-in-up { opacity: 1; transform: none; } .hamburger { display: none; } .nav-links { display: flex; }</style></noscript>
   <script>if (location.pathname === '/index.html') history.replaceState(null, '', '/' + location.search + location.hash);</script>
@@ -65,7 +65,7 @@
       <div>
         <p class="eyebrow">Meet the lineup</p>
         <h2 id="fleet-heading">Your next haul starts here.</h2>
-        <p>Everyday projects or a bigger load. Get to know our utility trailer and the SLX coming soon.</p>
+        <p>Weekend adventures, everyday projects, or a bigger haul. Get to know our utility trailer and the SLX coming soon.</p>
       </div>
       <a class="text-link" href="/trailers">Compare Our Trailers &#8594;</a>
     </div>
@@ -73,33 +73,52 @@
         <div class="trailer-gallery" data-gallery role="region" aria-label="RawMaxx UTX photo gallery" aria-roledescription="carousel">
           <div class="gallery-stage">
             <div class="gallery-slide" id="home-utility-photo-1">
-              <img src="/assets/trailers/utx-front.webp" srcset="/assets/trailers/utx-front-640.webp 640w, /assets/trailers/utx-front.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx UTX utility trailer, front three-quarter view" width="1440" height="1080" loading="lazy" decoding="async" />
-            </div><div class="gallery-slide" id="home-utility-photo-2" hidden>
-              <img src="/assets/trailers/utx-deck.webp" srcset="/assets/trailers/utx-deck-640.webp 640w, /assets/trailers/utx-deck.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx UTX utility trailer deck" width="1440" height="1080" loading="lazy" decoding="async" />
-            </div><div class="gallery-slide" id="home-utility-photo-3" hidden>
-              <img src="/assets/trailers/utx-angle.webp" srcset="/assets/trailers/utx-angle-640.webp 640w, /assets/trailers/utx-angle.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx UTX utility trailer from another angle" width="1440" height="1080" loading="lazy" decoding="async" />
-            </div><div class="gallery-slide" id="home-utility-photo-4" hidden>
-              <img src="/assets/trailers/utx-toolbox.webp" srcset="/assets/trailers/utx-toolbox-640.webp 640w, /assets/trailers/utx-toolbox.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="Front-mounted toolbox on the RawMaxx UTX" width="1440" height="1080" loading="lazy" decoding="async" />
-            </div><div class="gallery-slide" id="home-utility-photo-5" hidden>
-              <img src="/assets/trailers/utx-side.webp" srcset="/assets/trailers/utx-side-640.webp 640w, /assets/trailers/utx-side.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx UTX utility trailer side profile" width="1440" height="1080" loading="lazy" decoding="async" />
-            </div><div class="gallery-slide" id="home-utility-photo-6" hidden>
-              <img src="/assets/trailers/utx-gate.webp" srcset="/assets/trailers/utx-gate-640.webp 640w, /assets/trailers/utx-gate.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="Reinforced rear drop gate on the RawMaxx UTX" width="1440" height="1080" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/utx-front.webp" srcset="/assets/trailers/utx-front-640.webp 640w, /assets/trailers/utx-front.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx UTX utility trailer, front three-quarter view" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-2" hidden>
+              <img src="/assets/trailers/utx-customer-segway.webp" srcset="/assets/trailers/utx-customer-segway-640.webp 640w, /assets/trailers/utx-customer-segway.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Customer photo: a Segway side-by-side loaded on the RawMaxx UTX utility trailer" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-3" hidden>
+              <img src="/assets/trailers/utx-customer-honda.webp" srcset="/assets/trailers/utx-customer-honda-640.webp 640w, /assets/trailers/utx-customer-honda.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Customer photo: a Honda side-by-side loaded on the RawMaxx UTX utility trailer" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-4" hidden>
+              <img src="/assets/trailers/utx-deck.webp" srcset="/assets/trailers/utx-deck-640.webp 640w, /assets/trailers/utx-deck.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx UTX utility trailer deck" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-5" hidden>
+              <img src="/assets/trailers/utx-angle.webp" srcset="/assets/trailers/utx-angle-640.webp 640w, /assets/trailers/utx-angle.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx UTX utility trailer from another angle" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-6" hidden>
+              <img src="/assets/trailers/utx-toolbox.webp" srcset="/assets/trailers/utx-toolbox-640.webp 640w, /assets/trailers/utx-toolbox.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Front-mounted toolbox on the RawMaxx UTX" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-7" hidden>
+              <img src="/assets/trailers/utx-side.webp" srcset="/assets/trailers/utx-side-640.webp 640w, /assets/trailers/utx-side.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx UTX utility trailer side profile" width="1440" height="1080" loading="lazy" decoding="async" />
+            </div>
+            <div class="gallery-slide" id="home-utility-photo-8" hidden>
+              <img src="/assets/trailers/utx-gate.webp" srcset="/assets/trailers/utx-gate-640.webp 640w, /assets/trailers/utx-gate.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Reinforced rear drop gate on the RawMaxx UTX" width="1440" height="1080" loading="lazy" decoding="async" />
             </div>
             <button class="gallery-arrow gallery-prev" type="button" data-previous data-gallery-controls hidden aria-label="Previous RawMaxx UTX photo">&#8249;</button>
             <button class="gallery-arrow gallery-next" type="button" data-next data-gallery-controls hidden aria-label="Next RawMaxx UTX photo">&#8250;</button>
           </div>
           <div class="gallery-toolbar" data-gallery-controls hidden>
-            <div class="gallery-dots"><button class="gallery-dot" type="button" data-slide="0" aria-label="Show RawMaxx UTX photo 1: RawMaxx UTX utility trailer, front three-quarter view" aria-pressed="true" aria-controls="home-utility-photo-1"></button><button class="gallery-dot" type="button" data-slide="1" aria-label="Show RawMaxx UTX photo 2: RawMaxx UTX utility trailer deck" aria-pressed="false" aria-controls="home-utility-photo-2"></button><button class="gallery-dot" type="button" data-slide="2" aria-label="Show RawMaxx UTX photo 3: RawMaxx UTX utility trailer from another angle" aria-pressed="false" aria-controls="home-utility-photo-3"></button><button class="gallery-dot" type="button" data-slide="3" aria-label="Show RawMaxx UTX photo 4: Front-mounted toolbox on the RawMaxx UTX" aria-pressed="false" aria-controls="home-utility-photo-4"></button><button class="gallery-dot" type="button" data-slide="4" aria-label="Show RawMaxx UTX photo 5: RawMaxx UTX utility trailer side profile" aria-pressed="false" aria-controls="home-utility-photo-5"></button><button class="gallery-dot" type="button" data-slide="5" aria-label="Show RawMaxx UTX photo 6: Reinforced rear drop gate on the RawMaxx UTX" aria-pressed="false" aria-controls="home-utility-photo-6"></button></div>
-            <span class="gallery-count" role="status" aria-live="polite" aria-atomic="true">1 / 6 photos</span>
+            <div class="gallery-dots">
+              <button class="gallery-dot" type="button" data-slide="0" aria-label="Show RawMaxx UTX photo 1: RawMaxx UTX utility trailer, front three-quarter view" aria-pressed="true" aria-controls="home-utility-photo-1"></button>
+              <button class="gallery-dot" type="button" data-slide="1" aria-label="Show RawMaxx UTX photo 2: Customer photo: a Segway side-by-side loaded on the RawMaxx UTX utility trailer" aria-pressed="false" aria-controls="home-utility-photo-2"></button>
+              <button class="gallery-dot" type="button" data-slide="2" aria-label="Show RawMaxx UTX photo 3: Customer photo: a Honda side-by-side loaded on the RawMaxx UTX utility trailer" aria-pressed="false" aria-controls="home-utility-photo-3"></button>
+              <button class="gallery-dot" type="button" data-slide="3" aria-label="Show RawMaxx UTX photo 4: RawMaxx UTX utility trailer deck" aria-pressed="false" aria-controls="home-utility-photo-4"></button>
+              <button class="gallery-dot" type="button" data-slide="4" aria-label="Show RawMaxx UTX photo 5: RawMaxx UTX utility trailer from another angle" aria-pressed="false" aria-controls="home-utility-photo-5"></button>
+              <button class="gallery-dot" type="button" data-slide="5" aria-label="Show RawMaxx UTX photo 6: Front-mounted toolbox on the RawMaxx UTX" aria-pressed="false" aria-controls="home-utility-photo-6"></button>
+              <button class="gallery-dot" type="button" data-slide="6" aria-label="Show RawMaxx UTX photo 7: RawMaxx UTX utility trailer side profile" aria-pressed="false" aria-controls="home-utility-photo-7"></button>
+              <button class="gallery-dot" type="button" data-slide="7" aria-label="Show RawMaxx UTX photo 8: Reinforced rear drop gate on the RawMaxx UTX" aria-pressed="false" aria-controls="home-utility-photo-8"></button>
+            </div>
+            <span class="gallery-count" role="status" aria-live="polite" aria-atomic="true">1 / 8 photos</span>
           </div>
-
         </div>
         <div class="fleet-card-body">
           <div class="fleet-card-topline"><span class="fleet-model">RawMaxx UTX</span><span class="fleet-status">Available to rent</span></div>
           <h3 class="fleet-title" id="home-utility-title"><span class="fleet-kicker">Heavy-duty tandem axle</span>Utility Trailer</h3>
-          <p class="fleet-description">The everyday hauler for furniture, yard projects, landscaping supplies, and smaller equipment.</p>
+          <p class="fleet-description">A versatile 14-foot × 83-inch hauler for side-by-sides, golf carts, quads, furniture, and yard projects. Room for recreation, work, and everyday hauling.</p>
           <dl class="fleet-facts">
-            <div><dt>Deck length</dt><dd>14 ft</dd></div>
+            <div><dt>Length × width</dt><dd><span>14 ft</span> × <span>83 in</span></dd></div>
             <div><dt>Approx. payload</dt><dd>5,200 <small>lb</small></dd></div>
           </dl>
           <ul class="fleet-specs"><li>7,000 lb GVWR</li><li>Electric brakes</li><li>Powder-coated frame</li><li>Reinforced rear drop gate</li><li>Front-mounted toolbox</li><li>Straps included</li></ul>
@@ -119,19 +138,19 @@
         <div class="trailer-gallery" data-gallery role="region" aria-label="RawMaxx SLX photo gallery" aria-roledescription="carousel">
           <div class="gallery-stage">
             <div class="gallery-slide" id="home-slx-photo-1">
-              <img src="/assets/trailers/slx-front.webp" srcset="/assets/trailers/slx-front-640.webp 640w, /assets/trailers/slx-front.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx SLX equipment and car hauler, front three-quarter view" width="1440" height="1080" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-front.webp" srcset="/assets/trailers/slx-front-640.webp 640w, /assets/trailers/slx-front.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx SLX equipment and car hauler, front three-quarter view" width="1440" height="1080" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-2" hidden>
-              <img src="/assets/trailers/slx-side.webp" srcset="/assets/trailers/slx-side-640.webp 640w, /assets/trailers/slx-side.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx SLX side profile showing the long deck and tandem axles" width="1440" height="1080" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-side.webp" srcset="/assets/trailers/slx-side-640.webp 640w, /assets/trailers/slx-side.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx SLX side profile showing the long deck and tandem axles" width="1440" height="1080" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-3" hidden>
-              <img src="/assets/trailers/slx-rear.webp" srcset="/assets/trailers/slx-rear-640.webp 640w, /assets/trailers/slx-rear.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx SLX rear deck and drive-over fenders" width="1440" height="1080" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-rear.webp" srcset="/assets/trailers/slx-rear-640.webp 640w, /assets/trailers/slx-rear.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx SLX rear deck and drive-over fenders" width="1440" height="1080" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-4" hidden>
-              <img src="/assets/trailers/slx-toolbox.webp" srcset="/assets/trailers/slx-toolbox-640.webp 640w, /assets/trailers/slx-toolbox.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="RawMaxx SLX front-mounted toolbox and rock guard" width="1440" height="1080" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-toolbox.webp" srcset="/assets/trailers/slx-toolbox-640.webp 640w, /assets/trailers/slx-toolbox.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="RawMaxx SLX front-mounted toolbox and rock guard" width="1440" height="1080" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-5" hidden>
-              <img src="/assets/trailers/slx-car.webp" srcset="/assets/trailers/slx-car-640.webp 640w, /assets/trailers/slx-car.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="Illustration of a car on the RawMaxx SLX trailer" width="1440" height="810" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-car.webp" srcset="/assets/trailers/slx-car-640.webp 640w, /assets/trailers/slx-car.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Illustration of a car on the RawMaxx SLX trailer" width="1440" height="810" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-6" hidden>
-              <img src="/assets/trailers/slx-utv.webp" srcset="/assets/trailers/slx-utv-640.webp 640w, /assets/trailers/slx-utv.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="Illustration of a side-by-side on the RawMaxx SLX trailer" width="1440" height="894" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-utv.webp" srcset="/assets/trailers/slx-utv-640.webp 640w, /assets/trailers/slx-utv.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Illustration of a side-by-side on the RawMaxx SLX trailer" width="1440" height="894" loading="lazy" decoding="async" />
             </div><div class="gallery-slide" id="home-slx-photo-7" hidden>
-              <img src="/assets/trailers/slx-equipment.webp" srcset="/assets/trailers/slx-equipment-640.webp 640w, /assets/trailers/slx-equipment.webp 1440w" sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1200px) 48vw, 570px" alt="Illustration of compact equipment on the RawMaxx SLX trailer" width="1440" height="788" loading="lazy" decoding="async" />
+              <img src="/assets/trailers/slx-equipment.webp" srcset="/assets/trailers/slx-equipment-640.webp 640w, /assets/trailers/slx-equipment.webp 1440w" sizes="(max-width: 960px) calc(100vw - 40px), (max-width: 1480px) 48vw, 740px" alt="Illustration of compact equipment on the RawMaxx SLX trailer" width="1440" height="788" loading="lazy" decoding="async" />
             </div>
             <button class="gallery-arrow gallery-prev" type="button" data-previous data-gallery-controls hidden aria-label="Previous RawMaxx SLX photo">&#8249;</button>
             <button class="gallery-arrow gallery-next" type="button" data-next data-gallery-controls hidden aria-label="Next RawMaxx SLX photo">&#8250;</button>
@@ -147,7 +166,7 @@
           <h3 class="fleet-title" id="home-slx-title"><span class="fleet-kicker">Heavy-duty tandem axle</span>Equipment &amp; Car Hauler</h3>
           <p class="fleet-description">A wider, longer platform for cars, side-by-sides, and equipment, with drive-over fenders and pullout ramps.</p>
           <dl class="fleet-facts">
-            <div><dt>Length × width¹</dt><dd>20 ft × 102 in</dd></div>
+            <div><dt>Length × width¹</dt><dd><span>20 ft</span> × <span>102 in</span></dd></div>
             <div><dt>Approx. payload</dt><dd>7,000 <small>lb</small></dd></div>
           </dl>
           <ul class="fleet-specs"><li>10,000 lb GVWR</li><li>Approx. 3,000 lb empty weight</li><li>Electric brakes</li><li>Powder-coated frame</li><li>Pullout ramps</li><li>Drive-over fenders</li><li>Front-mounted toolbox</li><li>Front rock guard</li><li>Tie-down points throughout the deck</li></ul>
@@ -155,8 +174,8 @@
             <p class="fleet-rates-label">Planned rental rates</p>
             <dl class="fleet-prices">
               <div><dt>Daily / 24 hours</dt><dd>$100</dd></div>
-              <div><dt>Weekly / 7 days</dt><dd>$700</dd></div>
-              <div><dt>Monthly / 30 days</dt><dd>$3,000</dd></div>
+              <div><dt>Weekly / 7 days</dt><dd>$580</dd></div>
+              <div><dt>Monthly / 30 days</dt><dd>$2,400</dd></div>
             </dl>
             <p class="fleet-deposit"><strong>$200</strong> refundable security deposit</p>
           </div>

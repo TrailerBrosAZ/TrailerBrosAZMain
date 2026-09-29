@@ -6,9 +6,9 @@ html { scroll-behavior: smooth; }
   --bg-dark: #131618;
   --card-bg: #202326;
   --text-light: #e6e6e6;
-  --text-muted: #a0a0a0;
+  --text-muted: #c5ccd0;
   --text-dark: #1a1a1a;
-  --text-mid: #555;
+  --text-mid: #343a3e;
   --radius-lg: 18px;
   --radius-sm: 8px;
   --shadow-card: 0 30px 70px rgba(0,0,0,0.7);
@@ -34,7 +34,7 @@ body::after {
   background-size: 200px 200px;
   pointer-events: none;
   z-index: 9999;
-  opacity: 1;
+  opacity: 0.25;
 }
 
 /* NAV */
@@ -67,9 +67,9 @@ nav {
 .nav-links a {
   color: var(--text-light);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
-  opacity: 0.85;
+  opacity: 1;
   transition: opacity var(--transition), color var(--transition);
 }
 
@@ -102,7 +102,7 @@ nav {
   color: var(--accent);
   padding: 7px 18px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.25s ease, color 0.25s ease;
@@ -229,7 +229,7 @@ section.book-cta {
 }
 
 .book-cta p {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-mid);
   margin: 0 0 20px;
   line-height: 1.6;
@@ -237,7 +237,7 @@ section.book-cta {
 
 .deposit-note {
   font-size: 0.9rem;
-  color: #888;
+  color: #42484b;
   margin: 0 0 28px !important;
 }
 
@@ -261,7 +261,7 @@ section.book-cta {
 
 .book-cta .contact-line {
   margin-top: 20px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-mid);
   margin-bottom: 0;
 }
@@ -293,7 +293,7 @@ footer {
 .footer-logo img { height: 48px; }
 
 .footer-contact {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-muted);
   line-height: 1.7;
 }
@@ -314,7 +314,7 @@ footer {
 }
 
 .footer-links a {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   text-decoration: none;
   transition: color var(--transition);
@@ -323,8 +323,8 @@ footer {
 .footer-links a:hover { color: var(--accent); }
 
 .footer-copy {
-  font-size: 13px;
-  color: #606060;
+  font-size: 14px;
+  color: #b4bdc2;
   margin-top: 8px;
 }
 
@@ -400,7 +400,7 @@ footer {
 }
 
 .how-it-works-section {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 80px auto 0;
   padding: 0 20px;
   text-align: center;
@@ -449,7 +449,7 @@ footer {
   transform: translateX(-50%);
   background: var(--accent);
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   width: 28px;
   height: 28px;
@@ -472,7 +472,7 @@ footer {
 }
 
 .hiw-step p {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   line-height: 1.6;
   margin: 0;
@@ -585,13 +585,13 @@ footer {
 }
 
 .testimonial-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
 }
 
 .testimonial-source {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   background: rgba(255,255,255,0.06);
   padding: 3px 10px;
@@ -600,7 +600,7 @@ footer {
 
 .testimonial-cta-nudge {
   margin-top: 24px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
 }
 
@@ -647,7 +647,7 @@ footer {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   padding: 6px 16px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   transition: border-color 0.2s ease, color 0.2s ease;
   cursor: pointer;
